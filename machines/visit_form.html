@@ -1,0 +1,22 @@
+<div class="card p-3">
+  <h4>Registrar Visita</h4>
+  <form id="form-visit" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Service Request ID *</label><input class="form-control" name="serviceRequestId" required></div>
+    <div class="col-md-6"><label class="form-label">Técnico</label><input class="form-control" name="technicianId"></div>
+    <div class="col-md-6"><label class="form-label">Inicio</label><input class="form-control" type="datetime-local" name="startTime"></div>
+    <div class="col-md-6"><label class="form-label">Fin</label><input class="form-control" type="datetime-local" name="endTime"></div>
+    <div class="col-12"><label class="form-label">Notas de visita</label><textarea class="form-control" name="visitNotes"></textarea></div>
+    <div class="col-12"><button class="btn btn-success" type="submit">Registrar Visita</button></div>
+  </form>
+</div>
+
+<script src="../assets/js/serviceVisitService.js"></script>
+<script>
+document.getElementById("form-visit").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  // adapt fields if backend expects other names
+  try{ await serviceVisitService.create({ serviceRequestId: data.serviceRequestId, technicianId: data.technicianId, visitDatetime: data.startTime, startTime: data.startTime, endTime: data.endTime, visitNotes: data.visitNotes }); alert("Visita registrada"); appLoad('machines/service_requests.html'); }
+  catch(err){ alert("Error: "+err.message); }
+});
+</script>

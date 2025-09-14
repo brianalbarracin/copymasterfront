@@ -1,0 +1,59 @@
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 id="m-title">Máquina</h4>
+      <p class="text-muted" id="m-sub">Detalle de máquina</p>
+    </div>
+    <div>
+      <button class="btn btn-outline-secondary" onclick="appLoad('machines/edit.html?id='+__MID)">Editar</button>
+      <button class="btn btn-success" onclick="appLoad('machines/service_requests.html')">Ver solicitudes</button>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <h6>Información</h6>
+      <table class="table">
+        <tbody id="m-info"></tbody>
+      </table>
+    </div>
+    <div class="col-md-6">
+      <h6>Estado y ubicación</h6>
+      <table class="table">
+        <tbody id="m-location"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <h5>Historial de movimientos</h5>
+  <div class="table-responsive mb-3"><table class="table" id="m-movements"></table></div>
+
+  <h5>Lecturas (meter readings)</h5>
+  <div class="table-responsive"><table class="table" id="m-meter"></table></div>
+</div>
+
+<script src="../assets/js/machineService.js"></script>
+<script>
+async function loadDetail(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if(!id) return;
+  window.__MID = id;
+  const m = await machineService.get(id).then(r=>r.data||r);
+  document.getElementById("m-title").innerText = m.companySerial || ('Máquina '+m.id);
+  document.getElementById("m-sub").innerText = `${m.brand||''} ${m.model||''}`;
+  document.getElementById("m-info").innerHTML = `
+    <tr><th>Serial</th><td>${m.companySerial||''}</td></tr>
+    <tr><th>Número</th><td>${m.companyNumber||''}</td></tr>
+    <tr><th>Año</th><td>${m.year||''}</td></tr>
+    <tr><th>Notas</th><td>${m.notes||''}</td></tr>
+  `;
+  document.getElementById("m-location").innerHTML = `<tr><th>Ubicación</th><td>${m.currentLocationId||''}</td></tr><tr><th>Cliente</th><td>${m.currentCustomerId||''}</td></tr>`;
+  const moves = await machineService.movements(id).then(r=>r.data||r).catch(()=>[]);
+  const mvT = document.getElementById("m-movements");
+  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ (moves||[]).map(x=>`<tr><td>${new Date(x.effectiveDate).toLocaleString()}</td><td>${x.fromLocationId||''}</td><td>${x.toLocationId||''}</td><td>${x.movementType||''}</td><td>${x.reason||''}</td></tr>`).join('') + '</tbody>';
+  const meters = await machineService.meterReadings(id).then(r=>r.data||r).catch(()=>[]);
+  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
+}
+document.addEventListener("DOMContentLoaded", loadDetail);
+</script>

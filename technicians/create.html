@@ -1,0 +1,19 @@
+<div class="card p-3">
+  <h4>Agregar Técnico</h4>
+  <form id="form-tech" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Nombre completo</label><input class="form-control" name="fullName" required></div>
+    <div class="col-md-6"><label class="form-label">Identificación</label><input class="form-control" name="identification"></div>
+    <div class="col-md-6"><label class="form-label">Teléfono</label><input class="form-control" name="phone"></div>
+    <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" name="email" type="email"></div>
+    <div class="col-12"><button class="btn btn-success" type="submit">Guardar</button></div>
+  </form>
+</div>
+<script src="../assets/js/technicianService.js"></script>
+<script>
+document.getElementById("form-tech").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  await technicianService.create(data);
+  alert("Técnico creado"); appLoad('technicians/list.html');
+});
+</script>

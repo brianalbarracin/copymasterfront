@@ -1,0 +1,40 @@
+<div class="container">
+  <div class="row g-3">
+    <div class="col-md-8">
+      <div class="card p-3">
+        <h4>Resumen del día</h4>
+        <div class="row">
+          <div class="col-sm-4"><div class="p-3 bg-light rounded">Máquinas: <strong id="home-machines-count">...</strong></div></div>
+          <div class="col-sm-4"><div class="p-3 bg-light rounded">Solicitudes hoy: <strong id="home-requests-count">...</strong></div></div>
+          <div class="col-sm-4"><div class="p-3 bg-light rounded">Visitas hoy: <strong id="home-visits-count">...</strong></div></div>
+        </div>
+        <hr>
+        <h5 class="mt-3">Últimas solicitudes</h5>
+        <div id="home-latest-requests"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h5>Accesos rápidos</h5>
+        <ul class="list-unstyled">
+          <li><a href="#" data-page="machines/list.html" class="link-success">Ver máquinas</a></li>
+          <li><a href="#" data-page="machines/create.html" class="link-success">Crear máquina</a></li>
+          <li><a href="#" data-page="machines/service_requests.html" class="link-success">Crear solicitud</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/js/machineService.js"></script>
+<script src="assets/js/serviceRequestService.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async ()=>{
+  try{
+    const machines = await machineService.list().then(r=>r.data || r);
+    const reqs = await serviceRequestService.list().then(r=>r.data || r);
+    document.getElementById("home-machines-count").innerText = (machines && machines.length) || 0;
+    document.getElementById("home-requests-count").innerText = (reqs && reqs.length) || 0;
+    document.getElementById("home-latest-requests").innerHTML = (reqs||[]).slice(0,5).map(r=>`<div class="small mb-2"><strong>${r.requestNumber||r.id}</strong> - ${r.rootCause||''} <span class="text-muted">(${new Date(r.reportedAt).toLocaleString()})</span></div>`).join('');
+  }catch(e){ console.error(e); }
+});
+</script>

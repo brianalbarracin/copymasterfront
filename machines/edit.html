@@ -1,0 +1,61 @@
+<div class="card p-3">
+  <h4>Editar Máquina</h4>
+  <form id="form-edit-machine" class="row g-3">
+    <input type="hidden" name="id" id="m-id">
+    <div class="col-md-6">
+      <label class="form-label">Serial (companySerial) *</label>
+      <input class="form-control" name="companySerial" id="m-companySerial" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Número (companyNumber)</label>
+      <input class="form-control" name="companyNumber" id="m-companyNumber">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Modelo *</label>
+      <input class="form-control" name="model" id="m-model" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Marca</label>
+      <input class="form-control" name="brand" id="m-brand">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Año</label>
+      <input type="number" class="form-control" name="year" id="m-year">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notas</label>
+      <textarea class="form-control" name="notes" id="m-notes" rows="3"></textarea>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/detail.html?id='+document.getElementById('m-id').value)">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script src="../assets/js/machineService.js"></script>
+<script>
+async function loadEdit(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if(!id) return;
+  const m = await machineService.get(id).then(r=>r.data||r);
+  document.getElementById('m-id').value = m.id;
+  document.getElementById('m-companySerial').value = m.companySerial||'';
+  document.getElementById('m-companyNumber').value = m.companyNumber||'';
+  document.getElementById('m-model').value = m.model||'';
+  document.getElementById('m-brand').value = m.brand||'';
+  document.getElementById('m-year').value = m.year||'';
+  document.getElementById('m-notes').value = m.notes||'';
+}
+document.addEventListener("DOMContentLoaded", loadEdit);
+document.getElementById("form-edit-machine").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try{
+    await machineService.update(data.id, data);
+    alert("Guardado");
+    appLoad('machines/detail.html?id='+data.id);
+  }catch(err){ alert("Error: "+err.message); }
+});
+</script>

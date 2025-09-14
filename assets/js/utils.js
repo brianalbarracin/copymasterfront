@@ -1,0 +1,2 @@
+function showAlert(msg, type='info'){ const div = document.createElement('div'); div.className = 'alert alert-'+type; div.innerText = msg; document.getElementById('content-main').prepend(div); setTimeout(()=>div.remove(),4000); }
+function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }

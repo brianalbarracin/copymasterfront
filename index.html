@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>CopyMaster — Panel</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/index.css" rel="stylesheet">
+    <link href="assets/css/professional.css" rel="stylesheet">
+    <script>const API_BASE = "https://copymasterback.onrender.com";</script>
+    <script src="assets/js/app.js" defer></script>
+  </head>
+  <body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+      <nav class="navbar navbar-expand-lg navbar-light container">
+        <a class="navbar-brand text-success" href="#">CopyMaster</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="machines/service_requests.html">Solicitudes</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="machines/visit_form.html">Visitas</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
+          </ul>
+          <div class="d-flex align-items-center">
+            <span id="current-user" class="me-3 text-muted"></span>
+            <button id="logout" class="btn btn-outline-secondary btn-sm">Cerrar sesión</button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main content area -->
+    <main class="flex-fill container py-4" id="content-main">
+      <!-- Cargado dinámicamente -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light text-muted py-3 mt-auto">
+      <div class="container d-flex justify-content-between">
+        <div>CopyMaster &copy; 2025</div>
+        <div class="small">Contacto: soporte@copymaster.local</div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

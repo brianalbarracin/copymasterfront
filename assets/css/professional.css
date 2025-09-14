@@ -1,0 +1,5 @@
+/* Professional tweaks */
+.card { border-radius: 10px; }
+.navbar-brand { font-weight:700; font-size:1.15rem; }
+.link-success { color:#0f9d58 !important; }
+.table-actions button { margin-right:6px; }

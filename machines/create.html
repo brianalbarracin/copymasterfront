@@ -1,0 +1,48 @@
+<div class="card p-3">
+  <h4>Crear Máquina</h4>
+  <form id="form-create-machine" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Serial (companySerial) *</label>
+      <input class="form-control" name="companySerial" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Número (companyNumber)</label>
+      <input class="form-control" name="companyNumber">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Modelo *</label>
+      <input class="form-control" name="model" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Marca</label>
+      <input class="form-control" name="brand">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Año</label>
+      <input type="number" class="form-control" name="year">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notas</label>
+      <textarea class="form-control" name="notes" rows="3"></textarea>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script src="../assets/js/machineService.js"></script>
+<script>
+document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  if(!form.checkValidity()) { form.classList.add('was-validated'); return; }
+  const data = Object.fromEntries(new FormData(form));
+  try{
+    await machineService.create(data);
+    alert("Máquina creada");
+    appLoad('machines/list.html');
+  }catch(err){ alert("Error al crear: "+err.message); }
+});
+</script>
