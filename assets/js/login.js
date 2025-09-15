@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const password = form.password.value;
     if(!username || !password){ document.getElementById("login-error").innerText = "Usuario y contraseña requeridos"; return; }
     try{
-      const res = await fetch(API_BASE + "/api/auth/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ username, password }) });
+      const res = await fetch(API_BASE + "/auth/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ username, password }) });
       if(!res.ok) {
         const errTxt = await res.text().catch(()=>"Credenciales inválidas");
         throw new Error(errTxt || "Credenciales inválidas");
