@@ -171,122 +171,170 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     <!-- Script con todas las mejoras -->
     <script>
         // Servicios corregidos y mejorados
-        const technicianService = {
-            list: () => fetch(API_BASE + "/technicians").then(r => r.json()),
-            get: (id) => fetch(API_BASE + "/technicians/" + id).then(r => r.json()),
-            create: (data) => fetch(API_BASE + "/technicians", {
-                method: "POST", 
-                headers: {"Content-Type": "application/json"}, 
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            performance: (id, startDate, endDate) => {
-                const params = new URLSearchParams({
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString()
-                });
-                return fetch(`${API_BASE}/technicians/${id}/performance?${params}`).then(r => r.json());
-            },
-            comparison: (startDate, endDate) => {
-                const params = new URLSearchParams({
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString()
-                });
-                return fetch(`${API_BASE}/technicians/comparison?${params}`).then(r => r.json());
-            }
-        };
+                const technicianService = {
+        list: () => fetch(API_BASE + "/technicians")
+            .then(r => r.json()).then(res => res.data || []),
 
-        const machineService = {
-            list: () => fetch(API_BASE + "/machines").then(r => r.json()),
-            get: (id) => fetch(API_BASE + "/machines/" + id).then(r => r.json()),
-            create: (data) => fetch(API_BASE + "/machines", {
-                method: "POST", 
-                headers: {"Content-Type": "application/json"}, 
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            update: (id, data) => fetch(API_BASE + "/machines/" + id, {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            delete: (id) => fetch(API_BASE + "/machines/" + id, {
-                method: "DELETE"
-            }).then(r => r.json()),
-            movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id).then(r => r.json()),
-            meterReadings: (id) => fetch(API_BASE + "/meter-readings?machineId=" + id).then(r => r.json()),
-            search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query)).then(r => r.json())
-        };
+        get: (id) => fetch(API_BASE + "/technicians/" + id)
+            .then(r => r.json()).then(res => res.data),
 
-        const serviceRequestService = {
-            list: () => fetch(API_BASE + "/service-requests").then(r => r.json()),
-            get: (id) => fetch(API_BASE + "/service-requests/" + id).then(r => r.json()),
-            create: (data) => fetch(API_BASE + "/service-requests", {
-                method: "POST", 
-                headers: {"Content-Type": "application/json"}, 
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId).then(r => r.json()),
-            byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId).then(r => r.json())
-        };
+        create: (data) => fetch(API_BASE + "/technicians", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
 
-        const serviceVisitService = {
-            list: () => fetch(API_BASE + "/service-visits").then(r => r.json()),
-            get: (id) => fetch(API_BASE + "/service-visits/" + id).then(r => r.json()),
-            create: (data) => fetch(API_BASE + "/service-visits", {
-                method: "POST", 
-                headers: {"Content-Type": "application/json"}, 
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            update: (id, data) => fetch(API_BASE + "/service-visits/" + id, {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            byRequest: (requestId) => fetch(API_BASE + "/service-visits/request/" + requestId).then(r => r.json()),
-            byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId).then(r => r.json())
-        };
+        update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
 
-        const costService = {
-            analysis: (startDate, endDate) => {
-                const params = new URLSearchParams({
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString()
-                });
-                return fetch(`${API_BASE}/costs/analysis?${params}`).then(r => r.json());
-            },
-            comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`).then(r => r.json())
-        };
+        performance: (id, startDate, endDate) => {
+            const params = new URLSearchParams({
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
+            return fetch(`${API_BASE}/technicians/${id}/performance?${params}`)
+                .then(r => r.json()).then(res => res.data);
+        },
 
-        const reportService = {
-            generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({type, params})
-            }).then(r => r.json()),
-            list: () => fetch(API_BASE + "/reports").then(r => r.json())
-        };
+        comparison: (startDate, endDate) => {
+            const params = new URLSearchParams({
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
+            return fetch(`${API_BASE}/technicians/comparison?${params}`)
+                .then(r => r.json()).then(res => res.data);
+        }
+    };
 
-        const userService = {
-            getProfile: () => fetch(API_BASE + "/user/profile").then(r => r.json()),
-            updateProfile: (data) => fetch(API_BASE + "/user/profile", {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(data)
-            }).then(r => r.json()),
-            getSessions: () => fetch(API_BASE + "/user/sessions").then(r => r.json()),
-            terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
-                method: "DELETE"
-            }).then(r => r.json())
-        };
+    const machineService = {
+        list: () => fetch(API_BASE + "/machines")
+            .then(r => r.json()).then(res => res.data || []),
+
+        get: (id) => fetch(API_BASE + "/machines/" + id)
+            .then(r => r.json()).then(res => res.data),
+
+        create: (data) => fetch(API_BASE + "/machines", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        update: (id, data) => fetch(API_BASE + "/machines/" + id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        delete: (id) => fetch(API_BASE + "/machines/" + id, {
+            method: "DELETE"
+        }).then(r => r.json()).then(res => res.data),
+
+        movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id)
+            .then(r => r.json()).then(res => res.data || []),
+
+        meterReadings: (id) => fetch(API_BASE + "/meter-readings?machineId=" + id)
+            .then(r => r.json()).then(res => res.data || []),
+
+        search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const serviceRequestService = {
+        list: () => fetch(API_BASE + "/service-requests")
+            .then(r => r.json()).then(res => res.data || []),
+
+        get: (id) => fetch(API_BASE + "/service-requests/" + id)
+            .then(r => r.json()).then(res => res.data),
+
+        create: (data) => fetch(API_BASE + "/service-requests", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId)
+            .then(r => r.json()).then(res => res.data || []),
+
+        byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId)
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const serviceVisitService = {
+        list: () => fetch(API_BASE + "/service-visits")
+            .then(r => r.json()).then(res => res.data || []),
+
+        get: (id) => fetch(API_BASE + "/service-visits/" + id)
+            .then(r => r.json()).then(res => res.data),
+
+        create: (data) => fetch(API_BASE + "/service-visits", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        update: (id, data) => fetch(API_BASE + "/service-visits/" + id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        byRequest: (requestId) => fetch(API_BASE + "/service-visits/request/" + requestId)
+            .then(r => r.json()).then(res => res.data || []),
+
+        byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId)
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const costService = {
+        analysis: (startDate, endDate) => {
+            const params = new URLSearchParams({
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
+            return fetch(`${API_BASE}/costs/analysis?${params}`)
+                .then(r => r.json()).then(res => res.data);
+        },
+        comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`)
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const reportService = {
+        generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({type, params})
+        }).then(r => r.json()).then(res => res.data),
+
+        list: () => fetch(API_BASE + "/reports")
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const userService = {
+        getProfile: () => fetch(API_BASE + "/user/profile")
+            .then(r => r.json()).then(res => res.data),
+
+        updateProfile: (data) => fetch(API_BASE + "/user/profile", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        getSessions: () => fetch(API_BASE + "/user/sessions")
+            .then(r => r.json()).then(res => res.data || []),
+
+        terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
+            method: "DELETE"
+        }).then(r => r.json()).then(res => res.data)
+    };
 
         // Funciones de utilidad
         function showAlert(msg, type = 'info') {
@@ -500,24 +548,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }
   });
 });
-
-===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\machineService.js =====
-const machineService = {
-  list: ()=> fetch(API_BASE + "/machines").then(r=>r.json()),
-  get: (id)=> fetch(API_BASE + "/machines/"+id).then(r=>r.json()),
-  create: (data)=> fetch(API_BASE + "/machines", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json()),
-  update: (id,data)=> fetch(API_BASE + "/machines/"+id, {method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json()),
-  delete: (id)=> fetch(API_BASE + "/machines/"+id, {method:"DELETE"}).then(r=>r.json()),
-  movements: (id)=> fetch(API_BASE + "/machine-movements?machineId="+id).then(r=>r.json()),
-  meterReadings: (id)=> fetch(API_BASE + "/meter-readings?machineId="+id).then(r=>r.json())
-};
-
-===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\serviceRequestService.js =====
-const serviceRequestService = {
-  list: ()=> fetch(API_BASE + "/api/service-requests").then(r=>r.json()),
-  get: (id)=> fetch(API_BASE + "/api/service-requests/"+id).then(r=>r.json()),
-  create: (data)=> fetch(API_BASE + "/api/service-requests", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json())
-};
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\serviceVisitService.js =====
 const serviceVisitService = {
@@ -1503,27 +1533,6 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
     });
 </script>
 
-===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\create.html =====
-<div class="card p-3">
-  <h4>Agregar Técnico</h4>
-  <form id="form-tech" class="row g-3">
-    <div class="col-md-6"><label class="form-label">Nombre completo</label><input class="form-control" name="fullName" required></div>
-    <div class="col-md-6"><label class="form-label">Identificación</label><input class="form-control" name="identification"></div>
-    <div class="col-md-6"><label class="form-label">Teléfono</label><input class="form-control" name="phone"></div>
-    <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" name="email" type="email"></div>
-    <div class="col-12"><button class="btn btn-success" type="submit">Guardar</button></div>
-  </form>
-</div>
-<script src="../assets/js/technicianService.js"></script>
-<script>
-document.getElementById("form-tech").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target));
-  await technicianService.create(data);
-  alert("Técnico creado"); appLoad('technicians/list.html');
-});
-</script>
-
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\list.html =====
 <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1605,6 +1614,27 @@ document.getElementById("form-tech").addEventListener("submit", async (e)=>{
             loadTechnicians(e.target.value);
         });
     });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\new.html =====
+<div class="card p-3">
+  <h4>Agregar Técnico</h4>
+  <form id="form-tech" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Nombre completo</label><input class="form-control" name="fullName" required></div>
+    <div class="col-md-6"><label class="form-label">Identificación</label><input class="form-control" name="identification"></div>
+    <div class="col-md-6"><label class="form-label">Teléfono</label><input class="form-control" name="phone"></div>
+    <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" name="email" type="email"></div>
+    <div class="col-12"><button class="btn btn-success" type="submit">Guardar</button></div>
+  </form>
+</div>
+<script src="../assets/js/technicianService.js"></script>
+<script>
+document.getElementById("form-tech").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  await technicianService.create(data);
+  alert("Técnico creado"); appLoad('technicians/list.html');
+});
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\performance.html =====
