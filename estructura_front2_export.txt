@@ -555,16 +555,6 @@ const serviceVisitService = {
   create: (data)=> fetch(API_BASE + "/service-visits", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json())
 };
 
-===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\technicianService.js =====
-const technicianService = {
-  list: ()=> fetch(API_BASE + "/technicians").then(r=>r.json()),
-  create: (data)=> fetch(API_BASE + "/technicians", {
-    method: "POST", 
-    headers: {"Content-Type": "application/json"}, 
-    body: JSON.stringify(data)
-  }).then(r=>r.json())
-};
-
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\utils.js =====
 function showAlert(msg, type='info'){ const div = document.createElement('div'); div.className = 'alert alert-'+type; div.innerText = msg; document.getElementById('content-main').prepend(div); setTimeout(()=>div.remove(),4000); }
 function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }
@@ -834,7 +824,6 @@ function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }
   </form>
 </div>
 
-<script src="../assets/js/machineService.js"></script>
 <script>
 document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
   e.preventDefault();
@@ -870,8 +859,6 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
     <div class="col-12"><button class="btn btn-success" type="submit">Crear</button></div>
   </form>
 </div>
-
-<script src="../assets/js/serviceRequestService.js"></script>
 <script>
 document.getElementById("form-create-request").addEventListener("submit", async (e)=>{
   e.preventDefault();
@@ -916,7 +903,6 @@ document.getElementById("form-create-request").addEventListener("submit", async 
   <div class="table-responsive"><table class="table" id="m-meter"></table></div>
 </div>
 
-<script src="../assets/js/machineService.js"></script>
 <script>
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
@@ -978,7 +964,7 @@ document.addEventListener("DOMContentLoaded", loadDetail);
   </form>
 </div>
 
-<script src="../assets/js/machineService.js"></script>
+
 <script>
 async function loadEdit(){
   const params = new URLSearchParams(location.search);
@@ -1115,7 +1101,7 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
   </div>
 </div>
 
-<script src="../assets/js/serviceRequestService.js"></script>
+
 <script>
 async function renderRequests(){
   const list = await serviceRequestService.list().then(r=>r.data||r).catch(()=>[]);
@@ -1149,7 +1135,6 @@ document.addEventListener("DOMContentLoaded", ()=>{ renderRequests(); document.g
   </form>
 </div>
 
-<script src="../assets/js/serviceVisitService.js"></script>
 <script>
 document.getElementById("form-visit").addEventListener("submit", async (e)=>{
   e.preventDefault();
@@ -1367,7 +1352,6 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
     });
 </script>
 
-<script src="../assets/js/machineService.js"></script>
 <script>
 document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
   e.preventDefault();
@@ -1627,7 +1611,7 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
     <div class="col-12"><button class="btn btn-success" type="submit">Guardar</button></div>
   </form>
 </div>
-<script src="../assets/js/technicianService.js"></script>
+
 <script>
 document.getElementById("form-tech").addEventListener("submit", async (e)=>{
   e.preventDefault();
