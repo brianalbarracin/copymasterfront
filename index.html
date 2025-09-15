@@ -128,7 +128,12 @@
     <!-- Script con todas las mejoras -->
     <script>
         // Servicios corregidos y mejorados
-                .then(r => r.json()).then(res => res.data),
+                const technicianService = {
+        list: () => fetch(API_BASE + "/technicians")
+            .then(r => r.json()).then(res => res.data || []),
+
+        get: (id) => fetch(API_BASE + "/technicians/" + id)
+            .then(r => r.json()).then(res => res.data),
 
         create: (data) => fetch(API_BASE + "/technicians", {
             method: "POST",
