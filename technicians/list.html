@@ -72,10 +72,11 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadTechnicians();
+    // Autoejecutar inmediatamente cuando el snippet se inyecta
+    (async function() {
+        await loadTechnicians();
         document.getElementById("technician-search").addEventListener("input", (e) => {
             loadTechnicians(e.target.value);
         });
-    });
+    })();
 </script>
