@@ -1,0 +1,2071 @@
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\home.html =====
+<div class="container">
+  <div class="row g-3">
+    <div class="col-md-8">
+      <div class="card p-3">
+        <h4>Resumen del día</h4>
+        <div class="row">
+          <div class="col-sm-4"><div class="p-3 bg-light rounded">Máquinas: <strong id="home-machines-count">...</strong></div></div>
+          <div class="col-sm-4"><div class="p-3 bg-light rounded">Solicitudes hoy: <strong id="home-requests-count">...</strong></div></div>
+          <div class="col-sm-4"><div class="p-3 bg-light rounded">Visitas hoy: <strong id="home-visits-count">...</strong></div></div>
+        </div>
+        <hr>
+        <h5 class="mt-3">Últimas solicitudes</h5>
+        <div id="home-latest-requests"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h5>Accesos rápidos</h5>
+        <ul class="list-unstyled">
+          <li><a href="#" data-page="machines/list.html" class="link-success">Ver máquinas</a></li>
+          <li><a href="#" data-page="machines/create.html" class="link-success">Crear máquina</a></li>
+          <li><a href="#" data-page="machines/service_requests.html" class="link-success">Crear solicitud</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/js/machineService.js"></script>
+<script src="assets/js/serviceRequestService.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async ()=>{
+  try{
+    const machines = await machineService.list().then(r=>r.data || r);
+    const reqs = await serviceRequestService.list().then(r=>r.data || r);
+    document.getElementById("home-machines-count").innerText = (machines && machines.length) || 0;
+    document.getElementById("home-requests-count").innerText = (reqs && reqs.length) || 0;
+    document.getElementById("home-latest-requests").innerHTML = (reqs||[]).slice(0,5).map(r=>`<div class="small mb-2"><strong>${r.requestNumber||r.id}</strong> - ${r.rootCause||''} <span class="text-muted">(${new Date(r.reportedAt).toLocaleString()})</span></div>`).join('');
+  }catch(e){ console.error(e); }
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\index.html =====
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>CopyMaster — Panel</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+        .container { max-width: 1100px; }
+        h1,h3,h4 { color: #0f9d58; }
+        .card { border-radius: 10px; }
+        .navbar-brand { font-weight:700; font-size:1.15rem; }
+        .link-success { color:#0f9d58 !important; }
+        .table-actions button { margin-right:6px; }
+        
+        /* Nuevos estilos para mejoras */
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #0f9d58;
+        }
+        .stat-card .number {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .technician-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #f1f1f1;
+        }
+        .performance-bar {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .performance-fill {
+            height: 100%;
+            background-color: #0f9d58;
+            border-radius: 5px;
+        }
+        .dashboard-section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            border-left: 4px solid #0f9d58;
+            padding-left: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+    </style>
+    <script>
+        const API_BASE = "https://copymasterback.onrender.com";
+    </script>
+    <script src="assets/js/app.js" defer></script>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <nav class="navbar navbar-expand-lg navbar-light container">
+            <a class="navbar-brand text-success" href="#">
+                <i class="fas fa-copy me-1"></i>CopyMaster
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="service_requests/list.html">Solicitudes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="costs/analysis.html">Costos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="reports/generate.html">Reportes</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted text-decoration-none dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> <span id="current-user"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-page="user/profile.html"><i class="fas fa-user me-2"></i>Mi perfil</a></li>
+                            <li><a class="dropdown-item" href="#" data-page="user/sessions.html"><i class="fas fa-clock me-2"></i>Sesiones activas</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logout"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main content area -->
+    <main class="flex-fill container py-4" id="content-main">
+        <!-- Cargado dinámicamente -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light text-muted py-3 mt-auto">
+        <div class="container d-flex justify-content-between">
+            <div>CopyMaster &copy; 2025</div>
+            <div class="small">Contacto: soporte@copymaster.local</div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script con todas las mejoras -->
+    <script>
+        // Servicios corregidos y mejorados
+        const technicianService = {
+            list: () => fetch(API_BASE + "/technicians").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/technicians/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/technicians", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            performance: (id, startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/technicians/${id}/performance?${params}`).then(r => r.json());
+            },
+            comparison: (startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/technicians/comparison?${params}`).then(r => r.json());
+            }
+        };
+
+        const machineService = {
+            list: () => fetch(API_BASE + "/machines").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/machines/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/machines", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/machines/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            delete: (id) => fetch(API_BASE + "/machines/" + id, {
+                method: "DELETE"
+            }).then(r => r.json()),
+            movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id).then(r => r.json()),
+            meterReadings: (id) => fetch(API_BASE + "/meter-readings?machineId=" + id).then(r => r.json()),
+            search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query)).then(r => r.json())
+        };
+
+        const serviceRequestService = {
+            list: () => fetch(API_BASE + "/service-requests").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/service-requests/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/service-requests", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId).then(r => r.json()),
+            byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId).then(r => r.json())
+        };
+
+        const serviceVisitService = {
+            list: () => fetch(API_BASE + "/service-visits").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/service-visits/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/service-visits", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/service-visits/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            byRequest: (requestId) => fetch(API_BASE + "/service-visits/request/" + requestId).then(r => r.json()),
+            byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId).then(r => r.json())
+        };
+
+        const costService = {
+            analysis: (startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/costs/analysis?${params}`).then(r => r.json());
+            },
+            comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`).then(r => r.json())
+        };
+
+        const reportService = {
+            generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({type, params})
+            }).then(r => r.json()),
+            list: () => fetch(API_BASE + "/reports").then(r => r.json())
+        };
+
+        const userService = {
+            getProfile: () => fetch(API_BASE + "/user/profile").then(r => r.json()),
+            updateProfile: (data) => fetch(API_BASE + "/user/profile", {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            getSessions: () => fetch(API_BASE + "/user/sessions").then(r => r.json()),
+            terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
+                method: "DELETE"
+            }).then(r => r.json())
+        };
+
+        // Funciones de utilidad
+        function showAlert(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `alert alert-${type} alert-dismissible fade show`;
+            div.innerHTML = `
+                ${msg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.getElementById('content-main').prepend(div);
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.remove();
+                }
+            }, 5000);
+        }
+
+        function formatDate(dt) {
+            return dt ? new Date(dt).toLocaleString() : '';
+        }
+
+        function formatDateOnly(dt) {
+            return dt ? new Date(dt).toLocaleDateString() : '';
+        }
+
+        // Código principal de la aplicación
+        document.addEventListener("DOMContentLoaded", () => {
+            // Verificar autenticación
+            const user = localStorage.getItem("user");
+            if (!user) {
+                window.location = "login.html";
+                return;
+            }
+            
+            const userObj = JSON.parse(user);
+            document.getElementById("current-user").innerText = userObj.username || userObj.fullName || "";
+            
+            // Configurar sistema de navegación
+            window.appLoad = async function(path) {
+                try {
+                    const res = await fetch(path);
+                    if (!res.ok) throw new Error("No se pudo cargar " + path);
+                    
+                    const html = await res.text();
+                    document.getElementById("content-main").innerHTML = html;
+                    
+                    // Ejecutar scripts incrustados
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = html;
+                    tmp.querySelectorAll('script').forEach(s => {
+                        const script = document.createElement('script');
+                        if (s.src) {
+                            script.src = s.src;
+                        } else {
+                            script.textContent = s.textContent;
+                        }
+                        document.body.appendChild(script);
+                    });
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById("content-main").innerHTML = `
+                        <div class="alert alert-danger">
+                            <h5>Error al cargar la página</h5>
+                            <p>${e.message}</p>
+                            <a href="#" onclick="appLoad('home.html')" class="btn btn-sm btn-success">Volver al inicio</a>
+                        </div>
+                    `;
+                }
+            };
+
+            // Configurar eventos de navegación
+            document.querySelectorAll('a[data-page]').forEach(a => {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    appLoad(a.dataset.page);
+                });
+            });
+
+            // Configurar logout
+            document.getElementById("logout").addEventListener("click", () => {
+                localStorage.removeItem("user");
+                window.location = "login.html";
+            });
+
+            // Cargar página inicial
+            appLoad('home.html');
+        });
+    </script>
+</body>
+</html>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\login.html =====
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>CopyMaster — Iniciar Sesión</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/index.css" rel="stylesheet">
+    <script>const API_BASE = "https://copymasterback.onrender.com";</script>
+    <script src="assets/js/login.js" defer></script>
+  </head>
+  <body class="bg-light">
+    <div class="vh-100 d-flex align-items-center">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-sm-10 col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+              <div class="card-body p-4">
+                <h3 class="card-title mb-3 text-center text-success">CopyMaster</h3>
+                <p class="text-muted text-center">Ingresa tus credenciales para acceder al panel</p>
+                <form id="login-form" novalidate>
+                  <div class="mb-3">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" name="username" class="form-control" required>
+                    <div class="invalid-feedback">Ingresa tu usuario</div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" name="password" class="form-control" required>
+                    <div class="invalid-feedback">Ingresa tu contraseña</div>
+                  </div>
+                  <div id="login-error" class="text-danger mb-2" role="alert"></div>
+                  <div class="d-grid">
+                    <button class="btn btn-success" type="submit">Ingresar</button>
+                  </div>
+                </form>
+              </div>
+              <div class="card-footer text-center small text-muted">
+                &copy; CopyMaster 2025 — Soporte técnico
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\css\index.css =====
+/* base styles */
+body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+.container { max-width: 1100px; }
+h1,h3,h4 { color: #0f9d58; }
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\css\professional.css =====
+/* Professional tweaks */
+.card { border-radius: 10px; }
+.navbar-brand { font-weight:700; font-size:1.15rem; }
+.link-success { color:#0f9d58 !important; }
+.table-actions button { margin-right:6px; }
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\app.js =====
+document.addEventListener("DOMContentLoaded", ()=>{
+  // Ensure user logged in
+  const user = localStorage.getItem("user");
+  if(!user){ window.location = "login.html"; return; }
+  const userObj = JSON.parse(user);
+  document.getElementById("current-user").innerText = userObj.username || userObj.fullName || "";
+
+  // helper to load snippet into content-main
+  window.appLoad = async function(path){
+    try{
+      const res = await fetch(path);
+      if(!res.ok) throw new Error("No se pudo cargar " + path);
+      const html = await res.text();
+      document.getElementById("content-main").innerHTML = html;
+      // execute scripts inside snippet
+      const tmp = document.createElement('div'); tmp.innerHTML = html;
+      tmp.querySelectorAll('script').forEach(s=>{
+        const script = document.createElement('script');
+        if(s.src) script.src = s.src;
+        else script.textContent = s.textContent;
+        document.body.appendChild(script);
+      });
+    }catch(e){ console.error(e); document.getElementById("content-main").innerHTML = `<div class="alert alert-danger">Error: ${e.message}</div>`; }
+  }
+
+  // wire menu links
+  document.querySelectorAll('a[data-page]').forEach(a=> a.addEventListener('click', (e)=> { e.preventDefault(); appLoad(a.dataset.page); }));
+  document.getElementById("logout").addEventListener("click", ()=>{ localStorage.removeItem("user"); window.location="login.html"; });
+
+  // initial load
+  appLoad('home.html');
+});
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\login.js =====
+document.addEventListener("DOMContentLoaded", ()=>{
+  const form = document.getElementById("login-form");
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const username = form.username.value.trim();
+    const password = form.password.value;
+    if(!username || !password){ document.getElementById("login-error").innerText = "Usuario y contraseña requeridos"; return; }
+    try{
+      const res = await fetch(API_BASE + "/auth/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ username, password }) });
+      if(!res.ok) {
+        const errTxt = await res.text().catch(()=>"Credenciales inválidas");
+        throw new Error(errTxt || "Credenciales inválidas");
+      }
+      const data = await res.json();
+      // store user info only (no JWT handling requested). Backend response may include user object
+      localStorage.setItem("user", JSON.stringify(data));
+      window.location = "index.html";
+    }catch(err){
+      document.getElementById("login-error").innerText = err.message || "Error en autenticar";
+    }
+  });
+});
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\machineService.js =====
+const machineService = {
+  list: ()=> fetch(API_BASE + "/machines").then(r=>r.json()),
+  get: (id)=> fetch(API_BASE + "/machines/"+id).then(r=>r.json()),
+  create: (data)=> fetch(API_BASE + "/machines", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json()),
+  update: (id,data)=> fetch(API_BASE + "/machines/"+id, {method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json()),
+  delete: (id)=> fetch(API_BASE + "/machines/"+id, {method:"DELETE"}).then(r=>r.json()),
+  movements: (id)=> fetch(API_BASE + "/machine-movements?machineId="+id).then(r=>r.json()),
+  meterReadings: (id)=> fetch(API_BASE + "/meter-readings?machineId="+id).then(r=>r.json())
+};
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\serviceRequestService.js =====
+const serviceRequestService = {
+  list: ()=> fetch(API_BASE + "/api/service-requests").then(r=>r.json()),
+  get: (id)=> fetch(API_BASE + "/api/service-requests/"+id).then(r=>r.json()),
+  create: (data)=> fetch(API_BASE + "/api/service-requests", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json())
+};
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\serviceVisitService.js =====
+const serviceVisitService = {
+  list: ()=> fetch(API_BASE + "/service-visits").then(r=>r.json()),
+  create: (data)=> fetch(API_BASE + "/service-visits", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)}).then(r=>r.json())
+};
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\technicianService.js =====
+const technicianService = {
+  list: ()=> fetch(API_BASE + "/technicians").then(r=>r.json()),
+  create: (data)=> fetch(API_BASE + "/technicians", {
+    method: "POST", 
+    headers: {"Content-Type": "application/json"}, 
+    body: JSON.stringify(data)
+  }).then(r=>r.json())
+};
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\utils.js =====
+function showAlert(msg, type='info'){ const div = document.createElement('div'); div.className = 'alert alert-'+type; div.innerText = msg; document.getElementById('content-main').prepend(div); setTimeout(()=>div.remove(),4000); }
+function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\costs\analysis.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Análisis de Costos</h4>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-costs">Actualizar</button>
+            <button class="btn btn-success btn-sm" onclick="generateCostReport()">Generar Reporte</button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Fecha inicio</label>
+            <input type="date" class="form-control" id="cost-start-date">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Fecha fin</label>
+            <input type="date" class="form-control" id="cost-end-date">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tipo de análisis</label>
+            <select class="form-select" id="cost-analysis-type">
+                <option value="monthly">Mensual</option>
+                <option value="quarterly">Trimestral</option>
+                <option value="yearly">Anual</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-success w-100" id="btn-analyze-costs">Analizar</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Resumen de Costos</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <i class="fas fa-tools"></i>
+                                <div class="number" id="total-cost">$0</div>
+                                <div class="label">Costo Total</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <i class="fas fa-chart-line"></i>
+                                <div class="number" id="avg-cost">$0</div>
+                                <div class="label">Costo Promedio/Mes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Distribución de Costos</div>
+                <div class="card-body">
+                    <canvas id="costDistributionChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h5>Evolución de Costos</h5>
+        <canvas id="costTrendChart" height="100"></canvas>
+    </div>
+
+    <div class="mt-4">
+        <h5>Detalle de Costos</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Tipo</th>
+                        <th>Costo</th>
+                        <th>Técnico</th>
+                    </tr>
+                </thead>
+                <tbody id="costs-detail-tbody">
+                    <tr>
+                        <td colspan="5" class="text-center">Cargando detalle de costos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadCostAnalysis() {
+        try {
+            // Obtener parámetros de filtro
+            const startDate = document.getElementById('cost-start-date').value;
+            const endDate = document.getElementById('cost-end-date').value;
+            const analysisType = document.getElementById('cost-analysis-type').value;
+            
+            // Cargar datos de costos
+            const costData = await costService.analysis(new Date(startDate), new Date(endDate));
+            
+            // Actualizar UI con los datos
+            updateCostUI(costData);
+            
+        } catch (error) {
+            console.error('Error loading cost analysis:', error);
+            showAlert('Error cargando análisis de costos', 'danger');
+        }
+    }
+    
+    function updateCostUI(data) {
+        // Actualizar resumen
+        document.getElementById('total-cost').textContent = `$${data.totalCost?.toLocaleString() || '0'}`;
+        document.getElementById('avg-cost').textContent = `$${data.avgMonthlyCost?.toLocaleString() || '0'}`;
+        
+        // Actualizar tabla de detalle
+        const tbody = document.getElementById('costs-detail-tbody');
+        tbody.innerHTML = '';
+        
+        if (data.details && data.details.length > 0) {
+            data.details.forEach(cost => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${formatDateOnly(cost.date)}</td>
+                        <td>${cost.concept}</td>
+                        <td>${cost.type}</td>
+                        <td>$${cost.amount?.toLocaleString()}</td>
+                        <td>${cost.technician || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay datos de costos</td></tr>';
+        }
+        
+        // Crear gráficos
+        createCostCharts(data);
+    }
+    
+    function createCostCharts(data) {
+        // Gráfico de distribución
+        const distCtx = document.getElementById('costDistributionChart').getContext('2d');
+        if (window.costDistributionChart) {
+            window.costDistributionChart.destroy();
+        }
+        
+        window.costDistributionChart = new Chart(distCtx, {
+            type: 'doughnut',
+            data: {
+                labels: data.distribution?.map(d => d.category) || [],
+                datasets: [{
+                    data: data.distribution?.map(d => d.amount) || [],
+                    backgroundColor: ['#0f9d58', '#36a2eb', '#ff6384', '#ffcd56', '#4bc0c0']
+                }]
+            }
+        });
+        
+        // Gráfico de tendencia
+        const trendCtx = document.getElementById('costTrendChart').getContext('2d');
+        if (window.costTrendChart) {
+            window.costTrendChart.destroy();
+        }
+        
+        window.costTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: data.trend?.map(t => t.period) || [],
+                datasets: [{
+                    label: 'Costos',
+                    data: data.trend?.map(t => t.amount) || [],
+                    borderColor: '#0f9d58',
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    async function generateCostReport() {
+        try {
+            const startDate = document.getElementById('cost-start-date').value;
+            const endDate = document.getElementById('cost-end-date').value;
+            
+            const report = await reportService.generate('cost', {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate)
+            });
+            
+            if (report.url) {
+                window.open(report.url, '_blank');
+                showAlert('Reporte generado correctamente', 'success');
+            } else {
+                showAlert('Error generando el reporte', 'danger');
+            }
+        } catch (error) {
+            console.error('Error generating report:', error);
+            showAlert('Error generando el reporte', 'danger');
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Establecer fechas por defecto (últimos 6 meses)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 6);
+        
+        document.getElementById('cost-start-date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('cost-end-date').value = endDate.toISOString().split('T')[0];
+        
+        // Cargar datos iniciales
+        loadCostAnalysis();
+        
+        // Configurar eventos
+        document.getElementById('btn-analyze-costs').addEventListener('click', loadCostAnalysis);
+        document.getElementById('btn-refresh-costs').addEventListener('click', loadCostAnalysis);
+    });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\create.html =====
+<div class="card p-3">
+  <h4>Crear Máquina</h4>
+  <form id="form-create-machine" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Serial (companySerial) *</label>
+      <input class="form-control" name="companySerial" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Número (companyNumber)</label>
+      <input class="form-control" name="companyNumber">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Modelo *</label>
+      <input class="form-control" name="model" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Marca</label>
+      <input class="form-control" name="brand">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Año</label>
+      <input type="number" class="form-control" name="year">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notas</label>
+      <textarea class="form-control" name="notes" rows="3"></textarea>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script src="../assets/js/machineService.js"></script>
+<script>
+document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  if(!form.checkValidity()) { form.classList.add('was-validated'); return; }
+  const data = Object.fromEntries(new FormData(form));
+  try{
+    await machineService.create(data);
+    alert("Máquina creada");
+    appLoad('machines/list.html');
+  }catch(err){ alert("Error al crear: "+err.message); }
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\create_request.html =====
+<div class="card p-3">
+  <h4>Crear Solicitud</h4>
+  <form id="form-create-request" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Machine ID *</label><input class="form-control" name="machineId" required></div>
+    <div class="col-md-6"><label class="form-label">Cliente (customerId)</label><input class="form-control" name="customerId"></div>
+    <div class="col-md-6"><label class="form-label">Canal</label>
+      <select name="reportedChannel" class="form-select">
+        <option value="telefono">Teléfono</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="portal">Portal</option>
+      </select>
+    </div>
+    <div class="col-md-6"><label class="form-label">Tipo de servicio</label>
+      <select name="serviceType" class="form-select">
+        <option value="correctivo">Correctivo</option><option value="preventivo">Preventivo</option><option value="diagnostico">Diagnóstico</option><option value="toner">Toner</option><option value="toma_contador">Toma contador</option><option value="otro">Otro</option>
+      </select>
+    </div>
+    <div class="col-12"><label class="form-label">Root cause</label><input class="form-control" name="rootCause"></div>
+    <div class="col-12"><label class="form-label">Descripción</label><textarea class="form-control" name="description" rows="4"></textarea></div>
+    <div class="col-12"><button class="btn btn-success" type="submit">Crear</button></div>
+  </form>
+</div>
+
+<script src="../assets/js/serviceRequestService.js"></script>
+<script>
+document.getElementById("form-create-request").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try{ await serviceRequestService.create(data); alert("Solicitud creada"); appLoad('machines/service_requests.html'); }
+  catch(err){ alert("Error: "+err.message); }
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\detail.html =====
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 id="m-title">Máquina</h4>
+      <p class="text-muted" id="m-sub">Detalle de máquina</p>
+    </div>
+    <div>
+      <button class="btn btn-outline-secondary" onclick="appLoad('machines/edit.html?id='+__MID)">Editar</button>
+      <button class="btn btn-success" onclick="appLoad('machines/service_requests.html')">Ver solicitudes</button>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <h6>Información</h6>
+      <table class="table">
+        <tbody id="m-info"></tbody>
+      </table>
+    </div>
+    <div class="col-md-6">
+      <h6>Estado y ubicación</h6>
+      <table class="table">
+        <tbody id="m-location"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <h5>Historial de movimientos</h5>
+  <div class="table-responsive mb-3"><table class="table" id="m-movements"></table></div>
+
+  <h5>Lecturas (meter readings)</h5>
+  <div class="table-responsive"><table class="table" id="m-meter"></table></div>
+</div>
+
+<script src="../assets/js/machineService.js"></script>
+<script>
+async function loadDetail(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if(!id) return;
+  window.__MID = id;
+  const m = await machineService.get(id).then(r=>r.data||r);
+  document.getElementById("m-title").innerText = m.companySerial || ('Máquina '+m.id);
+  document.getElementById("m-sub").innerText = `${m.brand||''} ${m.model||''}`;
+  document.getElementById("m-info").innerHTML = `
+    <tr><th>Serial</th><td>${m.companySerial||''}</td></tr>
+    <tr><th>Número</th><td>${m.companyNumber||''}</td></tr>
+    <tr><th>Año</th><td>${m.year||''}</td></tr>
+    <tr><th>Notas</th><td>${m.notes||''}</td></tr>
+  `;
+  document.getElementById("m-location").innerHTML = `<tr><th>Ubicación</th><td>${m.currentLocationId||''}</td></tr><tr><th>Cliente</th><td>${m.currentCustomerId||''}</td></tr>`;
+  const moves = await machineService.movements(id).then(r=>r.data||r).catch(()=>[]);
+  const mvT = document.getElementById("m-movements");
+  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ (moves||[]).map(x=>`<tr><td>${new Date(x.effectiveDate).toLocaleString()}</td><td>${x.fromLocationId||''}</td><td>${x.toLocationId||''}</td><td>${x.movementType||''}</td><td>${x.reason||''}</td></tr>`).join('') + '</tbody>';
+  const meters = await machineService.meterReadings(id).then(r=>r.data||r).catch(()=>[]);
+  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
+}
+document.addEventListener("DOMContentLoaded", loadDetail);
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\edit.html =====
+<div class="card p-3">
+  <h4>Editar Máquina</h4>
+  <form id="form-edit-machine" class="row g-3">
+    <input type="hidden" name="id" id="m-id">
+    <div class="col-md-6">
+      <label class="form-label">Serial (companySerial) *</label>
+      <input class="form-control" name="companySerial" id="m-companySerial" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Número (companyNumber)</label>
+      <input class="form-control" name="companyNumber" id="m-companyNumber">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Modelo *</label>
+      <input class="form-control" name="model" id="m-model" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Marca</label>
+      <input class="form-control" name="brand" id="m-brand">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Año</label>
+      <input type="number" class="form-control" name="year" id="m-year">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notas</label>
+      <textarea class="form-control" name="notes" id="m-notes" rows="3"></textarea>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/detail.html?id='+document.getElementById('m-id').value)">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script src="../assets/js/machineService.js"></script>
+<script>
+async function loadEdit(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if(!id) return;
+  const m = await machineService.get(id).then(r=>r.data||r);
+  document.getElementById('m-id').value = m.id;
+  document.getElementById('m-companySerial').value = m.companySerial||'';
+  document.getElementById('m-companyNumber').value = m.companyNumber||'';
+  document.getElementById('m-model').value = m.model||'';
+  document.getElementById('m-brand').value = m.brand||'';
+  document.getElementById('m-year').value = m.year||'';
+  document.getElementById('m-notes').value = m.notes||'';
+}
+document.addEventListener("DOMContentLoaded", loadEdit);
+document.getElementById("form-edit-machine").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try{
+    await machineService.update(data.id, data);
+    alert("Guardado");
+    appLoad('machines/detail.html?id='+data.id);
+  }catch(err){ alert("Error: "+err.message); }
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\list.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Listado de Máquinas</h4>
+        <button class="btn btn-success btn-sm" onclick="appLoad('machines/new.html')">
+            <i class="fas fa-plus me-1"></i> Nueva Máquina
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <input type="text" id="machine-search" class="form-control" placeholder="Buscar máquina...">
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Modelo</th>
+                    <th>Cliente</th>
+                    <th>Ubicación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="machines-tbody">
+                <tr>
+                    <td colspan="5" class="text-center">Cargando máquinas...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function loadMachines(query="") {
+        try {
+            const machines = query 
+                ? await machineService.search(query) 
+                : await machineService.list();
+            const tbody = document.getElementById("machines-tbody");
+            tbody.innerHTML = "";
+
+            if (machines && machines.length > 0) {
+                machines.forEach(m => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${m.id}</td>
+                            <td>${m.model}</td>
+                            <td>${m.customerName || 'N/A'}</td>
+                            <td>${m.location || ''}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id=${m.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="appLoad('machines/edit.html?id=${m.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteMachine(${m.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No se encontraron máquinas</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error loading machines:", error);
+            showAlert("Error cargando máquinas", "danger");
+        }
+    }
+
+    async function deleteMachine(id) {
+        if (!confirm("¿Seguro que deseas eliminar esta máquina?")) return;
+        try {
+            await machineService.delete(id);
+            showAlert("Máquina eliminada", "success");
+            loadMachines();
+        } catch (error) {
+            console.error("Error deleting machine:", error);
+            showAlert("Error eliminando máquina", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadMachines();
+        document.getElementById("machine-search").addEventListener("input", (e) => {
+            loadMachines(e.target.value);
+        });
+    });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\service_requests.html =====
+<div class="card p-3">
+  <div class="d-flex justify-content-between mb-3 align-items-center">
+    <h4 class="mb-0">Solicitudes de Servicio</h4>
+    <div>
+      <button class="btn btn-success btn-sm" onclick="appLoad('machines/create_request.html')">Crear Solicitud</button>
+      <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-req">Actualizar</button>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light"><tr><th>ID</th><th>Número</th><th>Máquina</th><th>Cliente</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody id="requests-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="../assets/js/serviceRequestService.js"></script>
+<script>
+async function renderRequests(){
+  const list = await serviceRequestService.list().then(r=>r.data||r).catch(()=>[]);
+  const tbody = document.getElementById("requests-tbody");
+  tbody.innerHTML='';
+  (list||[]).forEach(r=>{
+    tbody.insertAdjacentHTML('beforeend', `<tr>
+      <td>${r.id}</td>
+      <td>${r.requestNumber||''}</td>
+      <td>${r.companySerial||''}</td>
+      <td>${r.customerId||''}</td>
+      <td>${r.serviceType||''}</td>
+      <td>${r.status||''}</td>
+      <td><button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id='+r.machineId)">Ver</button></td>
+    </tr>`);
+  });
+}
+document.addEventListener("DOMContentLoaded", ()=>{ renderRequests(); document.getElementById('btn-refresh-req').addEventListener('click', renderRequests); });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\visit_form.html =====
+<div class="card p-3">
+  <h4>Registrar Visita</h4>
+  <form id="form-visit" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Service Request ID *</label><input class="form-control" name="serviceRequestId" required></div>
+    <div class="col-md-6"><label class="form-label">Técnico</label><input class="form-control" name="technicianId"></div>
+    <div class="col-md-6"><label class="form-label">Inicio</label><input class="form-control" type="datetime-local" name="startTime"></div>
+    <div class="col-md-6"><label class="form-label">Fin</label><input class="form-control" type="datetime-local" name="endTime"></div>
+    <div class="col-12"><label class="form-label">Notas de visita</label><textarea class="form-control" name="visitNotes"></textarea></div>
+    <div class="col-12"><button class="btn btn-success" type="submit">Registrar Visita</button></div>
+  </form>
+</div>
+
+<script src="../assets/js/serviceVisitService.js"></script>
+<script>
+document.getElementById("form-visit").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  // adapt fields if backend expects other names
+  try{ await serviceVisitService.create({ serviceRequestId: data.serviceRequestId, technicianId: data.technicianId, visitDatetime: data.startTime, startTime: data.startTime, endTime: data.endTime, visitNotes: data.visitNotes }); alert("Visita registrada"); appLoad('machines/service_requests.html'); }
+  catch(err){ alert("Error: "+err.message); }
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\reports\generate.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Generar Reporte</h4>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-reports">Actualizar</button>
+    </div>
+
+    <form id="report-form" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label class="form-label">Tipo de Reporte</label>
+            <select class="form-select" id="report-type" required>
+                <option value="cost">Costos</option>
+                <option value="technician">Técnicos</option>
+                <option value="machine">Máquinas</option>
+                <option value="service">Solicitudes</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="date" class="form-control" id="report-start-date" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Fecha Fin</label>
+            <input type="date" class="form-control" id="report-end-date" required>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-success w-100">
+                <i class="fas fa-file-alt me-1"></i> Generar
+            </button>
+        </div>
+    </form>
+
+    <div>
+        <h5>Historial de Reportes</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Parámetros</th>
+                        <th>Archivo</th>
+                    </tr>
+                </thead>
+                <tbody id="reports-tbody">
+                    <tr>
+                        <td colspan="4" class="text-center">Cargando reportes...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadReports() {
+        try {
+            const reports = await reportService.list();
+            const tbody = document.getElementById("reports-tbody");
+            tbody.innerHTML = "";
+
+            if (reports && reports.length > 0) {
+                reports.forEach(r => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${formatDate(r.generatedAt)}</td>
+                            <td>${r.type}</td>
+                            <td>${JSON.stringify(r.params)}</td>
+                            <td><a href="${r.url}" target="_blank" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-download"></i> Descargar
+                            </a></td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center">No hay reportes generados</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error loading reports:", error);
+            showAlert("Error cargando reportes", "danger");
+        }
+    }
+
+    document.getElementById("report-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try {
+            const type = document.getElementById("report-type").value;
+            const startDate = document.getElementById("report-start-date").value;
+            const endDate = document.getElementById("report-end-date").value;
+
+            const report = await reportService.generate(type, {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate)
+            });
+
+            if (report.url) {
+                window.open(report.url, "_blank");
+                showAlert("Reporte generado correctamente", "success");
+                loadReports();
+            } else {
+                showAlert("Error generando reporte", "danger");
+            }
+        } catch (error) {
+            console.error("Error generating report:", error);
+            showAlert("Error generando reporte", "danger");
+        }
+    });
+
+    document.getElementById("btn-refresh-reports").addEventListener("click", loadReports);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const end = new Date();
+        const start = new Date();
+        start.setMonth(start.getMonth() - 1);
+        document.getElementById("report-start-date").value = start.toISOString().split("T")[0];
+        document.getElementById("report-end-date").value = end.toISOString().split("T")[0];
+        loadReports();
+    });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\list.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Solicitudes de Servicio</h4>
+        <button class="btn btn-success btn-sm" onclick="appLoad('service_requests/new.html')">
+            <i class="fas fa-plus me-1"></i> Nueva Solicitud
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <input type="text" id="service-search" class="form-control" placeholder="Buscar por cliente o máquina...">
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Máquina</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="requests-tbody">
+                <tr>
+                    <td colspan="6" class="text-center">Cargando solicitudes...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function loadRequests(query="") {
+        try {
+            const requests = await serviceRequestService.list();
+            const tbody = document.getElementById("requests-tbody");
+            tbody.innerHTML = "";
+
+            const filtered = query
+                ? requests.filter(r => (r.customerName || "").toLowerCase().includes(query.toLowerCase()) 
+                                     || (r.machineModel || "").toLowerCase().includes(query.toLowerCase()))
+                : requests;
+
+            if (filtered.length > 0) {
+                filtered.forEach(r => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${r.id}</td>
+                            <td>${r.customerName || "N/A"}</td>
+                            <td>${r.machineModel || "N/A"}</td>
+                            <td>${r.description || ""}</td>
+                            <td>
+                                <span class="badge ${r.status === "CERRADA" ? "bg-success" : "bg-warning"}">
+                                    ${r.status}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="appLoad('service_requests/detail.html?id=${r.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="appLoad('service_requests/edit.html?id=${r.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center">No se encontraron solicitudes</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error loading requests:", error);
+            showAlert("Error cargando solicitudes", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadRequests();
+        document.getElementById("service-search").addEventListener("input", (e) => {
+            loadRequests(e.target.value);
+        });
+    });
+</script>
+
+<script src="../assets/js/machineService.js"></script>
+<script>
+document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  if(!form.checkValidity()) { form.classList.add('was-validated'); return; }
+  const data = Object.fromEntries(new FormData(form));
+  try{
+    await machineService.create(data);
+    alert("Máquina creada");
+    appLoad('machines/list.html');
+  }catch(err){ alert("Error al crear: "+err.message); }
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\comparison.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Comparación de Técnicos</h4>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-comparison">Actualizar</button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Fecha inicio</label>
+            <input type="date" class="form-control" id="start-date">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Fecha fin</label>
+            <input type="date" class="form-control" id="end-date">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-success w-100" id="btn-filter-comparison">Aplicar Filtros</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Técnico</th>
+                    <th>Visitas</th>
+                    <th>Servicios Repetidos</th>
+                    <th>Efectividad</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-tbody">
+                <tr>
+                    <td colspan="5" class="text-center">Cargando datos de técnicos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <h5>Gráfico de Comparación</h5>
+        <canvas id="techComparisonChart" height="100"></canvas>
+    </div>
+</div>
+
+<script>
+    async function loadTechnicianComparison() {
+        try {
+            // Obtener fechas de filtro
+            const startDate = document.getElementById('start-date').value || new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+            const endDate = document.getElementById('end-date').value || new Date().toISOString().split('T')[0];
+            
+            // Cargar datos de comparación
+            const comparisonData = await technicianService.comparison(new Date(startDate), new Date(endDate));
+            
+            // Actualizar tabla
+            const tbody = document.getElementById('comparison-tbody');
+            tbody.innerHTML = '';
+            
+            if (comparisonData && comparisonData.length > 0) {
+                comparisonData.forEach(tech => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${tech.fullName}</td>
+                            <td>${tech.totalVisits || 0}</td>
+                            <td>${tech.repeatedServices || 0}</td>
+                            <td>
+                                <div class="performance-bar">
+                                    <div class="performance-fill" style="width: ${tech.effectiveness || 0}%"></div>
+                                </div>
+                                ${tech.effectiveness || 0}%
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="appLoad('technicians/performance.html?id=${tech.id}')">
+                                    Ver Detalle
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                // Crear gráfico
+                createComparisonChart(comparisonData);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay datos para mostrar</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error loading technician comparison:', error);
+            document.getElementById('comparison-tbody').innerHTML = 
+                '<tr><td colspan="5" class="text-center text-danger">Error cargando datos</td></tr>';
+        }
+    }
+    
+    function createComparisonChart(data) {
+        const ctx = document.getElementById('techComparisonChart').getContext('2d');
+        
+        // Destruir gráfico existente si hay uno
+        if (window.techComparisonChartInstance) {
+            window.techComparisonChartInstance.destroy();
+        }
+        
+        window.techComparisonChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(tech => tech.fullName),
+                datasets: [{
+                    label: 'Efectividad (%)',
+                    data: data.map(tech => tech.effectiveness || 0),
+                    backgroundColor: '#0f9d58',
+                    borderColor: '#0d8a4d',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Efectividad (%)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Establecer fechas por defecto (últimos 30 días)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        
+        document.getElementById('start-date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
+        
+        // Cargar datos iniciales
+        loadTechnicianComparison();
+        
+        // Configurar eventos
+        document.getElementById('btn-filter-comparison').addEventListener('click', loadTechnicianComparison);
+        document.getElementById('btn-refresh-comparison').addEventListener('click', loadTechnicianComparison);
+    });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\create.html =====
+<div class="card p-3">
+  <h4>Agregar Técnico</h4>
+  <form id="form-tech" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Nombre completo</label><input class="form-control" name="fullName" required></div>
+    <div class="col-md-6"><label class="form-label">Identificación</label><input class="form-control" name="identification"></div>
+    <div class="col-md-6"><label class="form-label">Teléfono</label><input class="form-control" name="phone"></div>
+    <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" name="email" type="email"></div>
+    <div class="col-12"><button class="btn btn-success" type="submit">Guardar</button></div>
+  </form>
+</div>
+<script src="../assets/js/technicianService.js"></script>
+<script>
+document.getElementById("form-tech").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  await technicianService.create(data);
+  alert("Técnico creado"); appLoad('technicians/list.html');
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\list.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Técnicos</h4>
+        <button class="btn btn-success btn-sm" onclick="appLoad('technicians/new.html')">
+            <i class="fas fa-plus me-1"></i> Nuevo Técnico
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <input type="text" id="technician-search" class="form-control" placeholder="Buscar técnico...">
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Especialidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="technicians-tbody">
+                <tr>
+                    <td colspan="5" class="text-center">Cargando técnicos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function loadTechnicians(query="") {
+        try {
+            const technicians = await technicianService.list();
+            const tbody = document.getElementById("technicians-tbody");
+            tbody.innerHTML = "";
+
+            const filtered = query
+                ? technicians.filter(t => (t.fullName || "").toLowerCase().includes(query.toLowerCase()))
+                : technicians;
+
+            if (filtered.length > 0) {
+                filtered.forEach(t => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${t.fullName}</td>
+                            <td>${t.email || "N/A"}</td>
+                            <td>${t.phone || ""}</td>
+                            <td>${t.specialty || ""}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="appLoad('technicians/detail.html?id=${t.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="appLoad('technicians/edit.html?id=${t.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info" onclick="appLoad('technicians/performance.html?id=${t.id}')">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No se encontraron técnicos</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error loading technicians:", error);
+            showAlert("Error cargando técnicos", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadTechnicians();
+        document.getElementById("technician-search").addEventListener("input", (e) => {
+            loadTechnicians(e.target.value);
+        });
+    });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\performance.html =====
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 id="tech-name">Desempeño del Técnico</h4>
+      <p class="text-muted">Análisis de rendimiento</p>
+    </div>
+    <div>
+      <button class="btn btn-outline-secondary" onclick="appLoad('technicians/list.html')">Volver</button>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Filtros</div>
+        <div class="card-body">
+          <form id="performance-filter">
+            <div class="mb-2">
+              <label class="form-label">Fecha inicio</label>
+              <input type="date" class="form-control" id="start-date">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Fecha fin</label>
+              <input type="date" class="form-control" id="end-date">
+            </div>
+            <button type="submit" class="btn btn-success">Aplicar filtros</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Rendimiento</div>
+        <div class="card-body">
+          <div class="progress mb-2" style="height: 30px;">
+            <div class="progress-bar bg-success" id="performance-bar" style="width: 0%">0%</div>
+          </div>
+          <div id="performance-stats">
+            <div>Visitas realizadas: <span id="total-visits">0</span></div>
+            <div>Servicios repetidos: <span id="repeated-services">0</span></div>
+            <div>Efectividad: <span id="effectiveness">0%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h5>Desglose de servicios</h5>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Tipo</th>
+          <th>Cantidad</th>
+          <th>Porcentaje</th>
+        </tr>
+      </thead>
+      <tbody id="service-breakdown"></tbody>
+    </table>
+  </div>
+
+  <h5 class="mt-4">Visitas realizadas</h5>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Solicitud</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Resuelto</th>
+        </tr>
+      </thead>
+      <tbody id="visits-list"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let currentTechnicianId = null;
+
+async function loadPerformance() {
+  const params = new URLSearchParams(location.search);
+  currentTechnicianId = params.get('id');
+  
+  if (!currentTechnicianId) {
+    alert("ID de técnico no especificado");
+    appLoad('technicians/list.html');
+    return;
+  }
+  
+  // Cargar información básica del técnico
+  try {
+    const tech = await technicianService.get(currentTechnicianId).then(r => r.data || r);
+    document.getElementById("tech-name").innerText = `Desempeño de ${tech.fullName || 'Técnico'}`;
+  } catch (err) {
+    console.error("Error cargando técnico:", err);
+  }
+  
+  // Cargar datos de rendimiento con filtros por defecto (último mes)
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - 1);
+  
+  document.getElementById("start-date").value = startDate.toISOString().split('T')[0];
+  document.getElementById("end-date").value = endDate.toISOString().split('T')[0];
+  
+  await loadPerformanceData(startDate, endDate);
+}
+
+async function loadPerformanceData(startDate, endDate) {
+  try {
+    // En una implementación real, esto llamaría a endpoints específicos del backend
+    // Por ahora simulamos datos de ejemplo
+    const performanceData = {
+      totalVisits: 24,
+      repeatedServices: 3,
+      effectiveness: 87.5,
+      serviceBreakdown: [
+        { type: 'correctivo', count: 10 },
+        { type: 'preventivo', count: 8 },
+        { type: 'diagnostico', count: 4 },
+        { type: 'toner', count: 2 }
+      ],
+      visits: [
+        { request: 'SR-001', date: '2025-09-10', customer: 'Cliente A', type: 'correctivo', solved: true },
+        { request: 'SR-002', date: '2025-09-12', customer: 'Cliente B', type: 'preventivo', solved: true },
+        // ... más visitas
+      ]
+    };
+    
+    // Actualizar UI
+    document.getElementById("performance-bar").style.width = `${performanceData.effectiveness}%`;
+    document.getElementById("performance-bar").innerText = `${performanceData.effectiveness}%`;
+    document.getElementById("total-visits").innerText = performanceData.totalVisits;
+    document.getElementById("repeated-services").innerText = performanceData.repeatedServices;
+    document.getElementById("effectiveness").innerText = `${performanceData.effectiveness}%`;
+    
+    // Desglose de servicios
+    const breakdownBody = document.getElementById("service-breakdown");
+    breakdownBody.innerHTML = '';
+    performanceData.serviceBreakdown.forEach(item => {
+      const percentage = (item.count / performanceData.totalVisits * 100).toFixed(1);
+      breakdownBody.innerHTML += `
+        <tr>
+          <td>${item.type}</td>
+          <td>${item.count}</td>
+          <td>${percentage}%</td>
+        </tr>
+      `;
+    });
+    
+    // Lista de visitas
+    const visitsBody = document.getElementById("visits-list");
+    visitsBody.innerHTML = '';
+    performanceData.visits.forEach(visit => {
+      visitsBody.innerHTML += `
+        <tr>
+          <td>${visit.request}</td>
+          <td>${visit.date}</td>
+          <td>${visit.customer}</td>
+          <td>${visit.type}</td>
+          <td>${visit.solved ? 'Sí' : 'No'}</td>
+        </tr>
+      `;
+    });
+    
+  } catch (err) {
+    console.error("Error cargando datos de rendimiento:", err);
+    alert("Error cargando datos de rendimiento");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadPerformance);
+
+document.getElementById("performance-filter").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const startDate = new Date(document.getElementById("start-date").value);
+  const endDate = new Date(document.getElementById("end-date").value);
+  await loadPerformanceData(startDate, endDate);
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\user\profile.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Mi Perfil</h4>
+    </div>
+
+    <div class="row">
+        <!-- Avatar + info básica -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img src="https://ui-avatars.com/api/?name=Usuario&background=0f9d58&color=fff&size=100" 
+                         class="technician-img mb-3" alt="Avatar" id="user-avatar">
+                    <h5 id="profile-name">Usuario</h5>
+                    <p class="text-muted" id="profile-role">Rol</p>
+                    <button class="btn btn-outline-secondary btn-sm mt-2" onclick="document.getElementById('avatar-input').click()">
+                        <i class="fas fa-camera me-1"></i> Cambiar imagen
+                    </button>
+                    <input type="file" id="avatar-input" accept="image/*" style="display: none;" onchange="uploadAvatar(this.files[0])">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Datos editables -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">Información Personal</div>
+                <div class="card-body">
+                    <form id="profile-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre completo</label>
+                                <input type="text" class="form-control" name="fullName" id="profile-fullName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Correo electrónico</label>
+                                <input type="email" class="form-control" name="email" id="profile-email" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" name="phone" id="profile-phone">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Rol</label>
+                                <input type="text" class="form-control" id="profile-role-input" disabled>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">Seguridad</div>
+                <div class="card-body">
+                    <form id="password-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nueva contraseña</label>
+                                <input type="password" class="form-control" id="new-password" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Confirmar contraseña</label>
+                                <input type="password" class="form-control" id="confirm-password" required>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-outline-success">
+                                <i class="fas fa-lock me-1"></i> Cambiar contraseña
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadUserProfile() {
+        try {
+            const profile = await userService.getProfile();
+
+            // Llenar datos en UI
+            document.getElementById("profile-name").textContent = profile.fullName || "Usuario";
+            document.getElementById("profile-role").textContent = profile.role || "Rol";
+            document.getElementById("profile-fullName").value = profile.fullName || "";
+            document.getElementById("profile-email").value = profile.email || "";
+            document.getElementById("profile-phone").value = profile.phone || "";
+            document.getElementById("profile-role-input").value = profile.role || "";
+            
+            if (profile.avatarUrl) {
+                document.getElementById("user-avatar").src = profile.avatarUrl;
+            }
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            showAlert("Error cargando perfil de usuario", "danger");
+        }
+    }
+
+    document.getElementById("profile-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try {
+            const data = {
+                fullName: document.getElementById("profile-fullName").value,
+                email: document.getElementById("profile-email").value,
+                phone: document.getElementById("profile-phone").value
+            };
+            await userService.updateProfile(data);
+            showAlert("Perfil actualizado correctamente", "success");
+            loadUserProfile();
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            showAlert("Error actualizando perfil", "danger");
+        }
+    });
+
+    document.getElementById("password-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const newPass = document.getElementById("new-password").value;
+        const confirmPass = document.getElementById("confirm-password").value;
+
+        if (newPass !== confirmPass) {
+            showAlert("Las contraseñas no coinciden", "warning");
+            return;
+        }
+
+        try {
+            const res = await fetch(API_BASE + "/user/change-password", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ password: newPass })
+            });
+            if (!res.ok) throw new Error("Error cambiando contraseña");
+            showAlert("Contraseña cambiada correctamente", "success");
+            document.getElementById("password-form").reset();
+        } catch (error) {
+            console.error("Error changing password:", error);
+            showAlert("Error cambiando contraseña", "danger");
+        }
+    });
+
+    async function uploadAvatar(file) {
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("avatar", file);
+
+        try {
+            const res = await fetch(API_BASE + "/user/avatar", {
+                method: "POST",
+                body: formData
+            });
+            const result = await res.json();
+            if (result.url) {
+                document.getElementById("user-avatar").src = result.url;
+                showAlert("Imagen de perfil actualizada", "success");
+            } else {
+                showAlert("Error al subir la imagen", "danger");
+            }
+        } catch (error) {
+            console.error("Error uploading avatar:", error);
+            showAlert("Error al subir la imagen", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadUserProfile);
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\user\sessions.html =====
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Sesiones de Usuario</h4>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-sessions">Actualizar</button>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Aquí puedes ver y gestionar tus sesiones activas en el sistema.
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Dispositivo</th>
+                    <th>Ubicación</th>
+                    <th>Inicio de Sesión</th>
+                    <th>Última Actividad</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="sessions-tbody">
+                <tr>
+                    <td colspan="6" class="text-center">Cargando sesiones...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function loadUserSessions() {
+        try {
+            const sessions = await userService.getSessions();
+            updateSessionsTable(sessions);
+        } catch (error) {
+            console.error('Error loading user sessions:', error);
+            document.getElementById('sessions-tbody').innerHTML = 
+                '<tr><td colspan="6" class="text-center text-danger">Error cargando sesiones</td></tr>';
+        }
+    }
+    
+    function updateSessionsTable(sessions) {
+        const tbody = document.getElementById('sessions-tbody');
+        tbody.innerHTML = '';
+        
+        if (sessions && sessions.length > 0) {
+            sessions.forEach(session => {
+                const isCurrent = session.isCurrent || false;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <i class="fas ${session.deviceType === 'mobile' ? 'fa-mobile-alt' : 'fa-desktop'} me-2"></i>
+                            ${session.browser} / ${session.os}
+                        </td>
+                        <td>${session.location || 'N/A'}</td>
+                        <td>${formatDate(session.loginTime)}</td>
+                        <td>${formatDate(session.lastActivity)}</td>
+                        <td>
+                            <span class="badge ${isCurrent ? 'bg-success' : 'bg-secondary'}">
+                                ${isCurrent ? 'Activa' : 'Inactiva'}
+                            </span>
+                        </td>
+                        <td>
+                            ${!isCurrent ? `
+                                <button class="btn btn-sm btn-danger" onclick="terminateSession('${session.id}')">
+                                    <i class="fas fa-times"></i> Cerrar
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron sesiones</td></tr>';
+        }
+    }
+    
+    async function terminateSession(sessionId) {
+        if (!confirm('¿Estás seguro de que deseas cerrar esta sesión?')) return;
+        
+        try {
+            await userService.terminateSession(sessionId);
+            showAlert('Sesión terminada correctamente', 'success');
+            loadUserSessions(); // Recargar la lista
+        } catch (error) {
+            console.error('Error terminating session:', error);
+            showAlert('Error terminando la sesión', 'danger');
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserSessions();
+        document.getElementById('btn-refresh-sessions').addEventListener('click', loadUserSessions);
+    });
+</script>
+
