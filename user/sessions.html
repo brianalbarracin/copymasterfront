@@ -1,0 +1,101 @@
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Sesiones de Usuario</h4>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-sessions">Actualizar</button>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Aquí puedes ver y gestionar tus sesiones activas en el sistema.
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Dispositivo</th>
+                    <th>Ubicación</th>
+                    <th>Inicio de Sesión</th>
+                    <th>Última Actividad</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="sessions-tbody">
+                <tr>
+                    <td colspan="6" class="text-center">Cargando sesiones...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function loadUserSessions() {
+        try {
+            const sessions = await userService.getSessions();
+            updateSessionsTable(sessions);
+        } catch (error) {
+            console.error('Error loading user sessions:', error);
+            document.getElementById('sessions-tbody').innerHTML = 
+                '<tr><td colspan="6" class="text-center text-danger">Error cargando sesiones</td></tr>';
+        }
+    }
+    
+    function updateSessionsTable(sessions) {
+        const tbody = document.getElementById('sessions-tbody');
+        tbody.innerHTML = '';
+        
+        if (sessions && sessions.length > 0) {
+            sessions.forEach(session => {
+                const isCurrent = session.isCurrent || false;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <i class="fas ${session.deviceType === 'mobile' ? 'fa-mobile-alt' : 'fa-desktop'} me-2"></i>
+                            ${session.browser} / ${session.os}
+                        </td>
+                        <td>${session.location || 'N/A'}</td>
+                        <td>${formatDate(session.loginTime)}</td>
+                        <td>${formatDate(session.lastActivity)}</td>
+                        <td>
+                            <span class="badge ${isCurrent ? 'bg-success' : 'bg-secondary'}">
+                                ${isCurrent ? 'Activa' : 'Inactiva'}
+                            </span>
+                        </td>
+                        <td>
+                            ${!isCurrent ? `
+                                <button class="btn btn-sm btn-danger" onclick="terminateSession('${session.id}')">
+                                    <i class="fas fa-times"></i> Cerrar
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron sesiones</td></tr>';
+        }
+    }
+    
+    async function terminateSession(sessionId) {
+        if (!confirm('¿Estás seguro de que deseas cerrar esta sesión?')) return;
+        
+        try {
+            await userService.terminateSession(sessionId);
+            showAlert('Sesión terminada correctamente', 'success');
+            loadUserSessions(); // Recargar la lista
+        } catch (error) {
+            console.error('Error terminating session:', error);
+            showAlert('Error terminando la sesión', 'danger');
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserSessions();
+        document.getElementById('btn-refresh-sessions').addEventListener('click', loadUserSessions);
+    });
+</script>

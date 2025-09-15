@@ -1,0 +1,228 @@
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Análisis de Costos</h4>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-costs">Actualizar</button>
+            <button class="btn btn-success btn-sm" onclick="generateCostReport()">Generar Reporte</button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Fecha inicio</label>
+            <input type="date" class="form-control" id="cost-start-date">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Fecha fin</label>
+            <input type="date" class="form-control" id="cost-end-date">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tipo de análisis</label>
+            <select class="form-select" id="cost-analysis-type">
+                <option value="monthly">Mensual</option>
+                <option value="quarterly">Trimestral</option>
+                <option value="yearly">Anual</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-success w-100" id="btn-analyze-costs">Analizar</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Resumen de Costos</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <i class="fas fa-tools"></i>
+                                <div class="number" id="total-cost">$0</div>
+                                <div class="label">Costo Total</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <i class="fas fa-chart-line"></i>
+                                <div class="number" id="avg-cost">$0</div>
+                                <div class="label">Costo Promedio/Mes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Distribución de Costos</div>
+                <div class="card-body">
+                    <canvas id="costDistributionChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h5>Evolución de Costos</h5>
+        <canvas id="costTrendChart" height="100"></canvas>
+    </div>
+
+    <div class="mt-4">
+        <h5>Detalle de Costos</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Tipo</th>
+                        <th>Costo</th>
+                        <th>Técnico</th>
+                    </tr>
+                </thead>
+                <tbody id="costs-detail-tbody">
+                    <tr>
+                        <td colspan="5" class="text-center">Cargando detalle de costos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadCostAnalysis() {
+        try {
+            // Obtener parámetros de filtro
+            const startDate = document.getElementById('cost-start-date').value;
+            const endDate = document.getElementById('cost-end-date').value;
+            const analysisType = document.getElementById('cost-analysis-type').value;
+            
+            // Cargar datos de costos
+            const costData = await costService.analysis(new Date(startDate), new Date(endDate));
+            
+            // Actualizar UI con los datos
+            updateCostUI(costData);
+            
+        } catch (error) {
+            console.error('Error loading cost analysis:', error);
+            showAlert('Error cargando análisis de costos', 'danger');
+        }
+    }
+    
+    function updateCostUI(data) {
+        // Actualizar resumen
+        document.getElementById('total-cost').textContent = `$${data.totalCost?.toLocaleString() || '0'}`;
+        document.getElementById('avg-cost').textContent = `$${data.avgMonthlyCost?.toLocaleString() || '0'}`;
+        
+        // Actualizar tabla de detalle
+        const tbody = document.getElementById('costs-detail-tbody');
+        tbody.innerHTML = '';
+        
+        if (data.details && data.details.length > 0) {
+            data.details.forEach(cost => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${formatDateOnly(cost.date)}</td>
+                        <td>${cost.concept}</td>
+                        <td>${cost.type}</td>
+                        <td>$${cost.amount?.toLocaleString()}</td>
+                        <td>${cost.technician || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay datos de costos</td></tr>';
+        }
+        
+        // Crear gráficos
+        createCostCharts(data);
+    }
+    
+    function createCostCharts(data) {
+        // Gráfico de distribución
+        const distCtx = document.getElementById('costDistributionChart').getContext('2d');
+        if (window.costDistributionChart) {
+            window.costDistributionChart.destroy();
+        }
+        
+        window.costDistributionChart = new Chart(distCtx, {
+            type: 'doughnut',
+            data: {
+                labels: data.distribution?.map(d => d.category) || [],
+                datasets: [{
+                    data: data.distribution?.map(d => d.amount) || [],
+                    backgroundColor: ['#0f9d58', '#36a2eb', '#ff6384', '#ffcd56', '#4bc0c0']
+                }]
+            }
+        });
+        
+        // Gráfico de tendencia
+        const trendCtx = document.getElementById('costTrendChart').getContext('2d');
+        if (window.costTrendChart) {
+            window.costTrendChart.destroy();
+        }
+        
+        window.costTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: data.trend?.map(t => t.period) || [],
+                datasets: [{
+                    label: 'Costos',
+                    data: data.trend?.map(t => t.amount) || [],
+                    borderColor: '#0f9d58',
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    async function generateCostReport() {
+        try {
+            const startDate = document.getElementById('cost-start-date').value;
+            const endDate = document.getElementById('cost-end-date').value;
+            
+            const report = await reportService.generate('cost', {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate)
+            });
+            
+            if (report.url) {
+                window.open(report.url, '_blank');
+                showAlert('Reporte generado correctamente', 'success');
+            } else {
+                showAlert('Error generando el reporte', 'danger');
+            }
+        } catch (error) {
+            console.error('Error generating report:', error);
+            showAlert('Error generando el reporte', 'danger');
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Establecer fechas por defecto (últimos 6 meses)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 6);
+        
+        document.getElementById('cost-start-date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('cost-end-date').value = endDate.toISOString().split('T')[0];
+        
+        // Cargar datos iniciales
+        loadCostAnalysis();
+        
+        // Configurar eventos
+        document.getElementById('btn-analyze-costs').addEventListener('click', loadCostAnalysis);
+        document.getElementById('btn-refresh-costs').addEventListener('click', loadCostAnalysis);
+    });
+</script>

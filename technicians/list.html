@@ -1,37 +1,81 @@
 <div class="card p-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Técnicos</h4>
-    <div><button class="btn btn-success btn-sm" onclick="appLoad('technicians/create.html')">Agregar</button></div>
-  </div>
-  <div class="table-responsive"><table class="table"><thead class="table-light"><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead><tbody id="tech-tbody"></tbody></table></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Técnicos</h4>
+        <button class="btn btn-success btn-sm" onclick="appLoad('technicians/new.html')">
+            <i class="fas fa-plus me-1"></i> Nuevo Técnico
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <input type="text" id="technician-search" class="form-control" placeholder="Buscar técnico...">
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Especialidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="technicians-tbody">
+                <tr>
+                    <td colspan="5" class="text-center">Cargando técnicos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
-<script src="../assets/js/technicianService.js"></script>
+
 <script>
-async function renderTechs(){
-  try {
-    const list = await technicianService.list().then(r=>r.data||r);
-    const tbody = document.getElementById("tech-tbody"); 
-    tbody.innerHTML='';
-    
-    (list||[]).forEach(t=> {
-      tbody.insertAdjacentHTML('beforeend', 
-        `<tr>
-          <td>${t.id}</td>
-          <td>${t.fullName||''}</td>
-          <td>${t.phone||''}</td>
-          <td>${t.email||''}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-secondary" 
-                    onclick="appLoad('technicians/edit.html?id=${t.id}')">Editar</button>
-            <button class="btn btn-sm btn-primary" 
-                    onclick="appLoad('technicians/performance.html?id=${t.id}')">Rendimiento</button>
-          </td>
-        </tr>`
-      );
+    async function loadTechnicians(query="") {
+        try {
+            const technicians = await technicianService.list();
+            const tbody = document.getElementById("technicians-tbody");
+            tbody.innerHTML = "";
+
+            const filtered = query
+                ? technicians.filter(t => (t.fullName || "").toLowerCase().includes(query.toLowerCase()))
+                : technicians;
+
+            if (filtered.length > 0) {
+                filtered.forEach(t => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${t.fullName}</td>
+                            <td>${t.email || "N/A"}</td>
+                            <td>${t.phone || ""}</td>
+                            <td>${t.specialty || ""}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="appLoad('technicians/detail.html?id=${t.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="appLoad('technicians/edit.html?id=${t.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info" onclick="appLoad('technicians/performance.html?id=${t.id}')">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No se encontraron técnicos</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error loading technicians:", error);
+            showAlert("Error cargando técnicos", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadTechnicians();
+        document.getElementById("technician-search").addEventListener("input", (e) => {
+            loadTechnicians(e.target.value);
+        });
     });
-  } catch(err) {
-    console.error("Error cargando técnicos:", err);
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error cargando técnicos</td></tr>';
-  }
-}document.addEventListener("DOMContentLoaded", renderTechs);
 </script>

@@ -1,0 +1,173 @@
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Mi Perfil</h4>
+    </div>
+
+    <div class="row">
+        <!-- Avatar + info básica -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img src="https://ui-avatars.com/api/?name=Usuario&background=0f9d58&color=fff&size=100" 
+                         class="technician-img mb-3" alt="Avatar" id="user-avatar">
+                    <h5 id="profile-name">Usuario</h5>
+                    <p class="text-muted" id="profile-role">Rol</p>
+                    <button class="btn btn-outline-secondary btn-sm mt-2" onclick="document.getElementById('avatar-input').click()">
+                        <i class="fas fa-camera me-1"></i> Cambiar imagen
+                    </button>
+                    <input type="file" id="avatar-input" accept="image/*" style="display: none;" onchange="uploadAvatar(this.files[0])">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Datos editables -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">Información Personal</div>
+                <div class="card-body">
+                    <form id="profile-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre completo</label>
+                                <input type="text" class="form-control" name="fullName" id="profile-fullName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Correo electrónico</label>
+                                <input type="email" class="form-control" name="email" id="profile-email" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" name="phone" id="profile-phone">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Rol</label>
+                                <input type="text" class="form-control" id="profile-role-input" disabled>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">Seguridad</div>
+                <div class="card-body">
+                    <form id="password-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nueva contraseña</label>
+                                <input type="password" class="form-control" id="new-password" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Confirmar contraseña</label>
+                                <input type="password" class="form-control" id="confirm-password" required>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-outline-success">
+                                <i class="fas fa-lock me-1"></i> Cambiar contraseña
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadUserProfile() {
+        try {
+            const profile = await userService.getProfile();
+
+            // Llenar datos en UI
+            document.getElementById("profile-name").textContent = profile.fullName || "Usuario";
+            document.getElementById("profile-role").textContent = profile.role || "Rol";
+            document.getElementById("profile-fullName").value = profile.fullName || "";
+            document.getElementById("profile-email").value = profile.email || "";
+            document.getElementById("profile-phone").value = profile.phone || "";
+            document.getElementById("profile-role-input").value = profile.role || "";
+            
+            if (profile.avatarUrl) {
+                document.getElementById("user-avatar").src = profile.avatarUrl;
+            }
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            showAlert("Error cargando perfil de usuario", "danger");
+        }
+    }
+
+    document.getElementById("profile-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try {
+            const data = {
+                fullName: document.getElementById("profile-fullName").value,
+                email: document.getElementById("profile-email").value,
+                phone: document.getElementById("profile-phone").value
+            };
+            await userService.updateProfile(data);
+            showAlert("Perfil actualizado correctamente", "success");
+            loadUserProfile();
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            showAlert("Error actualizando perfil", "danger");
+        }
+    });
+
+    document.getElementById("password-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const newPass = document.getElementById("new-password").value;
+        const confirmPass = document.getElementById("confirm-password").value;
+
+        if (newPass !== confirmPass) {
+            showAlert("Las contraseñas no coinciden", "warning");
+            return;
+        }
+
+        try {
+            const res = await fetch(API_BASE + "/user/change-password", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ password: newPass })
+            });
+            if (!res.ok) throw new Error("Error cambiando contraseña");
+            showAlert("Contraseña cambiada correctamente", "success");
+            document.getElementById("password-form").reset();
+        } catch (error) {
+            console.error("Error changing password:", error);
+            showAlert("Error cambiando contraseña", "danger");
+        }
+    });
+
+    async function uploadAvatar(file) {
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("avatar", file);
+
+        try {
+            const res = await fetch(API_BASE + "/user/avatar", {
+                method: "POST",
+                body: formData
+            });
+            const result = await res.json();
+            if (result.url) {
+                document.getElementById("user-avatar").src = result.url;
+                showAlert("Imagen de perfil actualizada", "success");
+            } else {
+                showAlert("Error al subir la imagen", "danger");
+            }
+        } catch (error) {
+            console.error("Error uploading avatar:", error);
+            showAlert("Error al subir la imagen", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadUserProfile);
+</script>

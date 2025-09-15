@@ -1,0 +1,149 @@
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Comparación de Técnicos</h4>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-comparison">Actualizar</button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Fecha inicio</label>
+            <input type="date" class="form-control" id="start-date">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Fecha fin</label>
+            <input type="date" class="form-control" id="end-date">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-success w-100" id="btn-filter-comparison">Aplicar Filtros</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Técnico</th>
+                    <th>Visitas</th>
+                    <th>Servicios Repetidos</th>
+                    <th>Efectividad</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-tbody">
+                <tr>
+                    <td colspan="5" class="text-center">Cargando datos de técnicos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <h5>Gráfico de Comparación</h5>
+        <canvas id="techComparisonChart" height="100"></canvas>
+    </div>
+</div>
+
+<script>
+    async function loadTechnicianComparison() {
+        try {
+            // Obtener fechas de filtro
+            const startDate = document.getElementById('start-date').value || new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+            const endDate = document.getElementById('end-date').value || new Date().toISOString().split('T')[0];
+            
+            // Cargar datos de comparación
+            const comparisonData = await technicianService.comparison(new Date(startDate), new Date(endDate));
+            
+            // Actualizar tabla
+            const tbody = document.getElementById('comparison-tbody');
+            tbody.innerHTML = '';
+            
+            if (comparisonData && comparisonData.length > 0) {
+                comparisonData.forEach(tech => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${tech.fullName}</td>
+                            <td>${tech.totalVisits || 0}</td>
+                            <td>${tech.repeatedServices || 0}</td>
+                            <td>
+                                <div class="performance-bar">
+                                    <div class="performance-fill" style="width: ${tech.effectiveness || 0}%"></div>
+                                </div>
+                                ${tech.effectiveness || 0}%
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="appLoad('technicians/performance.html?id=${tech.id}')">
+                                    Ver Detalle
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                // Crear gráfico
+                createComparisonChart(comparisonData);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay datos para mostrar</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error loading technician comparison:', error);
+            document.getElementById('comparison-tbody').innerHTML = 
+                '<tr><td colspan="5" class="text-center text-danger">Error cargando datos</td></tr>';
+        }
+    }
+    
+    function createComparisonChart(data) {
+        const ctx = document.getElementById('techComparisonChart').getContext('2d');
+        
+        // Destruir gráfico existente si hay uno
+        if (window.techComparisonChartInstance) {
+            window.techComparisonChartInstance.destroy();
+        }
+        
+        window.techComparisonChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(tech => tech.fullName),
+                datasets: [{
+                    label: 'Efectividad (%)',
+                    data: data.map(tech => tech.effectiveness || 0),
+                    backgroundColor: '#0f9d58',
+                    borderColor: '#0d8a4d',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Efectividad (%)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Establecer fechas por defecto (últimos 30 días)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        
+        document.getElementById('start-date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
+        
+        // Cargar datos iniciales
+        loadTechnicianComparison();
+        
+        // Configurar eventos
+        document.getElementById('btn-filter-comparison').addEventListener('click', loadTechnicianComparison);
+        document.getElementById('btn-refresh-comparison').addEventListener('click', loadTechnicianComparison);
+    });
+</script>

@@ -1,0 +1,118 @@
+<div class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Generar Reporte</h4>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-reports">Actualizar</button>
+    </div>
+
+    <form id="report-form" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label class="form-label">Tipo de Reporte</label>
+            <select class="form-select" id="report-type" required>
+                <option value="cost">Costos</option>
+                <option value="technician">Técnicos</option>
+                <option value="machine">Máquinas</option>
+                <option value="service">Solicitudes</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="date" class="form-control" id="report-start-date" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Fecha Fin</label>
+            <input type="date" class="form-control" id="report-end-date" required>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-success w-100">
+                <i class="fas fa-file-alt me-1"></i> Generar
+            </button>
+        </div>
+    </form>
+
+    <div>
+        <h5>Historial de Reportes</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Parámetros</th>
+                        <th>Archivo</th>
+                    </tr>
+                </thead>
+                <tbody id="reports-tbody">
+                    <tr>
+                        <td colspan="4" class="text-center">Cargando reportes...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadReports() {
+        try {
+            const reports = await reportService.list();
+            const tbody = document.getElementById("reports-tbody");
+            tbody.innerHTML = "";
+
+            if (reports && reports.length > 0) {
+                reports.forEach(r => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${formatDate(r.generatedAt)}</td>
+                            <td>${r.type}</td>
+                            <td>${JSON.stringify(r.params)}</td>
+                            <td><a href="${r.url}" target="_blank" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-download"></i> Descargar
+                            </a></td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center">No hay reportes generados</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error loading reports:", error);
+            showAlert("Error cargando reportes", "danger");
+        }
+    }
+
+    document.getElementById("report-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try {
+            const type = document.getElementById("report-type").value;
+            const startDate = document.getElementById("report-start-date").value;
+            const endDate = document.getElementById("report-end-date").value;
+
+            const report = await reportService.generate(type, {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate)
+            });
+
+            if (report.url) {
+                window.open(report.url, "_blank");
+                showAlert("Reporte generado correctamente", "success");
+                loadReports();
+            } else {
+                showAlert("Error generando reporte", "danger");
+            }
+        } catch (error) {
+            console.error("Error generating report:", error);
+            showAlert("Error generando reporte", "danger");
+        }
+    });
+
+    document.getElementById("btn-refresh-reports").addEventListener("click", loadReports);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const end = new Date();
+        const start = new Date();
+        start.setMonth(start.getMonth() - 1);
+        document.getElementById("report-start-date").value = start.toISOString().split("T")[0];
+        document.getElementById("report-end-date").value = end.toISOString().split("T")[0];
+        loadReports();
+    });
+</script>

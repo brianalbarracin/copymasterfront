@@ -1,72 +1,91 @@
 <div class="card p-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Máquinas</h4>
-    <div>
-      <button class="btn btn-outline-secondary btn-sm" id="btn-refresh">Actualizar</button>
-      <button class="btn btn-success btn-sm" onclick="appLoad('machines/create.html')">Crear Máquina</button>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Listado de Máquinas</h4>
+        <button class="btn btn-success btn-sm" onclick="appLoad('machines/new.html')">
+            <i class="fas fa-plus me-1"></i> Nueva Máquina
+        </button>
     </div>
-  </div>
 
-  <div class="mb-3 row g-2">
-    <div class="col-md-4"><input id="filter-q" class="form-control" placeholder="Serial, número o modelo"></div>
-    <div class="col-md-2"><button id="btn-filter" class="btn btn-primary">Buscar</button></div>
-  </div>
+    <div class="mb-3">
+        <input type="text" id="machine-search" class="form-control" placeholder="Buscar máquina...">
+    </div>
 
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead class="table-light">
-        <tr><th>ID</th><th>Serial</th><th>Modelo</th><th>Marca</th><th>Ubicación</th><th>Cliente</th><th>Acciones</th></tr>
-      </thead>
-      <tbody id="machines-table"></tbody>
-    </table>
-  </div>
-
-  <nav><ul class="pagination" id="machines-pagination"></ul></nav>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Modelo</th>
+                    <th>Cliente</th>
+                    <th>Ubicación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="machines-tbody">
+                <tr>
+                    <td colspan="5" class="text-center">Cargando máquinas...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<script src="../assets/js/machineService.js"></script>
 <script>
-async function renderMachines(page=1, q=''){
-  const res = await machineService.list().then(r=>r.data||r).catch(()=>[]);
-  const perPage = 12;
-  const start = (page-1)*perPage;
-  const list = (res||[]).filter(m=> !q || (m.companySerial||'').toLowerCase().includes(q.toLowerCase()) || (m.model||'').toLowerCase().includes(q.toLowerCase())).slice(start,start+perPage);
-  const tbody = document.getElementById("machines-table");
-  tbody.innerHTML='';
-  list.forEach(m=>{
-    tbody.insertAdjacentHTML('beforeend', `<tr>
-      <td>${m.id}</td>
-      <td>${m.companySerial||''}</td>
-      <td>${m.model||''}</td>
-      <td>${m.brand||''}</td>
-      <td>${m.currentLocationId||''}</td>
-      <td>${m.currentCustomerId||''}</td>
-      <td class="table-actions">
-        <button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id=${m.id}')">Ver</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="appLoad('machines/edit.html?id=${m.id}')">Editar</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteMachine(${m.id})">Eliminar</button>
-      </td>
-    </tr>`);
-  });
-  // simple pagination
-  const total = (res||[]).length;
-  const pages = Math.ceil(total/perPage);
-  const pag = document.getElementById("machines-pagination");
-  pag.innerHTML='';
-  for(let i=1;i<=pages;i++){
-    pag.insertAdjacentHTML('beforeend', `<li class="page-item ${i===page? 'active':''}"><a class="page-link" href="#" onclick="renderMachines(${i},'${q}')">${i}</a></li>`);
-  }
-}
+    async function loadMachines(query="") {
+        try {
+            const machines = query 
+                ? await machineService.search(query) 
+                : await machineService.list();
+            const tbody = document.getElementById("machines-tbody");
+            tbody.innerHTML = "";
 
-async function deleteMachine(id){
-  if(!confirm("Eliminar máquina?")) return;
-  await machineService.delete(id);
-  renderMachines();
-}
+            if (machines && machines.length > 0) {
+                machines.forEach(m => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${m.id}</td>
+                            <td>${m.model}</td>
+                            <td>${m.customerName || 'N/A'}</td>
+                            <td>${m.location || ''}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id=${m.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="appLoad('machines/edit.html?id=${m.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteMachine(${m.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No se encontraron máquinas</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error loading machines:", error);
+            showAlert("Error cargando máquinas", "danger");
+        }
+    }
 
-document.addEventListener("DOMContentLoaded", ()=>{
-  document.getElementById("btn-refresh").addEventListener("click", ()=> renderMachines());
-  document.getElementById("btn-filter").addEventListener("click", ()=> renderMachines(1, document.getElementById("filter-q").value));
-  renderMachines();
-});
+    async function deleteMachine(id) {
+        if (!confirm("¿Seguro que deseas eliminar esta máquina?")) return;
+        try {
+            await machineService.delete(id);
+            showAlert("Máquina eliminada", "success");
+            loadMachines();
+        } catch (error) {
+            console.error("Error deleting machine:", error);
+            showAlert("Error eliminando máquina", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadMachines();
+        document.getElementById("machine-search").addEventListener("input", (e) => {
+            loadMachines(e.target.value);
+        });
+    });
 </script>

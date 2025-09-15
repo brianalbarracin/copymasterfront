@@ -1,54 +1,336 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>CopyMaster — Panel</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="assets/css/index.css" rel="stylesheet">
-    <link href="assets/css/professional.css" rel="stylesheet">
-    <script>const API_BASE = "https://copymasterback.onrender.com";</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+        .container { max-width: 1100px; }
+        h1,h3,h4 { color: #0f9d58; }
+        .card { border-radius: 10px; }
+        .navbar-brand { font-weight:700; font-size:1.15rem; }
+        .link-success { color:#0f9d58 !important; }
+        .table-actions button { margin-right:6px; }
+        
+        /* Nuevos estilos para mejoras */
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #0f9d58;
+        }
+        .stat-card .number {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .technician-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #f1f1f1;
+        }
+        .performance-bar {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .performance-fill {
+            height: 100%;
+            background-color: #0f9d58;
+            border-radius: 5px;
+        }
+        .dashboard-section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            border-left: 4px solid #0f9d58;
+            padding-left: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+    </style>
+    <script>
+        const API_BASE = "https://copymasterback.onrender.com";
+    </script>
     <script src="assets/js/app.js" defer></script>
-  </head>
-  <body class="d-flex flex-column min-vh-100">
+</head>
+<body class="d-flex flex-column min-vh-100">
     <!-- Header -->
     <header class="bg-white shadow-sm">
-      <nav class="navbar navbar-expand-lg navbar-light container">
-        <a class="navbar-brand text-success" href="#">CopyMaster</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navMenu">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-page="machines/service_requests.html">Solicitudes</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-page="machines/visit_form.html">Visitas</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
-          </ul>
-          <div class="d-flex align-items-center">
-            <span id="current-user" class="me-3 text-muted"></span>
-            <button id="logout" class="btn btn-outline-secondary btn-sm">Cerrar sesión</button>
-          </div>
-        </div>
-      </nav>
+        <nav class="navbar navbar-expand-lg navbar-light container">
+            <a class="navbar-brand text-success" href="#">
+                <i class="fas fa-copy me-1"></i>CopyMaster
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="service_requests/list.html">Solicitudes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="costs/analysis.html">Costos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="reports/generate.html">Reportes</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted text-decoration-none dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> <span id="current-user"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-page="user/profile.html"><i class="fas fa-user me-2"></i>Mi perfil</a></li>
+                            <li><a class="dropdown-item" href="#" data-page="user/sessions.html"><i class="fas fa-clock me-2"></i>Sesiones activas</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logout"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
     </header>
 
     <!-- Main content area -->
     <main class="flex-fill container py-4" id="content-main">
-      <!-- Cargado dinámicamente -->
+        <!-- Cargado dinámicamente -->
     </main>
 
     <!-- Footer -->
     <footer class="bg-light text-muted py-3 mt-auto">
-      <div class="container d-flex justify-content-between">
-        <div>CopyMaster &copy; 2025</div>
-        <div class="small">Contacto: soporte@copymaster.local</div>
-      </div>
+        <div class="container d-flex justify-content-between">
+            <div>CopyMaster &copy; 2025</div>
+            <div class="small">Contacto: soporte@copymaster.local</div>
+        </div>
     </footer>
 
     <!-- Bootstrap JS bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+    
+    <!-- Script con todas las mejoras -->
+    <script>
+        // Servicios corregidos y mejorados
+        const technicianService = {
+            list: () => fetch(API_BASE + "/technicians").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/technicians/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/technicians", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            performance: (id, startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/technicians/${id}/performance?${params}`).then(r => r.json());
+            },
+            comparison: (startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/technicians/comparison?${params}`).then(r => r.json());
+            }
+        };
+
+        const machineService = {
+            list: () => fetch(API_BASE + "/machines").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/machines/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/machines", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/machines/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            delete: (id) => fetch(API_BASE + "/machines/" + id, {
+                method: "DELETE"
+            }).then(r => r.json()),
+            movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id).then(r => r.json()),
+            meterReadings: (id) => fetch(API_BASE + "/meter-readings?machineId=" + id).then(r => r.json()),
+            search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query)).then(r => r.json())
+        };
+
+        const serviceRequestService = {
+            list: () => fetch(API_BASE + "/service-requests").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/service-requests/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/service-requests", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId).then(r => r.json()),
+            byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId).then(r => r.json())
+        };
+
+        const serviceVisitService = {
+            list: () => fetch(API_BASE + "/service-visits").then(r => r.json()),
+            get: (id) => fetch(API_BASE + "/service-visits/" + id).then(r => r.json()),
+            create: (data) => fetch(API_BASE + "/service-visits", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            update: (id, data) => fetch(API_BASE + "/service-visits/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            byRequest: (requestId) => fetch(API_BASE + "/service-visits/request/" + requestId).then(r => r.json()),
+            byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId).then(r => r.json())
+        };
+
+        const costService = {
+            analysis: (startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/costs/analysis?${params}`).then(r => r.json());
+            },
+            comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`).then(r => r.json())
+        };
+
+        const reportService = {
+            generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({type, params})
+            }).then(r => r.json()),
+            list: () => fetch(API_BASE + "/reports").then(r => r.json())
+        };
+
+        const userService = {
+            getProfile: () => fetch(API_BASE + "/user/profile").then(r => r.json()),
+            updateProfile: (data) => fetch(API_BASE + "/user/profile", {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(r => r.json()),
+            getSessions: () => fetch(API_BASE + "/user/sessions").then(r => r.json()),
+            terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
+                method: "DELETE"
+            }).then(r => r.json())
+        };
+
+        // Funciones de utilidad
+        function showAlert(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `alert alert-${type} alert-dismissible fade show`;
+            div.innerHTML = `
+                ${msg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.getElementById('content-main').prepend(div);
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.remove();
+                }
+            }, 5000);
+        }
+
+        function formatDate(dt) {
+            return dt ? new Date(dt).toLocaleString() : '';
+        }
+
+        function formatDateOnly(dt) {
+            return dt ? new Date(dt).toLocaleDateString() : '';
+        }
+
+        // Código principal de la aplicación
+        document.addEventListener("DOMContentLoaded", () => {
+            // Verificar autenticación
+            const user = localStorage.getItem("user");
+            if (!user) {
+                window.location = "login.html";
+                return;
+            }
+            
+            const userObj = JSON.parse(user);
+            document.getElementById("current-user").innerText = userObj.username || userObj.fullName || "";
+            
+            // Configurar sistema de navegación
+            window.appLoad = async function(path) {
+                try {
+                    const res = await fetch(path);
+                    if (!res.ok) throw new Error("No se pudo cargar " + path);
+                    
+                    const html = await res.text();
+                    document.getElementById("content-main").innerHTML = html;
+                    
+                    // Ejecutar scripts incrustados
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = html;
+                    tmp.querySelectorAll('script').forEach(s => {
+                        const script = document.createElement('script');
+                        if (s.src) {
+                            script.src = s.src;
+                        } else {
+                            script.textContent = s.textContent;
+                        }
+                        document.body.appendChild(script);
+                    });
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById("content-main").innerHTML = `
+                        <div class="alert alert-danger">
+                            <h5>Error al cargar la página</h5>
+                            <p>${e.message}</p>
+                            <a href="#" onclick="appLoad('home.html')" class="btn btn-sm btn-success">Volver al inicio</a>
+                        </div>
+                    `;
+                }
+            };
+
+            // Configurar eventos de navegación
+            document.querySelectorAll('a[data-page]').forEach(a => {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    appLoad(a.dataset.page);
+                });
+            });
+
+            // Configurar logout
+            document.getElementById("logout").addEventListener("click", () => {
+                localStorage.removeItem("user");
+                window.location = "login.html";
+            });
+
+            // Cargar página inicial
+            appLoad('home.html');
+        });
+    </script>
+</body>
 </html>
