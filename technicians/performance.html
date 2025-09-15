@@ -1,0 +1,182 @@
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 id="tech-name">Desempeño del Técnico</h4>
+      <p class="text-muted">Análisis de rendimiento</p>
+    </div>
+    <div>
+      <button class="btn btn-outline-secondary" onclick="appLoad('technicians/list.html')">Volver</button>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Filtros</div>
+        <div class="card-body">
+          <form id="performance-filter">
+            <div class="mb-2">
+              <label class="form-label">Fecha inicio</label>
+              <input type="date" class="form-control" id="start-date">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Fecha fin</label>
+              <input type="date" class="form-control" id="end-date">
+            </div>
+            <button type="submit" class="btn btn-success">Aplicar filtros</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Rendimiento</div>
+        <div class="card-body">
+          <div class="progress mb-2" style="height: 30px;">
+            <div class="progress-bar bg-success" id="performance-bar" style="width: 0%">0%</div>
+          </div>
+          <div id="performance-stats">
+            <div>Visitas realizadas: <span id="total-visits">0</span></div>
+            <div>Servicios repetidos: <span id="repeated-services">0</span></div>
+            <div>Efectividad: <span id="effectiveness">0%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h5>Desglose de servicios</h5>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Tipo</th>
+          <th>Cantidad</th>
+          <th>Porcentaje</th>
+        </tr>
+      </thead>
+      <tbody id="service-breakdown"></tbody>
+    </table>
+  </div>
+
+  <h5 class="mt-4">Visitas realizadas</h5>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Solicitud</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Resuelto</th>
+        </tr>
+      </thead>
+      <tbody id="visits-list"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let currentTechnicianId = null;
+
+async function loadPerformance() {
+  const params = new URLSearchParams(location.search);
+  currentTechnicianId = params.get('id');
+  
+  if (!currentTechnicianId) {
+    alert("ID de técnico no especificado");
+    appLoad('technicians/list.html');
+    return;
+  }
+  
+  // Cargar información básica del técnico
+  try {
+    const tech = await technicianService.get(currentTechnicianId).then(r => r.data || r);
+    document.getElementById("tech-name").innerText = `Desempeño de ${tech.fullName || 'Técnico'}`;
+  } catch (err) {
+    console.error("Error cargando técnico:", err);
+  }
+  
+  // Cargar datos de rendimiento con filtros por defecto (último mes)
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - 1);
+  
+  document.getElementById("start-date").value = startDate.toISOString().split('T')[0];
+  document.getElementById("end-date").value = endDate.toISOString().split('T')[0];
+  
+  await loadPerformanceData(startDate, endDate);
+}
+
+async function loadPerformanceData(startDate, endDate) {
+  try {
+    // En una implementación real, esto llamaría a endpoints específicos del backend
+    // Por ahora simulamos datos de ejemplo
+    const performanceData = {
+      totalVisits: 24,
+      repeatedServices: 3,
+      effectiveness: 87.5,
+      serviceBreakdown: [
+        { type: 'correctivo', count: 10 },
+        { type: 'preventivo', count: 8 },
+        { type: 'diagnostico', count: 4 },
+        { type: 'toner', count: 2 }
+      ],
+      visits: [
+        { request: 'SR-001', date: '2025-09-10', customer: 'Cliente A', type: 'correctivo', solved: true },
+        { request: 'SR-002', date: '2025-09-12', customer: 'Cliente B', type: 'preventivo', solved: true },
+        // ... más visitas
+      ]
+    };
+    
+    // Actualizar UI
+    document.getElementById("performance-bar").style.width = `${performanceData.effectiveness}%`;
+    document.getElementById("performance-bar").innerText = `${performanceData.effectiveness}%`;
+    document.getElementById("total-visits").innerText = performanceData.totalVisits;
+    document.getElementById("repeated-services").innerText = performanceData.repeatedServices;
+    document.getElementById("effectiveness").innerText = `${performanceData.effectiveness}%`;
+    
+    // Desglose de servicios
+    const breakdownBody = document.getElementById("service-breakdown");
+    breakdownBody.innerHTML = '';
+    performanceData.serviceBreakdown.forEach(item => {
+      const percentage = (item.count / performanceData.totalVisits * 100).toFixed(1);
+      breakdownBody.innerHTML += `
+        <tr>
+          <td>${item.type}</td>
+          <td>${item.count}</td>
+          <td>${percentage}%</td>
+        </tr>
+      `;
+    });
+    
+    // Lista de visitas
+    const visitsBody = document.getElementById("visits-list");
+    visitsBody.innerHTML = '';
+    performanceData.visits.forEach(visit => {
+      visitsBody.innerHTML += `
+        <tr>
+          <td>${visit.request}</td>
+          <td>${visit.date}</td>
+          <td>${visit.customer}</td>
+          <td>${visit.type}</td>
+          <td>${visit.solved ? 'Sí' : 'No'}</td>
+        </tr>
+      `;
+    });
+    
+  } catch (err) {
+    console.error("Error cargando datos de rendimiento:", err);
+    alert("Error cargando datos de rendimiento");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadPerformance);
+
+document.getElementById("performance-filter").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const startDate = new Date(document.getElementById("start-date").value);
+  const endDate = new Date(document.getElementById("end-date").value);
+  await loadPerformanceData(startDate, endDate);
+});
+</script>

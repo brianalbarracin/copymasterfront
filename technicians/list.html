@@ -8,9 +8,30 @@
 <script src="../assets/js/technicianService.js"></script>
 <script>
 async function renderTechs(){
-  const list = await technicianService.list().then(r=>r.data||r).catch(()=>[]);
-  const tbody = document.getElementById("tech-tbody"); tbody.innerHTML='';
-  (list||[]).forEach(t=> tbody.insertAdjacentHTML('beforeend', `<tr><td>${t.id}</td><td>${t.fullName||t.name||''}</td><td>${t.phone||''}</td><td>${t.email||''}</td><td><button class="btn btn-sm btn-outline-secondary" onclick="appLoad('technicians/create.html')">Editar</button></td></tr>`));
-}
-document.addEventListener("DOMContentLoaded", renderTechs);
+  try {
+    const list = await technicianService.list().then(r=>r.data||r);
+    const tbody = document.getElementById("tech-tbody"); 
+    tbody.innerHTML='';
+    
+    (list||[]).forEach(t=> {
+      tbody.insertAdjacentHTML('beforeend', 
+        `<tr>
+          <td>${t.id}</td>
+          <td>${t.fullName||''}</td>
+          <td>${t.phone||''}</td>
+          <td>${t.email||''}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary" 
+                    onclick="appLoad('technicians/edit.html?id=${t.id}')">Editar</button>
+            <button class="btn btn-sm btn-primary" 
+                    onclick="appLoad('technicians/performance.html?id=${t.id}')">Rendimiento</button>
+          </td>
+        </tr>`
+      );
+    });
+  } catch(err) {
+    console.error("Error cargando técnicos:", err);
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error cargando técnicos</td></tr>';
+  }
+}document.addEventListener("DOMContentLoaded", renderTechs);
 </script>
