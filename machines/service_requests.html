@@ -14,7 +14,7 @@
   </div>
 </div>
 
-<script src="../assets/js/serviceRequestService.js"></script>
+
 <script>
 async function renderRequests(){
   const list = await serviceRequestService.list().then(r=>r.data||r).catch(()=>[]);
