@@ -1,0 +1,46 @@
+<div class="card p-3">
+  <h4>Nueva Solicitud</h4>
+  <form id="form-new-request" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Máquina ID *</label>
+      <input class="form-control" name="machineId" required></div>
+    <div class="col-md-6"><label class="form-label">Cliente ID</label>
+      <input class="form-control" name="customerId"></div>
+    <div class="col-md-6"><label class="form-label">Canal</label>
+      <select name="reportedChannel" class="form-select">
+        <option value="telefono">Teléfono</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="email">Email</option>
+        <option value="portal">Portal</option>
+      </select></div>
+    <div class="col-md-6"><label class="form-label">Tipo de Servicio</label>
+      <select name="serviceType" class="form-select">
+        <option value="correctivo">Correctivo</option>
+        <option value="preventivo">Preventivo</option>
+        <option value="diagnostico">Diagnóstico</option>
+        <option value="toner">Toner</option>
+        <option value="otro">Otro</option>
+      </select></div>
+    <div class="col-12"><label class="form-label">Descripción</label>
+      <textarea class="form-control" name="description" rows="3"></textarea></div>
+    <div class="col-12"><label class="form-label">Causa Raíz</label>
+      <input class="form-control" name="rootCause"></div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById("form-new-request").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    await serviceRequestService.create(data);
+    alert("Solicitud creada correctamente");
+    appLoad('service_requests/list.html');
+  } catch(err) {
+    alert("Error al crear: "+err.message);
+  }
+});
+</script>

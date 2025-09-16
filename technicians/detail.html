@@ -1,0 +1,29 @@
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 id="t-name">Técnico</h4>
+    <button class="btn btn-outline-secondary" onclick="appLoad('technicians/edit.html?id='+__TID)">Editar</button>
+  </div>
+
+  <table class="table">
+    <tbody id="t-info"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadTechnicianDetail(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  if(!id) return;
+  window.__TID = id;
+  const t = await technicianService.get(id);
+  document.getElementById("t-name").innerText = t.fullName || ("Técnico " + t.id);
+  document.getElementById("t-info").innerHTML = `
+    <tr><th>ID</th><td>${t.id}</td></tr>
+    <tr><th>Identificación</th><td>${t.identification||""}</td></tr>
+    <tr><th>Teléfono</th><td>${t.phone||""}</td></tr>
+    <tr><th>Email</th><td>${t.email||""}</td></tr>
+    <tr><th>Activo</th><td>${t.active ? "Sí" : "No"}</td></tr>
+  `;
+}
+document.addEventListener("DOMContentLoaded", loadTechnicianDetail);
+</script>
