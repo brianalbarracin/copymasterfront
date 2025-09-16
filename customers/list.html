@@ -30,8 +30,7 @@
 <script>
     async function loadCustomers(){
         try {
-            const res = await customerService.list();
-            const customers = res.data || []; // 👈 importante
+            const customers = await customerService.list(); // ahora devuelve el array
             const tbody = document.getElementById("customers-tbody");
             tbody.innerHTML = "";
 
