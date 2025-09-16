@@ -30,13 +30,16 @@
 <script>
 async function loadCustomers(){
   try {
-    const customers = await customerService.list();
+    const res = await customerService.list();
+    const customers = res.data || []; // 👈 importante porque tu backend envuelve en { data: [...] }
     const tbody = document.getElementById("customers-tbody");
     tbody.innerHTML = "";
+
     if(customers.length === 0){
       tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay clientes</td></tr>`;
       return;
     }
+
     customers.forEach(c => {
       tbody.innerHTML += `
         <tr>
