@@ -1,0 +1,52 @@
+<div class="card p-3">
+  <h4>Crear Cliente</h4>
+  <form id="form-create-customer" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">NIT</label>
+      <input class="form-control" name="nit">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Nombre</label>
+      <input class="form-control" name="name" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Contacto</label>
+      <input class="form-control" name="contactName">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Teléfono</label>
+      <input class="form-control" name="phone">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" name="email">
+    </div>
+    <div class="col-md-12">
+      <label class="form-label">Dirección</label>
+      <input class="form-control" name="address">
+    </div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('customers/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById("form-create-customer").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    const res = await fetch(API_BASE + "/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    if(!res.ok) throw new Error("Error creando cliente");
+    alert("Cliente creado");
+    appLoad("customers/list.html");
+  } catch(err) {
+    alert("Error: " + err.message);
+  }
+});
+</script>

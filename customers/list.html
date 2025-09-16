@@ -1,0 +1,56 @@
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Clientes</h4>
+    <button class="btn btn-success btn-sm" onclick="appLoad('customers/create.html')">
+      <i class="fas fa-plus me-1"></i> Nuevo Cliente
+    </button>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>NIT</th>
+          <th>Nombre</th>
+          <th>Contacto</th>
+          <th>Teléfono</th>
+          <th>Email</th>
+          <th>Dirección</th>
+        </tr>
+      </thead>
+      <tbody id="customers-tbody">
+        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function loadCustomers() {
+  try {
+    const res = await fetch(API_BASE + "/customers");
+    const data = await res.json();
+    const customers = data.data || data;
+    const tbody = document.getElementById("customers-tbody");
+    tbody.innerHTML = "";
+    customers.forEach(c => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${c.id}</td>
+          <td>${c.nit || ""}</td>
+          <td>${c.name || ""}</td>
+          <td>${c.contactName || ""}</td>
+          <td>${c.phone || ""}</td>
+          <td>${c.email || ""}</td>
+          <td>${c.address || ""}</td>
+        </tr>
+      `;
+    });
+  } catch (err) {
+    console.error(err);
+    showAlert("Error cargando clientes", "danger");
+  }
+}
+document.addEventListener("DOMContentLoaded", loadCustomers);
+</script>

@@ -129,6 +129,9 @@ document.addEventListener("DOMContentLoaded", async ()=>{
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
+<li class="nav-item">
+  <a class="nav-link" href="#" data-page="customers/list.html">Clientes</a>
+</li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="service_requests/list.html">Solicitudes</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="costs/analysis.html">Costos</a></li>
@@ -788,6 +791,118 @@ function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }
     });
 </script>
 
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\customers\create.html =====
+<div class="card p-3">
+  <h4>Crear Cliente</h4>
+  <form id="form-create-customer" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">NIT</label>
+      <input class="form-control" name="nit">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Nombre</label>
+      <input class="form-control" name="name" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Contacto</label>
+      <input class="form-control" name="contactName">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Teléfono</label>
+      <input class="form-control" name="phone">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" name="email">
+    </div>
+    <div class="col-md-12">
+      <label class="form-label">Dirección</label>
+      <input class="form-control" name="address">
+    </div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('customers/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById("form-create-customer").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    const res = await fetch(API_BASE + "/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    if(!res.ok) throw new Error("Error creando cliente");
+    alert("Cliente creado");
+    appLoad("customers/list.html");
+  } catch(err) {
+    alert("Error: " + err.message);
+  }
+});
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\customers\list.html =====
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Clientes</h4>
+    <button class="btn btn-success btn-sm" onclick="appLoad('customers/create.html')">
+      <i class="fas fa-plus me-1"></i> Nuevo Cliente
+    </button>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>NIT</th>
+          <th>Nombre</th>
+          <th>Contacto</th>
+          <th>Teléfono</th>
+          <th>Email</th>
+          <th>Dirección</th>
+        </tr>
+      </thead>
+      <tbody id="customers-tbody">
+        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function loadCustomers() {
+  try {
+    const res = await fetch(API_BASE + "/customers");
+    const data = await res.json();
+    const customers = data.data || data;
+    const tbody = document.getElementById("customers-tbody");
+    tbody.innerHTML = "";
+    customers.forEach(c => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${c.id}</td>
+          <td>${c.nit || ""}</td>
+          <td>${c.name || ""}</td>
+          <td>${c.contactName || ""}</td>
+          <td>${c.phone || ""}</td>
+          <td>${c.email || ""}</td>
+          <td>${c.address || ""}</td>
+        </tr>
+      `;
+    });
+  } catch (err) {
+    console.error(err);
+    showAlert("Error cargando clientes", "danger");
+  }
+}
+document.addEventListener("DOMContentLoaded", loadCustomers);
+</script>
+
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\create.html =====
 <div class="card p-3">
   <h4>Crear Máquina</h4>
@@ -1365,6 +1480,54 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
 });
 </script>
 
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\new.html =====
+<div class="card p-3">
+  <h4>Nueva Solicitud</h4>
+  <form id="form-new-request" class="row g-3">
+    <div class="col-md-6"><label class="form-label">Máquina ID *</label>
+      <input class="form-control" name="machineId" required></div>
+    <div class="col-md-6"><label class="form-label">Cliente ID</label>
+      <input class="form-control" name="customerId"></div>
+    <div class="col-md-6"><label class="form-label">Canal</label>
+      <select name="reportedChannel" class="form-select">
+        <option value="telefono">Teléfono</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="email">Email</option>
+        <option value="portal">Portal</option>
+      </select></div>
+    <div class="col-md-6"><label class="form-label">Tipo de Servicio</label>
+      <select name="serviceType" class="form-select">
+        <option value="correctivo">Correctivo</option>
+        <option value="preventivo">Preventivo</option>
+        <option value="diagnostico">Diagnóstico</option>
+        <option value="toner">Toner</option>
+        <option value="otro">Otro</option>
+      </select></div>
+    <div class="col-12"><label class="form-label">Descripción</label>
+      <textarea class="form-control" name="description" rows="3"></textarea></div>
+    <div class="col-12"><label class="form-label">Causa Raíz</label>
+      <input class="form-control" name="rootCause"></div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById("form-new-request").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    await serviceRequestService.create(data);
+    alert("Solicitud creada correctamente");
+    appLoad('service_requests/list.html');
+  } catch(err) {
+    alert("Error al crear: "+err.message);
+  }
+});
+</script>
+
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\comparison.html =====
 <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1516,6 +1679,83 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
     });
 </script>
 
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\detail.html =====
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 id="t-name">Técnico</h4>
+    <button class="btn btn-outline-secondary" onclick="appLoad('technicians/edit.html?id='+__TID)">Editar</button>
+  </div>
+
+  <table class="table">
+    <tbody id="t-info"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadTechnicianDetail(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  if(!id) return;
+  window.__TID = id;
+  const t = await technicianService.get(id);
+  document.getElementById("t-name").innerText = t.fullName || ("Técnico " + t.id);
+  document.getElementById("t-info").innerHTML = `
+    <tr><th>ID</th><td>${t.id}</td></tr>
+    <tr><th>Identificación</th><td>${t.identification||""}</td></tr>
+    <tr><th>Teléfono</th><td>${t.phone||""}</td></tr>
+    <tr><th>Email</th><td>${t.email||""}</td></tr>
+    <tr><th>Activo</th><td>${t.active ? "Sí" : "No"}</td></tr>
+  `;
+}
+document.addEventListener("DOMContentLoaded", loadTechnicianDetail);
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\edit.html =====
+<div class="card p-3">
+  <h4>Editar Técnico</h4>
+  <form id="form-edit-technician" class="row g-3"></form>
+</div>
+
+<script>
+async function loadTechnicianEdit(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  if(!id) return;
+  const t = await technicianService.get(id);
+
+  const form = document.getElementById("form-edit-technician");
+  form.innerHTML = `
+    <div class="col-md-6"><label class="form-label">Nombre</label>
+      <input class="form-control" name="fullName" value="${t.fullName||""}" required></div>
+    <div class="col-md-6"><label class="form-label">Identificación</label>
+      <input class="form-control" name="identification" value="${t.identification||""}"></div>
+    <div class="col-md-6"><label class="form-label">Teléfono</label>
+      <input class="form-control" name="phone" value="${t.phone||""}"></div>
+    <div class="col-md-6"><label class="form-label">Email</label>
+      <input class="form-control" name="email" value="${t.email||""}"></div>
+    <div class="col-md-6"><label class="form-label">Activo</label>
+      <select name="active" class="form-select">
+        <option value="true" ${t.active?"selected":""}>Sí</option>
+        <option value="false" ${!t.active?"selected":""}>No</option>
+      </select></div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Guardar</button>
+      <button type="button" class="btn btn-outline-secondary" onclick="appLoad('technicians/list.html')">Cancelar</button>
+    </div>
+  `;
+
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    data.active = data.active === "true";
+    await technicianService.update(id, data);
+    alert("Técnico actualizado");
+    appLoad('technicians/detail.html?id='+id);
+  });
+}
+document.addEventListener("DOMContentLoaded", loadTechnicianEdit);
+</script>
+
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\list.html =====
 <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1591,12 +1831,13 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadTechnicians();
+    // Autoejecutar inmediatamente cuando el snippet se inyecta
+    (async function() {
+        await loadTechnicians();
         document.getElementById("technician-search").addEventListener("input", (e) => {
             loadTechnicians(e.target.value);
         });
-    });
+    })();
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\technicians\new.html =====
