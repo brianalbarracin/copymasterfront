@@ -17,23 +17,26 @@
           <th>Teléfono</th>
           <th>Email</th>
           <th>Dirección</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="customers-tbody">
-        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+        <tr><td colspan="8" class="text-center">Cargando...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <script>
-async function loadCustomers() {
+async function loadCustomers(){
   try {
-    const res = await fetch(API_BASE + "/customers");
-    const data = await res.json();
-    const customers = data.data || data;
+    const customers = await customerService.list();
     const tbody = document.getElementById("customers-tbody");
     tbody.innerHTML = "";
+    if(customers.length === 0){
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay clientes</td></tr>`;
+      return;
+    }
     customers.forEach(c => {
       tbody.innerHTML += `
         <tr>
@@ -44,13 +47,28 @@ async function loadCustomers() {
           <td>${c.phone || ""}</td>
           <td>${c.email || ""}</td>
           <td>${c.address || ""}</td>
+          <td class="table-actions text-end">
+            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+          </td>
         </tr>
       `;
     });
   } catch (err) {
-    console.error(err);
-    showAlert("Error cargando clientes", "danger");
+    showAlert("Error cargando clientes: " + err.message, "danger");
   }
 }
+
+async function deleteCustomer(id){
+  if(!confirm("¿Seguro que quieres eliminar este cliente?")) return;
+  try {
+    await customerService.delete(id);
+    showAlert("Cliente eliminado","success");
+    loadCustomers();
+  } catch(err){
+    showAlert("Error eliminando: " + err.message,"danger");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", loadCustomers);
 </script>

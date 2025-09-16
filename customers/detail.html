@@ -1,0 +1,38 @@
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 id="c-name">Cliente</h4>
+    <button class="btn btn-outline-secondary" onclick="appLoad('customers/edit.html?id='+__CID)">
+      <i class="fas fa-edit me-1"></i> Editar
+    </button>
+  </div>
+
+  <table class="table">
+    <tbody id="c-info"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadCustomerDetail(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  if(!id) return;
+  window.__CID = id; // guardar id para reusar en editar
+
+  try {
+    const c = await customerService.get(id);
+    document.getElementById("c-name").innerText = c.name || ("Cliente " + c.id);
+    document.getElementById("c-info").innerHTML = `
+      <tr><th>ID</th><td>${c.id}</td></tr>
+      <tr><th>NIT</th><td>${c.nit || ""}</td></tr>
+      <tr><th>Nombre</th><td>${c.name || ""}</td></tr>
+      <tr><th>Contacto</th><td>${c.contactName || ""}</td></tr>
+      <tr><th>Teléfono</th><td>${c.phone || ""}</td></tr>
+      <tr><th>Email</th><td>${c.email || ""}</td></tr>
+      <tr><th>Dirección</th><td>${c.address || ""}</td></tr>
+    `;
+  } catch(err){
+    showAlert("Error cargando cliente: " + err.message,"danger");
+  }
+}
+document.addEventListener("DOMContentLoaded", loadCustomerDetail);
+</script>

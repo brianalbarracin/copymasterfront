@@ -1,0 +1,57 @@
+<div class="card p-3">
+  <h4>Editar Cliente</h4>
+  <form id="form-edit-customer" class="row g-3"></form>
+</div>
+
+<script>
+async function loadCustomerEdit(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  if(!id) return;
+
+  try {
+    const c = await customerService.get(id);
+    const form = document.getElementById("form-edit-customer");
+    form.innerHTML = `
+      <div class="col-md-6"><label class="form-label">NIT</label>
+        <input class="form-control" name="nit" value="${c.nit||""}">
+      </div>
+      <div class="col-md-6"><label class="form-label">Nombre *</label>
+        <input class="form-control" name="name" value="${c.name||""}" required>
+      </div>
+      <div class="col-md-6"><label class="form-label">Contacto</label>
+        <input class="form-control" name="contactName" value="${c.contactName||""}">
+      </div>
+      <div class="col-md-6"><label class="form-label">Teléfono</label>
+        <input class="form-control" name="phone" value="${c.phone||""}">
+      </div>
+      <div class="col-md-6"><label class="form-label">Email</label>
+        <input type="email" class="form-control" name="email" value="${c.email||""}">
+      </div>
+      <div class="col-md-12"><label class="form-label">Dirección</label>
+        <input class="form-control" name="address" value="${c.address||""}">
+      </div>
+      <div class="col-12">
+        <button class="btn btn-success" type="submit">Guardar</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="appLoad('customers/list.html')">Cancelar</button>
+      </div>
+    `;
+
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      try {
+        await customerService.update(id, data);
+        showAlert("Cliente actualizado","success");
+        appLoad("customers/list.html");
+      } catch(err){
+        showAlert("Error actualizando: " + err.message,"danger");
+      }
+    });
+
+  } catch(err){
+    showAlert("Error cargando cliente: " + err.message,"danger");
+  }
+}
+document.addEventListener("DOMContentLoaded", loadCustomerEdit);
+</script>
