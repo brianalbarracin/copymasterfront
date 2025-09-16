@@ -6,16 +6,16 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const username = form.username.value.trim();
     const password = form.password.value;
 
-    if(!username || !password){
-      document.getElementById("login-error").innerText = "Usuario y contraseña requeridos";
-      return;
+    if(!username || !password){ 
+      document.getElementById("login-error").innerText = "Usuario y contraseña requeridos"; 
+      return; 
     }
 
-    try {
-      const res = await fetch(API_BASE + "/auth/login", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ username, password })
+    try{
+      const res = await fetch(API_BASE + "/auth/login", { 
+        method:"POST", 
+        headers:{"Content-Type":"application/json"}, 
+        body: JSON.stringify({ username, password }) 
       });
 
       if(!res.ok) {
@@ -24,16 +24,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
       }
 
       const data = await res.json();
-
-      // Guardar la info del usuario
+      // Guardar credenciales para BasicAuth
+      localStorage.setItem("auth", JSON.stringify({ username, password }));
+      // Guardar datos del usuario para mostrar en el front
       localStorage.setItem("user", JSON.stringify(data));
 
-      // 🔑 Guardar credenciales para Authorization: Basic
-      localStorage.setItem("auth", JSON.stringify({ username, password }));
-
-      // Redirigir a la app
       window.location = "index.html";
-    } catch(err) {
+    }catch(err){
       document.getElementById("login-error").innerText = err.message || "Error en autenticar";
     }
   });

@@ -58,61 +58,22 @@ document.addEventListener("DOMContentLoaded", async ()=>{
         .navbar-brand { font-weight:700; font-size:1.15rem; }
         .link-success { color:#0f9d58 !important; }
         .table-actions button { margin-right:6px; }
-        
-        /* Nuevos estilos para mejoras */
-        .stat-card {
-            text-align: center;
-            padding: 20px;
-            transition: transform 0.3s;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .stat-card i {
-            font-size: 2rem;
-            margin-bottom: 10px;
-            color: #0f9d58;
-        }
-        .stat-card .number {
-            font-size: 1.8rem;
-            font-weight: bold;
-        }
-        .stat-card .label {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-        .technician-img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #f1f1f1;
-        }
-        .performance-bar {
-            height: 10px;
-            background-color: #e9ecef;
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        .performance-fill {
-            height: 100%;
-            background-color: #0f9d58;
-            border-radius: 5px;
-        }
-        .dashboard-section {
-            margin-bottom: 30px;
-        }
-        .section-title {
-            border-left: 4px solid #0f9d58;
-            padding-left: 10px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
+
+        .stat-card { text-align: center; padding: 20px; transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card i { font-size: 2rem; margin-bottom: 10px; color: #0f9d58; }
+        .stat-card .number { font-size: 1.8rem; font-weight: bold; }
+        .stat-card .label { font-size: 0.9rem; color: #6c757d; }
+        .technician-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f1f1f1; }
+        .performance-bar { height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; margin: 10px 0; }
+        .performance-fill { height: 100%; background-color: #0f9d58; border-radius: 5px; }
+        .dashboard-section { margin-bottom: 30px; }
+        .section-title { border-left: 4px solid #0f9d58; padding-left: 10px; margin-bottom: 20px; font-weight: 600; }
     </style>
     <script>
         const API_BASE = "https://copymasterback.onrender.com";
     </script>
+    <script src="assets/js/utils.js" defer></script>
     <script src="assets/js/app.js" defer></script>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -129,9 +90,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
-<li class="nav-item">
-  <a class="nav-link" href="#" data-page="customers/list.html">Clientes</a>
-</li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="customers/list.html">Clientes</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="service_requests/list.html">Solicitudes</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="costs/analysis.html">Costos</a></li>
@@ -170,229 +129,120 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     <!-- Bootstrap JS bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Script con todas las mejoras -->
+    <!-- Servicios -->
     <script>
-        // Servicios corregidos y mejorados
-                const technicianService = {
-        list: () => fetch(API_BASE + "/technicians")
+        const technicianService = {
+            list: () => authFetch(API_BASE + "/technicians").then(r => r.json()).then(res => res.data || []),
+            get: (id) => authFetch(API_BASE + "/technicians/" + id).then(r => r.json()).then(res => res.data),
+            create: (data) => authFetch(API_BASE + "/technicians", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            update: (id,data) => authFetch(API_BASE + "/technicians/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            performance: (id, startDate, endDate) => {
+                const params = new URLSearchParams({startDate:startDate.toISOString(),endDate:endDate.toISOString()});
+                return authFetch(`${API_BASE}/technicians/${id}/performance?${params}`).then(r=>r.json()).then(res=>res.data);
+            },
+            comparison: (startDate, endDate) => {
+                const params = new URLSearchParams({startDate:startDate.toISOString(),endDate:endDate.toISOString()});
+                return authFetch(`${API_BASE}/technicians/comparison?${params}`).then(r=>r.json()).then(res=>res.data);
+            }
+        };
+
+        const machineService = {
+            list: () => authFetch(API_BASE + "/machines").then(r=>r.json()).then(res=>res.data || []),
+            get: (id) => authFetch(API_BASE + "/machines/" + id).then(r=>r.json()).then(res=>res.data),
+            create: (data) => authFetch(API_BASE + "/machines", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            update: (id,data) => authFetch(API_BASE + "/machines/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            delete: (id) => authFetch(API_BASE + "/machines/" + id, {method:"DELETE"}).then(r=>r.json()).then(res=>res.data),
+            movements: (id) => authFetch(API_BASE + "/machine-movements?machineId="+id).then(r=>r.json()).then(res=>res.data || []),
+            meterReadings: (id) => authFetch(API_BASE + "/meter-readings?machineId="+id).then(r=>r.json()).then(res=>res.data || []),
+            search: (query) => authFetch(API_BASE + "/machines/search?q="+encodeURIComponent(query)).then(r=>r.json()).then(res=>res.data || [])
+        };
+
+        const serviceRequestService = {
+            list: () => authFetch(API_BASE + "/service-requests").then(r=>r.json()).then(res=>res.data || []),
+            get: (id) => authFetch(API_BASE + "/service-requests/" + id).then(r=>r.json()).then(res=>res.data),
+            create: (data) => authFetch(API_BASE + "/service-requests", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            update: (id,data) => authFetch(API_BASE + "/service-requests/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            byCustomer: (cid) => authFetch(API_BASE + "/service-requests/customer/"+cid).then(r=>r.json()).then(res=>res.data || []),
+            byMachine: (mid) => authFetch(API_BASE + "/service-requests/machine/"+mid).then(r=>r.json()).then(res=>res.data || [])
+        };
+
+        const serviceVisitService = {
+            list: () => authFetch(API_BASE + "/service-visits").then(r=>r.json()).then(res=>res.data || []),
+            get: (id) => authFetch(API_BASE + "/service-visits/" + id).then(r=>r.json()).then(res=>res.data),
+            create: (data) => authFetch(API_BASE + "/service-visits", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            update: (id,data) => authFetch(API_BASE + "/service-visits/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            byRequest: (rid) => authFetch(API_BASE + "/service-visits/request/"+rid).then(r=>r.json()).then(res=>res.data || []),
+            byTechnician: (tid) => authFetch(API_BASE + "/service-visits/technician/"+tid).then(r=>r.json()).then(res=>res.data || [])
+        };
+
+ const customerService = {
+        list: () => authFetch(API_BASE + "/customers")
             .then(r => r.json()).then(res => res.data || []),
 
-        get: (id) => fetch(API_BASE + "/technicians/" + id)
+        get: (id) => authFetch(API_BASE + "/customers/" + id)
             .then(r => r.json()).then(res => res.data),
 
-        create: (data) => fetch(API_BASE + "/technicians", {
+        create: (data) => authFetch(API_BASE + "/customers", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => res.data),
 
-        update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
+        update: (id, data) => authFetch(API_BASE + "/customers/" + id, {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => res.data),
 
-        performance: (id, startDate, endDate) => {
-            const params = new URLSearchParams({
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
-            });
-            return fetch(`${API_BASE}/technicians/${id}/performance?${params}`)
-                .then(r => r.json()).then(res => res.data);
-        },
-
-        comparison: (startDate, endDate) => {
-            const params = new URLSearchParams({
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
-            });
-            return fetch(`${API_BASE}/technicians/comparison?${params}`)
-                .then(r => r.json()).then(res => res.data);
-        }
-    };
-
-    const machineService = {
-        list: () => fetch(API_BASE + "/machines")
-            .then(r => r.json()).then(res => res.data || []),
-
-        get: (id) => fetch(API_BASE + "/machines/" + id)
-            .then(r => r.json()).then(res => res.data),
-
-        create: (data) => fetch(API_BASE + "/machines", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
-        update: (id, data) => fetch(API_BASE + "/machines/" + id, {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
-        delete: (id) => fetch(API_BASE + "/machines/" + id, {
-            method: "DELETE"
-        }).then(r => r.json()).then(res => res.data),
-
-        movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id)
-            .then(r => r.json()).then(res => res.data || []),
-
-        meterReadings: (id) => fetch(API_BASE + "/meter-readings?machineId=" + id)
-            .then(r => r.json()).then(res => res.data || []),
-
-        search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
-            .then(r => r.json()).then(res => res.data || [])
-    };
-
-    const serviceRequestService = {
-        list: () => fetch(API_BASE + "/service-requests")
-            .then(r => r.json()).then(res => res.data || []),
-
-        get: (id) => fetch(API_BASE + "/service-requests/" + id)
-            .then(r => r.json()).then(res => res.data),
-
-        create: (data) => fetch(API_BASE + "/service-requests", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
-        update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
-        byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId)
-            .then(r => r.json()).then(res => res.data || []),
-
-        byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId)
-            .then(r => r.json()).then(res => res.data || [])
-    };
-
-    const serviceVisitService = {
-        list: () => fetch(API_BASE + "/service-visits")
-            .then(r => r.json()).then(res => res.data || []),
-
-        get: (id) => fetch(API_BASE + "/service-visits/" + id)
-            .then(r => r.json()).then(res => res.data),
-
-        create: (data) => fetch(API_BASE + "/service-visits", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
-        update: (id, data) => fetch(API_BASE + "/service-visits/" + id, {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
-        byRequest: (requestId) => fetch(API_BASE + "/service-visits/request/" + requestId)
-            .then(r => r.json()).then(res => res.data || []),
-
-        byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId)
-            .then(r => r.json()).then(res => res.data || [])
-    };
-
-    const costService = {
-        analysis: (startDate, endDate) => {
-            const params = new URLSearchParams({
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
-            });
-            return fetch(`${API_BASE}/costs/analysis?${params}`)
-                .then(r => r.json()).then(res => res.data);
-        },
-        comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`)
-            .then(r => r.json()).then(res => res.data || [])
-    };
-
-    const reportService = {
-        generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({type, params})
-        }).then(r => r.json()).then(res => res.data),
-
-        list: () => fetch(API_BASE + "/reports")
-            .then(r => r.json()).then(res => res.data || [])
-    };
-
-    const userService = {
-        getProfile: () => fetch(API_BASE + "/user/profile")
-            .then(r => r.json()).then(res => res.data),
-
-        updateProfile: (data) => fetch(API_BASE + "/user/profile", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
-        getSessions: () => fetch(API_BASE + "/user/sessions")
-            .then(r => r.json()).then(res => res.data || []),
-
-        terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
+        delete: (id) => authFetch(API_BASE + "/customers/" + id, {
             method: "DELETE"
         }).then(r => r.json()).then(res => res.data)
     };
 
-        // Funciones de utilidad
-        function showAlert(msg, type = 'info') {
-            const div = document.createElement('div');
-            div.className = `alert alert-${type} alert-dismissible fade show`;
-            div.innerHTML = `
-                ${msg}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.getElementById('content-main').prepend(div);
-            setTimeout(() => {
-                if (div.parentNode) {
-                    div.remove();
-                }
-            }, 5000);
-        }
+        const costService = {
+            analysis: (startDate,endDate) => {
+                const params = new URLSearchParams({startDate:startDate.toISOString(),endDate:endDate.toISOString()});
+                return authFetch(`${API_BASE}/costs/analysis?${params}`).then(r=>r.json()).then(res=>res.data);
+            },
+            comparison: (months) => authFetch(`${API_BASE}/costs/comparison?months=${months}`).then(r=>r.json()).then(res=>res.data || [])
+        };
 
-        function formatDate(dt) {
-            return dt ? new Date(dt).toLocaleString() : '';
-        }
+        const reportService = {
+            generate: (type,params) => authFetch(`${API_BASE}/reports/generate`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type,params})}).then(r=>r.json()).then(res=>res.data),
+            list: () => authFetch(API_BASE + "/reports").then(r=>r.json()).then(res=>res.data || [])
+        };
 
-        function formatDateOnly(dt) {
-            return dt ? new Date(dt).toLocaleDateString() : '';
-        }
+        const userService = {
+            getProfile: () => authFetch(API_BASE + "/user/profile").then(r=>r.json()).then(res=>res.data),
+            updateProfile: (data) => authFetch(API_BASE + "/user/profile", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
+            getSessions: () => authFetch(API_BASE + "/user/sessions").then(r=>r.json()).then(res=>res.data || []),
+            terminateSession: (sid) => authFetch(API_BASE + `/user/sessions/${sid}`, {method:"DELETE"}).then(r=>r.json()).then(res=>res.data)
+        };
+    </script>
 
-        // Código principal de la aplicación
+    <!-- Código principal -->
+    <script>
         document.addEventListener("DOMContentLoaded", () => {
-            // Verificar autenticación
             const user = localStorage.getItem("user");
             if (!user) {
                 window.location = "login.html";
                 return;
             }
-            
             const userObj = JSON.parse(user);
             document.getElementById("current-user").innerText = userObj.username || userObj.fullName || "";
-            
-            // Configurar sistema de navegación
+
             window.appLoad = async function(path) {
                 try {
                     const res = await fetch(path);
                     if (!res.ok) throw new Error("No se pudo cargar " + path);
-                    
                     const html = await res.text();
                     document.getElementById("content-main").innerHTML = html;
-                    
-                    // Ejecutar scripts incrustados
+
                     const tmp = document.createElement('div');
                     tmp.innerHTML = html;
                     tmp.querySelectorAll('script').forEach(s => {
                         const script = document.createElement('script');
-                        if (s.src) {
-                            script.src = s.src;
-                        } else {
-                            script.textContent = s.textContent;
-                        }
+                        if (s.src) script.src = s.src; else script.textContent = s.textContent;
                         document.body.appendChild(script);
                     });
                 } catch (e) {
@@ -407,7 +257,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
                 }
             };
 
-            // Configurar eventos de navegación
             document.querySelectorAll('a[data-page]').forEach(a => {
                 a.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -415,13 +264,12 @@ document.addEventListener("DOMContentLoaded", async ()=>{
                 });
             });
 
-            // Configurar logout
             document.getElementById("logout").addEventListener("click", () => {
                 localStorage.removeItem("user");
+                localStorage.removeItem("auth");
                 window.location = "login.html";
             });
 
-            // Cargar página inicial
             appLoad('home.html');
         });
     </script>
@@ -530,22 +378,40 @@ document.addEventListener("DOMContentLoaded", ()=>{
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\login.js =====
 document.addEventListener("DOMContentLoaded", ()=>{
   const form = document.getElementById("login-form");
+
   form.addEventListener("submit", async (e)=>{
     e.preventDefault();
     const username = form.username.value.trim();
     const password = form.password.value;
-    if(!username || !password){ document.getElementById("login-error").innerText = "Usuario y contraseña requeridos"; return; }
-    try{
-      const res = await fetch(API_BASE + "/auth/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ username, password }) });
+
+    if(!username || !password){
+      document.getElementById("login-error").innerText = "Usuario y contraseña requeridos";
+      return;
+    }
+
+    try {
+      const res = await fetch(API_BASE + "/auth/login", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ username, password })
+      });
+
       if(!res.ok) {
         const errTxt = await res.text().catch(()=>"Credenciales inválidas");
         throw new Error(errTxt || "Credenciales inválidas");
       }
+
       const data = await res.json();
-      // store user info only (no JWT handling requested). Backend response may include user object
+
+      // Guardar la info del usuario
       localStorage.setItem("user", JSON.stringify(data));
+
+      // 🔑 Guardar credenciales para Authorization: Basic
+      localStorage.setItem("auth", JSON.stringify({ username, password }));
+
+      // Redirigir a la app
       window.location = "index.html";
-    }catch(err){
+    } catch(err) {
       document.getElementById("login-error").innerText = err.message || "Error en autenticar";
     }
   });
@@ -558,8 +424,30 @@ const serviceVisitService = {
 };
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\utils.js =====
-function showAlert(msg, type='info'){ const div = document.createElement('div'); div.className = 'alert alert-'+type; div.innerText = msg; document.getElementById('content-main').prepend(div); setTimeout(()=>div.remove(),4000); }
-function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }
+function showAlert(msg, type='info'){
+  const div = document.createElement('div');
+  div.className = 'alert alert-'+type;
+  div.innerText = msg;
+  document.getElementById('content-main').prepend(div);
+  setTimeout(()=>div.remove(),4000);
+}
+
+function formatDate(dt){
+  return dt ? new Date(dt).toLocaleString() : '';
+}
+
+// 🔑 Helper para fetch con autenticación Basic
+function authFetch(url, options = {}) {
+  const auth = JSON.parse(localStorage.getItem("auth") || "{}");
+  if (auth.username && auth.password) {
+    const token = btoa(auth.username + ":" + auth.password);
+    options.headers = {
+      ...(options.headers || {}),
+      "Authorization": "Basic " + token
+    };
+  }
+  return fetch(url, options);
+}
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\costs\analysis.html =====
 <div class="card p-3">
@@ -793,35 +681,29 @@ function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\customers\create.html =====
 <div class="card p-3">
-  <h4>Crear Cliente</h4>
+  <h4>Nuevo Cliente</h4>
   <form id="form-create-customer" class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">NIT</label>
+    <div class="col-md-6"><label class="form-label">NIT</label>
       <input class="form-control" name="nit">
     </div>
-    <div class="col-md-6">
-      <label class="form-label">Nombre</label>
+    <div class="col-md-6"><label class="form-label">Nombre *</label>
       <input class="form-control" name="name" required>
     </div>
-    <div class="col-md-6">
-      <label class="form-label">Contacto</label>
+    <div class="col-md-6"><label class="form-label">Contacto</label>
       <input class="form-control" name="contactName">
     </div>
-    <div class="col-md-6">
-      <label class="form-label">Teléfono</label>
+    <div class="col-md-6"><label class="form-label">Teléfono</label>
       <input class="form-control" name="phone">
     </div>
-    <div class="col-md-6">
-      <label class="form-label">Email</label>
+    <div class="col-md-6"><label class="form-label">Email</label>
       <input type="email" class="form-control" name="email">
     </div>
-    <div class="col-md-12">
-      <label class="form-label">Dirección</label>
+    <div class="col-md-12"><label class="form-label">Dirección</label>
       <input class="form-control" name="address">
     </div>
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
-      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('customers/list.html')">Cancelar</button>
+      <button type="button" class="btn btn-outline-secondary" onclick="appLoad('customers/list.html')">Cancelar</button>
     </div>
   </form>
 </div>
@@ -831,18 +713,112 @@ document.getElementById("form-create-customer").addEventListener("submit", async
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
   try {
-    const res = await fetch(API_BASE + "/customers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    if(!res.ok) throw new Error("Error creando cliente");
-    alert("Cliente creado");
+    await customerService.create(data);
+    showAlert("Cliente creado correctamente","success");
     appLoad("customers/list.html");
   } catch(err) {
-    alert("Error: " + err.message);
+    showAlert("Error creando cliente: " + err.message,"danger");
   }
 });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\customers\detail.html =====
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 id="c-name">Cliente</h4>
+    <button class="btn btn-outline-secondary" onclick="appLoad('customers/edit.html?id='+__CID)">
+      <i class="fas fa-edit me-1"></i> Editar
+    </button>
+  </div>
+
+  <table class="table">
+    <tbody id="c-info"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadCustomerDetail(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  if(!id) return;
+  window.__CID = id; // guardar id para reusar en editar
+
+  try {
+    const c = await customerService.get(id);
+    document.getElementById("c-name").innerText = c.name || ("Cliente " + c.id);
+    document.getElementById("c-info").innerHTML = `
+      <tr><th>ID</th><td>${c.id}</td></tr>
+      <tr><th>NIT</th><td>${c.nit || ""}</td></tr>
+      <tr><th>Nombre</th><td>${c.name || ""}</td></tr>
+      <tr><th>Contacto</th><td>${c.contactName || ""}</td></tr>
+      <tr><th>Teléfono</th><td>${c.phone || ""}</td></tr>
+      <tr><th>Email</th><td>${c.email || ""}</td></tr>
+      <tr><th>Dirección</th><td>${c.address || ""}</td></tr>
+    `;
+  } catch(err){
+    showAlert("Error cargando cliente: " + err.message,"danger");
+  }
+}
+document.addEventListener("DOMContentLoaded", loadCustomerDetail);
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\customers\edit.html =====
+<div class="card p-3">
+  <h4>Editar Cliente</h4>
+  <form id="form-edit-customer" class="row g-3"></form>
+</div>
+
+<script>
+async function loadCustomerEdit(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  if(!id) return;
+
+  try {
+    const c = await customerService.get(id);
+    const form = document.getElementById("form-edit-customer");
+    form.innerHTML = `
+      <div class="col-md-6"><label class="form-label">NIT</label>
+        <input class="form-control" name="nit" value="${c.nit||""}">
+      </div>
+      <div class="col-md-6"><label class="form-label">Nombre *</label>
+        <input class="form-control" name="name" value="${c.name||""}" required>
+      </div>
+      <div class="col-md-6"><label class="form-label">Contacto</label>
+        <input class="form-control" name="contactName" value="${c.contactName||""}">
+      </div>
+      <div class="col-md-6"><label class="form-label">Teléfono</label>
+        <input class="form-control" name="phone" value="${c.phone||""}">
+      </div>
+      <div class="col-md-6"><label class="form-label">Email</label>
+        <input type="email" class="form-control" name="email" value="${c.email||""}">
+      </div>
+      <div class="col-md-12"><label class="form-label">Dirección</label>
+        <input class="form-control" name="address" value="${c.address||""}">
+      </div>
+      <div class="col-12">
+        <button class="btn btn-success" type="submit">Guardar</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="appLoad('customers/list.html')">Cancelar</button>
+      </div>
+    `;
+
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      try {
+        await customerService.update(id, data);
+        showAlert("Cliente actualizado","success");
+        appLoad("customers/list.html");
+      } catch(err){
+        showAlert("Error actualizando: " + err.message,"danger");
+      }
+    });
+
+  } catch(err){
+    showAlert("Error cargando cliente: " + err.message,"danger");
+  }
+}
+document.addEventListener("DOMContentLoaded", loadCustomerEdit);
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\customers\list.html =====
@@ -865,23 +841,26 @@ document.getElementById("form-create-customer").addEventListener("submit", async
           <th>Teléfono</th>
           <th>Email</th>
           <th>Dirección</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="customers-tbody">
-        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+        <tr><td colspan="8" class="text-center">Cargando...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <script>
-async function loadCustomers() {
+async function loadCustomers(){
   try {
-    const res = await fetch(API_BASE + "/customers");
-    const data = await res.json();
-    const customers = data.data || data;
+    const customers = await customerService.list();
     const tbody = document.getElementById("customers-tbody");
     tbody.innerHTML = "";
+    if(customers.length === 0){
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay clientes</td></tr>`;
+      return;
+    }
     customers.forEach(c => {
       tbody.innerHTML += `
         <tr>
@@ -892,14 +871,29 @@ async function loadCustomers() {
           <td>${c.phone || ""}</td>
           <td>${c.email || ""}</td>
           <td>${c.address || ""}</td>
+          <td class="table-actions text-end">
+            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+          </td>
         </tr>
       `;
     });
   } catch (err) {
-    console.error(err);
-    showAlert("Error cargando clientes", "danger");
+    showAlert("Error cargando clientes: " + err.message, "danger");
   }
 }
+
+async function deleteCustomer(id){
+  if(!confirm("¿Seguro que quieres eliminar este cliente?")) return;
+  try {
+    await customerService.delete(id);
+    showAlert("Cliente eliminado","success");
+    loadCustomers();
+  } catch(err){
+    showAlert("Error eliminando: " + err.message,"danger");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", loadCustomers);
 </script>
 
