@@ -131,6 +131,25 @@
     <!-- Script con todas las mejoras -->
     <script>
         // Servicios corregidos y mejorados
+
+
+const customerService = {
+      list: () => fetch(API_BASE + "/customers").then(r => r.json()).then(res => res.data || []),
+      get: (id) => fetch(API_BASE + "/customers/" + id).then(r => r.json()).then(res => res.data),
+      create: (data) => fetch(API_BASE + "/customers", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      }).then(r => r.json()).then(res => res.data),
+      update: (id, data) => fetch(API_BASE + "/customers/" + id, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      }).then(r => r.json()).then(res => res.data),
+      delete: (id) => fetch(API_BASE + "/customers/" + id, {
+        method: "DELETE"
+      }).then(r => r.json()).then(res => res.data)
+    };
                 const technicianService = {
         list: () => fetch(API_BASE + "/technicians")
             .then(r => r.json()).then(res => res.data || []),
