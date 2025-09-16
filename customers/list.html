@@ -31,7 +31,7 @@
     async function loadCustomers(){
         try {
             const res = await customerService.list();
-            const customers = res.data || []; // 👈 importante: backend envuelve en data
+            const customers = res.data || []; // 👈 importante
             const tbody = document.getElementById("customers-tbody");
             tbody.innerHTML = "";
 
