@@ -28,50 +28,54 @@
 </div>
 
 <script>
-async function loadCustomers(){
-  try {
-    const res = await customerService.list();
-    const customers = res.data || []; // 👈 importante porque tu backend envuelve en { data: [...] }
-    const tbody = document.getElementById("customers-tbody");
-    tbody.innerHTML = "";
+    async function loadCustomers(){
+        try {
+            const res = await customerService.list();
+            const customers = res.data || []; // 👈 importante: backend envuelve en data
+            const tbody = document.getElementById("customers-tbody");
+            tbody.innerHTML = "";
 
-    if(customers.length === 0){
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay clientes</td></tr>`;
-      return;
+            if(customers.length === 0){
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay clientes</td></tr>`;
+                return;
+            }
+
+            customers.forEach(c => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${c.id}</td>
+                        <td>${c.nit || ""}</td>
+                        <td>${c.name || ""}</td>
+                        <td>${c.contactName || ""}</td>
+                        <td>${c.phone || ""}</td>
+                        <td>${c.email || ""}</td>
+                        <td>${c.address || ""}</td>
+                        <td class="table-actions text-end">
+                            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.error("Error loading customers:", err);
+            showAlert("Error cargando clientes: " + err.message, "danger");
+        }
     }
 
-    customers.forEach(c => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${c.id}</td>
-          <td>${c.nit || ""}</td>
-          <td>${c.name || ""}</td>
-          <td>${c.contactName || ""}</td>
-          <td>${c.phone || ""}</td>
-          <td>${c.email || ""}</td>
-          <td>${c.address || ""}</td>
-          <td class="table-actions text-end">
-            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
-          </td>
-        </tr>
-      `;
-    });
-  } catch (err) {
-    showAlert("Error cargando clientes: " + err.message, "danger");
-  }
-}
+    async function deleteCustomer(id){
+        if(!confirm("¿Seguro que quieres eliminar este cliente?")) return;
+        try {
+            await customerService.delete(id);
+            showAlert("Cliente eliminado","success");
+            loadCustomers();
+        } catch(err){
+            showAlert("Error eliminando: " + err.message,"danger");
+        }
+    }
 
-async function deleteCustomer(id){
-  if(!confirm("¿Seguro que quieres eliminar este cliente?")) return;
-  try {
-    await customerService.delete(id);
-    showAlert("Cliente eliminado","success");
-    loadCustomers();
-  } catch(err){
-    showAlert("Error eliminando: " + err.message,"danger");
-  }
-}
-
-document.addEventListener("DOMContentLoaded", loadCustomers);
+    // Autoejecutar inmediatamente cuando el snippet se inyecta
+    (async function(){
+        await loadCustomers();
+    })();
 </script>
