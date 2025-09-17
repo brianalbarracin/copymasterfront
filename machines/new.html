@@ -1,6 +1,6 @@
 <div class="card p-3">
   <h4>Crear Máquina</h4>
-  <form id="form-create-machine" class="row g-3">
+  <form id="form-create-machine" class="row g-3 needs-validation" novalidate>
     <div class="col-md-6">
       <label class="form-label">Serial (companySerial) *</label>
       <input class="form-control" name="companySerial" required>
@@ -25,8 +25,10 @@
       <label class="form-label">Notas</label>
       <textarea class="form-control" name="notes" rows="3"></textarea>
     </div>
-    <!-- Campo oculto para estado -->
+
+    <!-- Campo oculto para enviar siempre un estado válido -->
     <input type="hidden" name="status" value="ACTIVE">
+
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
       <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
@@ -35,16 +37,30 @@
 </div>
 
 <script>
-document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
+document.getElementById("form-create-machine").addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target;
-  if(!form.checkValidity()) { form.classList.add('was-validated'); return; }
+
+  if (!form.checkValidity()) {
+    form.classList.add('was-validated');
+    return;
+  }
+
   const data = Object.fromEntries(new FormData(form));
-  data.year = data.year ? parseInt(data.year) : null; // asegúrate que año sea número
-  try{
+
+  // Asegurar que año sea número
+  if (data.year) {
+    data.year = parseInt(data.year);
+  } else {
+    data.year = null;
+  }
+
+  try {
     await machineService.create(data);
-    alert("Máquina creada");
+    alert("Máquina creada correctamente ✅");
     appLoad('machines/list.html');
-  }catch(err){ alert("Error al crear: "+err.message); }
+  } catch (err) {
+    alert("❌ Error al crear máquina: " + err.message);
+  }
 });
 </script>
