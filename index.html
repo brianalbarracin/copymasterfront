@@ -204,11 +204,16 @@ const customerService = {
             .then(r => r.json()).then(res => res.data),
 
         create: (data) => fetch(API_BASE + "/machines", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+}).then(async r => {
+    if (!r.ok) {
+        const text = await r.text();
+        throw new Error("Error en backend: " + text);
+    }
+    return r.json();
+}).then(res => res.data),
         update: (id, data) => fetch(API_BASE + "/machines/" + id, {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
