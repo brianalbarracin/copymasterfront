@@ -25,6 +25,8 @@
       <label class="form-label">Notas</label>
       <textarea class="form-control" name="notes" rows="3"></textarea>
     </div>
+    <!-- Campo oculto para estado -->
+    <input type="hidden" name="status" value="ACTIVE">
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
       <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
@@ -38,6 +40,7 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
   const form = e.target;
   if(!form.checkValidity()) { form.classList.add('was-validated'); return; }
   const data = Object.fromEntries(new FormData(form));
+  data.year = data.year ? parseInt(data.year) : null; // asegúrate que año sea número
   try{
     await machineService.create(data);
     alert("Máquina creada");
