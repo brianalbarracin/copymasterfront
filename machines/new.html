@@ -38,8 +38,16 @@
       <input class="form-control" name="readingNotes" placeholder="Ej: Lectura inicial al instalar">
     </div>
 
-    <!-- Estado oculto (por defecto ACTIVE) -->
-    <input type="hidden" name="status" value="ACTIVE">
+    <!-- 🔹 Selector de estado -->
+    <div class="col-md-6">
+      <label class="form-label">Estado</label>
+      <select class="form-select" name="status" required>
+        <option value="BODEGA" selected>Bodega</option>
+        <option value="INSTALADA">Instalada</option>
+        <option value="MANTENIMIENTO">Mantenimiento</option>
+        <option value="RETIRADA">Retirada</option>
+      </select>
+    </div>
 
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
