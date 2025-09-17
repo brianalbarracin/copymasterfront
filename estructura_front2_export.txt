@@ -58,22 +58,61 @@ document.addEventListener("DOMContentLoaded", async ()=>{
         .navbar-brand { font-weight:700; font-size:1.15rem; }
         .link-success { color:#0f9d58 !important; }
         .table-actions button { margin-right:6px; }
-
-        .stat-card { text-align: center; padding: 20px; transition: transform 0.3s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .stat-card i { font-size: 2rem; margin-bottom: 10px; color: #0f9d58; }
-        .stat-card .number { font-size: 1.8rem; font-weight: bold; }
-        .stat-card .label { font-size: 0.9rem; color: #6c757d; }
-        .technician-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f1f1f1; }
-        .performance-bar { height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; margin: 10px 0; }
-        .performance-fill { height: 100%; background-color: #0f9d58; border-radius: 5px; }
-        .dashboard-section { margin-bottom: 30px; }
-        .section-title { border-left: 4px solid #0f9d58; padding-left: 10px; margin-bottom: 20px; font-weight: 600; }
+        
+        /* Nuevos estilos para mejoras */
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #0f9d58;
+        }
+        .stat-card .number {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .technician-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #f1f1f1;
+        }
+        .performance-bar {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .performance-fill {
+            height: 100%;
+            background-color: #0f9d58;
+            border-radius: 5px;
+        }
+        .dashboard-section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            border-left: 4px solid #0f9d58;
+            padding-left: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
     </style>
     <script>
         const API_BASE = "https://copymasterback.onrender.com";
     </script>
-    <script src="assets/js/utils.js" defer></script>
     <script src="assets/js/app.js" defer></script>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -90,7 +129,9 @@ document.addEventListener("DOMContentLoaded", async ()=>{
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-page="customers/list.html">Clientes</a></li>
+<li class="nav-item">
+  <a class="nav-link" href="#" data-page="customers/list.html">Clientes</a>
+</li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="service_requests/list.html">Solicitudes</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="costs/analysis.html">Costos</a></li>
@@ -129,120 +170,256 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     <!-- Bootstrap JS bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Servicios -->
+    <!-- Script con todas las mejoras -->
     <script>
-        const technicianService = {
-            list: () => authFetch(API_BASE + "/technicians").then(r => r.json()).then(res => res.data || []),
-            get: (id) => authFetch(API_BASE + "/technicians/" + id).then(r => r.json()).then(res => res.data),
-            create: (data) => authFetch(API_BASE + "/technicians", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            update: (id,data) => authFetch(API_BASE + "/technicians/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            performance: (id, startDate, endDate) => {
-                const params = new URLSearchParams({startDate:startDate.toISOString(),endDate:endDate.toISOString()});
-                return authFetch(`${API_BASE}/technicians/${id}/performance?${params}`).then(r=>r.json()).then(res=>res.data);
-            },
-            comparison: (startDate, endDate) => {
-                const params = new URLSearchParams({startDate:startDate.toISOString(),endDate:endDate.toISOString()});
-                return authFetch(`${API_BASE}/technicians/comparison?${params}`).then(r=>r.json()).then(res=>res.data);
-            }
-        };
+        // Servicios corregidos y mejorados
 
-        const machineService = {
-            list: () => authFetch(API_BASE + "/machines").then(r=>r.json()).then(res=>res.data || []),
-            get: (id) => authFetch(API_BASE + "/machines/" + id).then(r=>r.json()).then(res=>res.data),
-            create: (data) => authFetch(API_BASE + "/machines", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            update: (id,data) => authFetch(API_BASE + "/machines/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            delete: (id) => authFetch(API_BASE + "/machines/" + id, {method:"DELETE"}).then(r=>r.json()).then(res=>res.data),
-            movements: (id) => authFetch(API_BASE + "/machine-movements?machineId="+id).then(r=>r.json()).then(res=>res.data || []),
-            meterReadings: (id) => authFetch(API_BASE + "/meter-readings?machineId="+id).then(r=>r.json()).then(res=>res.data || []),
-            search: (query) => authFetch(API_BASE + "/machines/search?q="+encodeURIComponent(query)).then(r=>r.json()).then(res=>res.data || [])
-        };
 
-        const serviceRequestService = {
-            list: () => authFetch(API_BASE + "/service-requests").then(r=>r.json()).then(res=>res.data || []),
-            get: (id) => authFetch(API_BASE + "/service-requests/" + id).then(r=>r.json()).then(res=>res.data),
-            create: (data) => authFetch(API_BASE + "/service-requests", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            update: (id,data) => authFetch(API_BASE + "/service-requests/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            byCustomer: (cid) => authFetch(API_BASE + "/service-requests/customer/"+cid).then(r=>r.json()).then(res=>res.data || []),
-            byMachine: (mid) => authFetch(API_BASE + "/service-requests/machine/"+mid).then(r=>r.json()).then(res=>res.data || [])
-        };
+const customerService = {
+  list: () => fetch(API_BASE + "/customers")
+    .then(r => r.json())
+    .then(res => res.data || []),
 
-        const serviceVisitService = {
-            list: () => authFetch(API_BASE + "/service-visits").then(r=>r.json()).then(res=>res.data || []),
-            get: (id) => authFetch(API_BASE + "/service-visits/" + id).then(r=>r.json()).then(res=>res.data),
-            create: (data) => authFetch(API_BASE + "/service-visits", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            update: (id,data) => authFetch(API_BASE + "/service-visits/" + id, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            byRequest: (rid) => authFetch(API_BASE + "/service-visits/request/"+rid).then(r=>r.json()).then(res=>res.data || []),
-            byTechnician: (tid) => authFetch(API_BASE + "/service-visits/technician/"+tid).then(r=>r.json()).then(res=>res.data || [])
-        };
+  get: (id) => fetch(API_BASE + "/customers/" + id)
+    .then(r => r.json())
+    .then(res => res.data),
 
- const customerService = {
-        list: () => authFetch(API_BASE + "/customers")
+  create: (data) => fetch(API_BASE + "/customers", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  }).then(r => r.json()).then(res => res.data),
+
+  update: (id, data) => fetch(API_BASE + "/customers/" + id, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  }).then(r => r.json()).then(res => res.data),
+
+  delete: (id) => fetch(API_BASE + "/customers/" + id, {
+    method: "DELETE"
+  }).then(r => r.json()).then(res => res.data)
+};
+                const technicianService = {
+        list: () => fetch(API_BASE + "/technicians")
             .then(r => r.json()).then(res => res.data || []),
 
-        get: (id) => authFetch(API_BASE + "/customers/" + id)
+        get: (id) => fetch(API_BASE + "/technicians/" + id)
             .then(r => r.json()).then(res => res.data),
 
-        create: (data) => authFetch(API_BASE + "/customers", {
+        create: (data) => fetch(API_BASE + "/technicians", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => res.data),
 
-        update: (id, data) => authFetch(API_BASE + "/customers/" + id, {
+        update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => res.data),
 
-        delete: (id) => authFetch(API_BASE + "/customers/" + id, {
+        performance: (id, startDate, endDate) => {
+            const params = new URLSearchParams({
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
+            return fetch(`${API_BASE}/technicians/${id}/performance?${params}`)
+                .then(r => r.json()).then(res => res.data);
+        },
+
+        comparison: (startDate, endDate) => {
+            const params = new URLSearchParams({
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
+            return fetch(`${API_BASE}/technicians/comparison?${params}`)
+                .then(r => r.json()).then(res => res.data);
+        }
+    };
+
+    const machineService = {
+        list: () => fetch(API_BASE + "/machines")
+            .then(r => r.json()).then(res => res.data || []),
+
+        get: (id) => fetch(API_BASE + "/machines/" + id)
+            .then(r => r.json()).then(res => res.data),
+
+        create: (data) => fetch(API_BASE + "/machines", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        update: (id, data) => fetch(API_BASE + "/machines/" + id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        delete: (id) => fetch(API_BASE + "/machines/" + id, {
+            method: "DELETE"
+        }).then(r => r.json()).then(res => res.data),
+
+        movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id)
+            .then(r => r.json()).then(res => res.data || []),
+
+        meterReadings: (id) => fetch(API_BASE + "/meter-readings?machineId=" + id)
+            .then(r => r.json()).then(res => res.data || []),
+
+        search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const serviceRequestService = {
+        list: () => fetch(API_BASE + "/service-requests")
+            .then(r => r.json()).then(res => res.data || []),
+
+        get: (id) => fetch(API_BASE + "/service-requests/" + id)
+            .then(r => r.json()).then(res => res.data),
+
+        create: (data) => fetch(API_BASE + "/service-requests", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId)
+            .then(r => r.json()).then(res => res.data || []),
+
+        byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId)
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const serviceVisitService = {
+        list: () => fetch(API_BASE + "/service-visits")
+            .then(r => r.json()).then(res => res.data || []),
+
+        get: (id) => fetch(API_BASE + "/service-visits/" + id)
+            .then(r => r.json()).then(res => res.data),
+
+        create: (data) => fetch(API_BASE + "/service-visits", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        update: (id, data) => fetch(API_BASE + "/service-visits/" + id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        byRequest: (requestId) => fetch(API_BASE + "/service-visits/request/" + requestId)
+            .then(r => r.json()).then(res => res.data || []),
+
+        byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId)
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const costService = {
+        analysis: (startDate, endDate) => {
+            const params = new URLSearchParams({
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
+            return fetch(`${API_BASE}/costs/analysis?${params}`)
+                .then(r => r.json()).then(res => res.data);
+        },
+        comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`)
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const reportService = {
+        generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({type, params})
+        }).then(r => r.json()).then(res => res.data),
+
+        list: () => fetch(API_BASE + "/reports")
+            .then(r => r.json()).then(res => res.data || [])
+    };
+
+    const userService = {
+        getProfile: () => fetch(API_BASE + "/user/profile")
+            .then(r => r.json()).then(res => res.data),
+
+        updateProfile: (data) => fetch(API_BASE + "/user/profile", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => res.data),
+
+        getSessions: () => fetch(API_BASE + "/user/sessions")
+            .then(r => r.json()).then(res => res.data || []),
+
+        terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
             method: "DELETE"
         }).then(r => r.json()).then(res => res.data)
     };
 
-        const costService = {
-            analysis: (startDate,endDate) => {
-                const params = new URLSearchParams({startDate:startDate.toISOString(),endDate:endDate.toISOString()});
-                return authFetch(`${API_BASE}/costs/analysis?${params}`).then(r=>r.json()).then(res=>res.data);
-            },
-            comparison: (months) => authFetch(`${API_BASE}/costs/comparison?months=${months}`).then(r=>r.json()).then(res=>res.data || [])
-        };
+        // Funciones de utilidad
+        function showAlert(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `alert alert-${type} alert-dismissible fade show`;
+            div.innerHTML = `
+                ${msg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.getElementById('content-main').prepend(div);
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.remove();
+                }
+            }, 5000);
+        }
 
-        const reportService = {
-            generate: (type,params) => authFetch(`${API_BASE}/reports/generate`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type,params})}).then(r=>r.json()).then(res=>res.data),
-            list: () => authFetch(API_BASE + "/reports").then(r=>r.json()).then(res=>res.data || [])
-        };
+        function formatDate(dt) {
+            return dt ? new Date(dt).toLocaleString() : '';
+        }
 
-        const userService = {
-            getProfile: () => authFetch(API_BASE + "/user/profile").then(r=>r.json()).then(res=>res.data),
-            updateProfile: (data) => authFetch(API_BASE + "/user/profile", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}).then(r=>r.json()).then(res=>res.data),
-            getSessions: () => authFetch(API_BASE + "/user/sessions").then(r=>r.json()).then(res=>res.data || []),
-            terminateSession: (sid) => authFetch(API_BASE + `/user/sessions/${sid}`, {method:"DELETE"}).then(r=>r.json()).then(res=>res.data)
-        };
-    </script>
+        function formatDateOnly(dt) {
+            return dt ? new Date(dt).toLocaleDateString() : '';
+        }
 
-    <!-- Código principal -->
-    <script>
+        // Código principal de la aplicación
         document.addEventListener("DOMContentLoaded", () => {
+            // Verificar autenticación
             const user = localStorage.getItem("user");
             if (!user) {
                 window.location = "login.html";
                 return;
             }
+            
             const userObj = JSON.parse(user);
             document.getElementById("current-user").innerText = userObj.username || userObj.fullName || "";
-
+            
+            // Configurar sistema de navegación
             window.appLoad = async function(path) {
                 try {
                     const res = await fetch(path);
                     if (!res.ok) throw new Error("No se pudo cargar " + path);
+                    
                     const html = await res.text();
                     document.getElementById("content-main").innerHTML = html;
-
+                    
+                    // Ejecutar scripts incrustados
                     const tmp = document.createElement('div');
                     tmp.innerHTML = html;
                     tmp.querySelectorAll('script').forEach(s => {
                         const script = document.createElement('script');
-                        if (s.src) script.src = s.src; else script.textContent = s.textContent;
+                        if (s.src) {
+                            script.src = s.src;
+                        } else {
+                            script.textContent = s.textContent;
+                        }
                         document.body.appendChild(script);
                     });
                 } catch (e) {
@@ -257,6 +434,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
                 }
             };
 
+            // Configurar eventos de navegación
             document.querySelectorAll('a[data-page]').forEach(a => {
                 a.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -264,17 +442,19 @@ document.addEventListener("DOMContentLoaded", async ()=>{
                 });
             });
 
+            // Configurar logout
             document.getElementById("logout").addEventListener("click", () => {
                 localStorage.removeItem("user");
-                localStorage.removeItem("auth");
                 window.location = "login.html";
             });
 
+            // Cargar página inicial
             appLoad('home.html');
         });
     </script>
 </body>
 </html>
+
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\login.html =====
 <!doctype html>
@@ -378,40 +558,22 @@ document.addEventListener("DOMContentLoaded", ()=>{
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\login.js =====
 document.addEventListener("DOMContentLoaded", ()=>{
   const form = document.getElementById("login-form");
-
   form.addEventListener("submit", async (e)=>{
     e.preventDefault();
     const username = form.username.value.trim();
     const password = form.password.value;
-
-    if(!username || !password){
-      document.getElementById("login-error").innerText = "Usuario y contraseña requeridos";
-      return;
-    }
-
-    try {
-      const res = await fetch(API_BASE + "/auth/login", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ username, password })
-      });
-
+    if(!username || !password){ document.getElementById("login-error").innerText = "Usuario y contraseña requeridos"; return; }
+    try{
+      const res = await fetch(API_BASE + "/auth/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ username, password }) });
       if(!res.ok) {
         const errTxt = await res.text().catch(()=>"Credenciales inválidas");
         throw new Error(errTxt || "Credenciales inválidas");
       }
-
       const data = await res.json();
-
-      // Guardar la info del usuario
+      // store user info only (no JWT handling requested). Backend response may include user object
       localStorage.setItem("user", JSON.stringify(data));
-
-      // 🔑 Guardar credenciales para Authorization: Basic
-      localStorage.setItem("auth", JSON.stringify({ username, password }));
-
-      // Redirigir a la app
       window.location = "index.html";
-    } catch(err) {
+    }catch(err){
       document.getElementById("login-error").innerText = err.message || "Error en autenticar";
     }
   });
@@ -424,30 +586,8 @@ const serviceVisitService = {
 };
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\utils.js =====
-function showAlert(msg, type='info'){
-  const div = document.createElement('div');
-  div.className = 'alert alert-'+type;
-  div.innerText = msg;
-  document.getElementById('content-main').prepend(div);
-  setTimeout(()=>div.remove(),4000);
-}
-
-function formatDate(dt){
-  return dt ? new Date(dt).toLocaleString() : '';
-}
-
-// 🔑 Helper para fetch con autenticación Basic
-function authFetch(url, options = {}) {
-  const auth = JSON.parse(localStorage.getItem("auth") || "{}");
-  if (auth.username && auth.password) {
-    const token = btoa(auth.username + ":" + auth.password);
-    options.headers = {
-      ...(options.headers || {}),
-      "Authorization": "Basic " + token
-    };
-  }
-  return fetch(url, options);
-}
+function showAlert(msg, type='info'){ const div = document.createElement('div'); div.className = 'alert alert-'+type; div.innerText = msg; document.getElementById('content-main').prepend(div); setTimeout(()=>div.remove(),4000); }
+function formatDate(dt){ return dt ? new Date(dt).toLocaleString() : ''; }
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\costs\analysis.html =====
 <div class="card p-3">
@@ -852,98 +992,55 @@ document.addEventListener("DOMContentLoaded", loadCustomerEdit);
 </div>
 
 <script>
-async function loadCustomers(){
-  try {
-    const customers = await customerService.list();
-    const tbody = document.getElementById("customers-tbody");
-    tbody.innerHTML = "";
-    if(customers.length === 0){
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay clientes</td></tr>`;
-      return;
+    async function loadCustomers(){
+        try {
+            const customers = await customerService.list(); // ahora devuelve el array
+            const tbody = document.getElementById("customers-tbody");
+            tbody.innerHTML = "";
+
+            if(customers.length === 0){
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay clientes</td></tr>`;
+                return;
+            }
+
+            customers.forEach(c => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${c.id}</td>
+                        <td>${c.nit || ""}</td>
+                        <td>${c.name || ""}</td>
+                        <td>${c.contactName || ""}</td>
+                        <td>${c.phone || ""}</td>
+                        <td>${c.email || ""}</td>
+                        <td>${c.address || ""}</td>
+                        <td class="table-actions text-end">
+                            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.error("Error loading customers:", err);
+            showAlert("Error cargando clientes: " + err.message, "danger");
+        }
     }
-    customers.forEach(c => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${c.id}</td>
-          <td>${c.nit || ""}</td>
-          <td>${c.name || ""}</td>
-          <td>${c.contactName || ""}</td>
-          <td>${c.phone || ""}</td>
-          <td>${c.email || ""}</td>
-          <td>${c.address || ""}</td>
-          <td class="table-actions text-end">
-            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
-          </td>
-        </tr>
-      `;
-    });
-  } catch (err) {
-    showAlert("Error cargando clientes: " + err.message, "danger");
-  }
-}
 
-async function deleteCustomer(id){
-  if(!confirm("¿Seguro que quieres eliminar este cliente?")) return;
-  try {
-    await customerService.delete(id);
-    showAlert("Cliente eliminado","success");
-    loadCustomers();
-  } catch(err){
-    showAlert("Error eliminando: " + err.message,"danger");
-  }
-}
+    async function deleteCustomer(id){
+        if(!confirm("¿Seguro que quieres eliminar este cliente?")) return;
+        try {
+            await customerService.delete(id);
+            showAlert("Cliente eliminado","success");
+            loadCustomers();
+        } catch(err){
+            showAlert("Error eliminando: " + err.message,"danger");
+        }
+    }
 
-document.addEventListener("DOMContentLoaded", loadCustomers);
-</script>
-
-===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\create.html =====
-<div class="card p-3">
-  <h4>Crear Máquina</h4>
-  <form id="form-create-machine" class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Serial (companySerial) *</label>
-      <input class="form-control" name="companySerial" required>
-    </div>
-    <div class="col-md-6">
-      <label class="form-label">Número (companyNumber)</label>
-      <input class="form-control" name="companyNumber">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Modelo *</label>
-      <input class="form-control" name="model" required>
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Marca</label>
-      <input class="form-control" name="brand">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">Año</label>
-      <input type="number" class="form-control" name="year">
-    </div>
-    <div class="col-12">
-      <label class="form-label">Notas</label>
-      <textarea class="form-control" name="notes" rows="3"></textarea>
-    </div>
-    <div class="col-12">
-      <button class="btn btn-success" type="submit">Crear</button>
-      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
-    </div>
-  </form>
-</div>
-
-<script>
-document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const form = e.target;
-  if(!form.checkValidity()) { form.classList.add('was-validated'); return; }
-  const data = Object.fromEntries(new FormData(form));
-  try{
-    await machineService.create(data);
-    alert("Máquina creada");
-    appLoad('machines/list.html');
-  }catch(err){ alert("Error al crear: "+err.message); }
-});
+    // Autoejecutar inmediatamente cuando el snippet se inyecta
+    (async function(){
+        await loadCustomers();
+    })();
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\create_request.html =====
@@ -1190,6 +1287,74 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
             loadMachines(e.target.value);
         });
     });
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\new.html =====
+<div class="card p-3">
+  <h4>Crear Máquina</h4>
+  <form id="form-create-machine" class="row g-3 needs-validation" novalidate>
+    <div class="col-md-6">
+      <label class="form-label">Serial (companySerial) *</label>
+      <input class="form-control" name="companySerial" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Número (companyNumber)</label>
+      <input class="form-control" name="companyNumber">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Modelo *</label>
+      <input class="form-control" name="model" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Marca</label>
+      <input class="form-control" name="brand">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Año</label>
+      <input type="number" class="form-control" name="year">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notas</label>
+      <textarea class="form-control" name="notes" rows="3"></textarea>
+    </div>
+
+    <!-- Campo oculto para enviar siempre un estado válido -->
+    <input type="hidden" name="status" value="ACTIVE">
+
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById("form-create-machine").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+
+  if (!form.checkValidity()) {
+    form.classList.add('was-validated');
+    return;
+  }
+
+  const data = Object.fromEntries(new FormData(form));
+
+  // Asegurar que año sea número
+  if (data.year) {
+    data.year = parseInt(data.year);
+  } else {
+    data.year = null;
+  }
+
+  try {
+    await machineService.create(data);
+    alert("Máquina creada correctamente ✅");
+    appLoad('machines/list.html');
+  } catch (err) {
+    alert("❌ Error al crear máquina: " + err.message);
+  }
+});
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\service_requests.html =====

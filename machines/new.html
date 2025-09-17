@@ -9,6 +9,7 @@
       <label class="form-label">Número (companyNumber)</label>
       <input class="form-control" name="companyNumber">
     </div>
+
     <div class="col-md-4">
       <label class="form-label">Modelo *</label>
       <input class="form-control" name="model" required>
@@ -21,12 +22,23 @@
       <label class="form-label">Año</label>
       <input type="number" class="form-control" name="year">
     </div>
+
     <div class="col-12">
-      <label class="form-label">Notas</label>
-      <textarea class="form-control" name="notes" rows="3"></textarea>
+      <label class="form-label">Notas de la máquina</label>
+      <textarea class="form-control" name="notes" rows="2"></textarea>
     </div>
 
-    <!-- Campo oculto para enviar siempre un estado válido -->
+    <!-- 🔹 Campos para la lectura inicial -->
+    <div class="col-md-6">
+      <label class="form-label">Lectura inicial *</label>
+      <input type="number" class="form-control" name="initialReading" required value="0">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Notas de lectura</label>
+      <input class="form-control" name="readingNotes" placeholder="Ej: Lectura inicial al instalar">
+    </div>
+
+    <!-- Estado oculto (por defecto ACTIVE) -->
     <input type="hidden" name="status" value="ACTIVE">
 
     <div class="col-12">
@@ -48,16 +60,13 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
 
   const data = Object.fromEntries(new FormData(form));
 
-  // Asegurar que año sea número
-  if (data.year) {
-    data.year = parseInt(data.year);
-  } else {
-    data.year = null;
-  }
+  // Convertir valores numéricos
+  if (data.year) data.year = parseInt(data.year);
+  if (data.initialReading) data.initialReading = parseInt(data.initialReading);
 
   try {
     await machineService.create(data);
-    alert("Máquina creada correctamente ✅");
+    alert("✅ Máquina creada correctamente");
     appLoad('machines/list.html');
   } catch (err) {
     alert("❌ Error al crear máquina: " + err.message);
