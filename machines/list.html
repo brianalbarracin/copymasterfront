@@ -82,10 +82,10 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadMachines();
-        document.getElementById("machine-search").addEventListener("input", (e) => {
-            loadMachines(e.target.value);
-        });
+    // 🚀 Cargar inmediatamente cuando se inyecta la vista
+    loadMachines();
+
+    document.getElementById("machine-search").addEventListener("input", (e) => {
+        loadMachines(e.target.value);
     });
 </script>
