@@ -120,7 +120,19 @@
 </div>
 
 <script>
-// Fuerza la ejecución manualmente
-console.log("🔴 Script de detail.html ejecutándose");
-loadDetail();
+console.log("✅ Script cargado correctamente");
+console.log("typeof loadDetail:", typeof loadDetail);
+
+// Intentar ejecutar después de un delay
+setTimeout(() => {
+    console.log("🔍 Buscando loadDetail después de delay...");
+    console.log("typeof loadDetail:", typeof loadDetail);
+    
+    if (typeof loadDetail === 'function') {
+        console.log("🎉 Ejecutando loadDetail");
+        loadDetail();
+    } else {
+        console.error("❌ loadDetail todavía no está definida");
+    }
+}, 200);
 </script>
