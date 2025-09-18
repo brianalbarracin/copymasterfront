@@ -40,8 +40,7 @@
 </div>
 
 <script>
-let machineData = null;
-window.locationsCache = window.locationsCache || [];
+var machineData = null; // 👈 ya no redeclaro locationsCache aquí
 
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
@@ -49,11 +48,11 @@ async function loadDetail(){
   if(!id) return;
   window.__MID = id;
 
-  // Cargar machine y locations
-  [machineData, locationsCache] = await Promise.all([
-    machineService.get(id).then(r=>r.data||r),
-    locationService.list()
-  ]);
+  // Cargar machine y locations (si no están ya cargadas)
+  machineData = await machineService.get(id).then(r=>r.data||r);
+  if (!locationsCache || locationsCache.length === 0) {
+    locationsCache = await locationService.list();
+  }
 
   document.getElementById("m-title").innerText = machineData.companySerial || ('Máquina '+machineData.id);
   document.getElementById("m-sub").innerText = `${machineData.brand||''} ${machineData.model||''}`;
