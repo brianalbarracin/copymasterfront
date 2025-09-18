@@ -207,7 +207,15 @@ const locationService = {
             .then(r => r.json()).then(res => res.data || []),
 
         get: (id) => fetch(API_BASE + "/machines/" + id)
-            .then(r => r.json()).then(res => res.data),
+    .then(r => r.json())
+    .then(res => {
+        // Si la respuesta tiene propiedad 'data', usarla
+        if (res && res.data !== undefined) {
+            return res.data;
+        }
+        // Si no, asumir que la respuesta es directamente los datos
+        return res;
+    }),
 
         create: (data) => fetch(API_BASE + "/machines", {
     method: "POST",

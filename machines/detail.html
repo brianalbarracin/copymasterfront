@@ -124,13 +124,18 @@
 window.machineData = null;
 
 async function loadDetail(){
+  console.log("🔍 INICIANDO loadDetail()");
   const params = new URLSearchParams(location.search);
   const id = params.get("id");
+  
+  console.log("📋 Parámetros de URL:", location.search);
+  console.log("🆔 ID obtenido:", id);
+  
   if(!id) {
+    console.error("❌ No se encontró ID en la URL");
     showAlert("ID de máquina no especificado", "danger");
     return;
-  }
-  
+  }  
   // Guardar ID en variable global para reutilizar
   window.__MID = id;
 
