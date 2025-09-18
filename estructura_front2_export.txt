@@ -200,6 +200,12 @@ const customerService = {
     method: "DELETE"
   }).then(r => r.json()).then(res => res.data)
 };
+
+const locationService = {
+  list: () => fetch(API_BASE + "/locations")
+    .then(r => r.json())
+    .then(res => res || [])
+};
                 const technicianService = {
         list: () => fetch(API_BASE + "/technicians")
             .then(r => r.json()).then(res => res.data || []),
@@ -1103,6 +1109,13 @@ document.getElementById("form-create-request").addEventListener("submit", async 
       <table class="table">
         <tbody id="m-location"></tbody>
       </table>
+      <button class="btn btn-sm btn-primary mt-2" onclick="showMoveForm()">Agregar movimiento</button>
+      <div id="move-form" class="mt-2" style="display:none;">
+        <select id="new-location" class="form-select mb-2"></select>
+        <input type="text" id="move-reason" class="form-control mb-2" placeholder="Razón del movimiento">
+        <button class="btn btn-success btn-sm" onclick="saveMovement()">Guardar movimiento</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="hideMoveForm()">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -1114,27 +1127,98 @@ document.getElementById("form-create-request").addEventListener("submit", async 
 </div>
 
 <script>
+var machineData = null; // 👈 usamos locationsCache global definida en index.html
+
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
   if(!id) return;
   window.__MID = id;
-  const m = await machineService.get(id).then(r=>r.data||r);
-  document.getElementById("m-title").innerText = m.companySerial || ('Máquina '+m.id);
-  document.getElementById("m-sub").innerText = `${m.brand||''} ${m.model||''}`;
+
+  machineData = await machineService.get(id).then(r=>r.data||r);
+  if (!locationsCache || locationsCache.length === 0) {
+    locationsCache = await locationService.list();
+  }
+
+  document.getElementById("m-title").innerText = machineData.companySerial || ('Máquina '+machineData.id);
+  document.getElementById("m-sub").innerText = `${machineData.brand||''} ${machineData.model||''}`;
+
   document.getElementById("m-info").innerHTML = `
-    <tr><th>Serial</th><td>${m.companySerial||''}</td></tr>
-    <tr><th>Número</th><td>${m.companyNumber||''}</td></tr>
-    <tr><th>Año</th><td>${m.year||''}</td></tr>
-    <tr><th>Notas</th><td>${m.notes||''}</td></tr>
+    <tr><th>Serial</th><td>${machineData.companySerial||''}</td></tr>
+    <tr><th>Número</th><td>${machineData.companyNumber||''}</td></tr>
+    <tr><th>Año</th><td>${machineData.year||''}</td></tr>
+    <tr><th>Notas</th><td>${machineData.notes||''}</td></tr>
   `;
-  document.getElementById("m-location").innerHTML = `<tr><th>Ubicación</th><td>${m.currentLocationId||''}</td></tr><tr><th>Cliente</th><td>${m.currentCustomerId||''}</td></tr>`;
+
+  const locName = locationsCache.find(l=>l.id===machineData.currentLocationId)?.name || 'N/A';
+  document.getElementById("m-location").innerHTML = `
+    <tr><th>Ubicación</th><td>${locName}</td></tr>
+  `;
+
   const moves = await machineService.movements(id).then(r=>r.data||r).catch(()=>[]);
   const mvT = document.getElementById("m-movements");
-  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ (moves||[]).map(x=>`<tr><td>${new Date(x.effectiveDate).toLocaleString()}</td><td>${x.fromLocationId||''}</td><td>${x.toLocationId||''}</td><td>${x.movementType||''}</td><td>${x.reason||''}</td></tr>`).join('') + '</tbody>';
+  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ 
+    (moves||[]).map(x=>{
+      const fromLoc = locationsCache.find(l=>l.id===x.fromLocationId)?.name || '';
+      const toLoc = locationsCache.find(l=>l.id===x.toLocationId)?.name || '';
+      return `<tr>
+        <td>${new Date(x.effectiveDate).toLocaleString()}</td>
+        <td>${fromLoc}</td>
+        <td>${toLoc}</td>
+        <td>${x.movementType||''}</td>
+        <td>${x.reason||''}</td>
+      </tr>`;
+    }).join('') + '</tbody>';
+
   const meters = await machineService.meterReadings(id).then(r=>r.data||r).catch(()=>[]);
-  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
+  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + 
+    (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
 }
+
+function showMoveForm(){
+  const sel = document.getElementById("new-location");
+  sel.innerHTML = '<option value="">Seleccione ubicación</option>' +
+    locationsCache.map(l=>`<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById("move-form").style.display = "block";
+}
+
+function hideMoveForm(){
+  document.getElementById("move-form").style.display = "none";
+}
+
+async function saveMovement(){
+  const toId = parseInt(document.getElementById("new-location").value);
+  const reason = document.getElementById("move-reason").value;
+  if(!toId){ alert("Seleccione una ubicación destino"); return; }
+
+  try {
+    await fetch(API_BASE + "/machine-movements", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        machineId: __MID,
+        fromLocationId: machineData.currentLocationId,
+        toLocationId: toId,
+        movementType: "REUBICACION",
+        reason: reason,
+        effectiveDate: new Date().toISOString()
+      })
+    });
+
+    await machineService.update(__MID, {
+      ...machineData,
+      currentLocationId: toId
+    });
+
+    showAlert("Movimiento registrado correctamente","success");
+    hideMoveForm();
+    loadDetail();
+  } catch(err){
+    console.error("Error guardando movimiento:", err);
+    showAlert("Error al guardar movimiento","danger");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", loadDetail);
 </script>
 
@@ -1218,8 +1302,9 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
         <table class="table table-hover">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th>
-                    <th>Modelo</th>
+                    <th>Serial</th>
+                    <th>Número</th>
+                    <th>Modelo / Marca</th>
                     <th>Cliente</th>
                     <th>Ubicación</th>
                     <th>Acciones</th>
@@ -1227,7 +1312,7 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
             </thead>
             <tbody id="machines-tbody">
                 <tr>
-                    <td colspan="5" class="text-center">Cargando máquinas...</td>
+                    <td colspan="6" class="text-center">Cargando máquinas...</td>
                 </tr>
             </tbody>
         </table>
@@ -1235,22 +1320,40 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
 </div>
 
 <script>
-    async function loadMachines(query="") {
+    let locationsCache = [];
+
+    async function loadLocations() {
+        try {
+            locationsCache = await locationService.list();
+        } catch (err) {
+            console.error("Error cargando locations:", err);
+            showAlert("No se pudieron cargar las ubicaciones", "danger");
+            locationsCache = [];
+        }
+    }
+
+    async function loadMachines(query = "") {
         try {
             const machines = query 
                 ? await machineService.search(query) 
                 : await machineService.list();
+
             const tbody = document.getElementById("machines-tbody");
             tbody.innerHTML = "";
 
             if (machines && machines.length > 0) {
                 machines.forEach(m => {
+                    const loc = locationsCache.find(l => l.id === m.currentLocationId);
                     tbody.innerHTML += `
                         <tr>
-                            <td>${m.id}</td>
-                            <td>${m.model}</td>
+                            <td>${m.companySerial || 'N/A'}</td>
+                            <td>${m.companyNumber || ''}</td>
+                            <td>
+                                ${m.model || 'N/A'}<br>
+                                <small>${m.brand || ''}</small>
+                            </td>
                             <td>${m.customerName || 'N/A'}</td>
-                            <td>${m.location || ''}</td>
+                            <td>${loc ? loc.name : ''}</td>
                             <td>
                                 <button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id=${m.id}')">
                                     <i class="fas fa-eye"></i>
@@ -1266,7 +1369,7 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
                     `;
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No se encontraron máquinas</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center">No se encontraron máquinas</td></tr>`;
             }
         } catch (error) {
             console.error("Error loading machines:", error);
@@ -1286,8 +1389,11 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
         }
     }
 
-    // 🚀 Cargar inmediatamente cuando se inyecta la vista
-    loadMachines();
+    // 🚀 Cargar locations primero y luego machines
+    (async () => {
+        await loadLocations();
+        await loadMachines();
+    })();
 
     document.getElementById("machine-search").addEventListener("input", (e) => {
         loadMachines(e.target.value);
@@ -1346,6 +1452,13 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
       </select>
     </div>
 
+<div class="col-md-6">
+  <label class="form-label">Ubicación actual</label>
+  <select class="form-select" name="currentLocationId" id="machine-location" required>
+    <option value="">Seleccione una ubicación</option>
+  </select>
+</div>
+
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
       <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
@@ -1354,27 +1467,35 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
 </div>
 
 <script>
+(async () => {
+  try {
+    const locations = await locationService.list();
+    const select = document.getElementById("machine-location");
+    select.innerHTML = '<option value="">Seleccione una ubicación</option>';
+    
+    locations.forEach(loc => {
+      const opt = document.createElement("option");
+      opt.value = loc.id;
+      opt.textContent = loc.name + (loc.address ? " - " + loc.address : "");
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error cargando locations", err);
+    showAlert("No se pudieron cargar las ubicaciones", "danger");
+  }
+})();
+
 document.getElementById("form-create-machine").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const form = e.target;
-
-  if (!form.checkValidity()) {
-    form.classList.add('was-validated');
-    return;
-  }
-
-  const data = Object.fromEntries(new FormData(form));
-
-  // Convertir valores numéricos
-  if (data.year) data.year = parseInt(data.year);
-  if (data.initialReading) data.initialReading = parseInt(data.initialReading);
+  const data = Object.fromEntries(new FormData(e.target));
+  data.year = data.year ? parseInt(data.year) : null;
 
   try {
     await machineService.create(data);
-    alert("✅ Máquina creada correctamente");
-    appLoad('machines/list.html');
+    showAlert("Máquina creada correctamente", "success");
+    appLoad("machines/list.html");
   } catch (err) {
-    alert("❌ Error al crear máquina: " + err.message);
+    showAlert("Error creando máquina: " + err.message, "danger");
   }
 });
 </script>
