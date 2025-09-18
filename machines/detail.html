@@ -40,7 +40,7 @@
 </div>
 
 <script>
-var machineData = null; // 👈 ya no redeclaro locationsCache aquí
+var machineData = null; // 👈 usamos locationsCache global definida en index.html
 
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
@@ -48,7 +48,6 @@ async function loadDetail(){
   if(!id) return;
   window.__MID = id;
 
-  // Cargar machine y locations (si no están ya cargadas)
   machineData = await machineService.get(id).then(r=>r.data||r);
   if (!locationsCache || locationsCache.length === 0) {
     locationsCache = await locationService.list();
@@ -57,7 +56,6 @@ async function loadDetail(){
   document.getElementById("m-title").innerText = machineData.companySerial || ('Máquina '+machineData.id);
   document.getElementById("m-sub").innerText = `${machineData.brand||''} ${machineData.model||''}`;
 
-  // Info básica
   document.getElementById("m-info").innerHTML = `
     <tr><th>Serial</th><td>${machineData.companySerial||''}</td></tr>
     <tr><th>Número</th><td>${machineData.companyNumber||''}</td></tr>
@@ -65,14 +63,11 @@ async function loadDetail(){
     <tr><th>Notas</th><td>${machineData.notes||''}</td></tr>
   `;
 
-  // Ubicación actual
   const locName = locationsCache.find(l=>l.id===machineData.currentLocationId)?.name || 'N/A';
   document.getElementById("m-location").innerHTML = `
     <tr><th>Ubicación</th><td>${locName}</td></tr>
-    <tr><th>Cliente</th><td>${machineData.customerName||''}</td></tr>
   `;
 
-  // Historial movimientos
   const moves = await machineService.movements(id).then(r=>r.data||r).catch(()=>[]);
   const mvT = document.getElementById("m-movements");
   mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ 
@@ -88,7 +83,6 @@ async function loadDetail(){
       </tr>`;
     }).join('') + '</tbody>';
 
-  // Lecturas
   const meters = await machineService.meterReadings(id).then(r=>r.data||r).catch(()=>[]);
   document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + 
     (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
@@ -111,7 +105,6 @@ async function saveMovement(){
   if(!toId){ alert("Seleccione una ubicación destino"); return; }
 
   try {
-    // Crear movimiento
     await fetch(API_BASE + "/machine-movements", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
@@ -125,7 +118,6 @@ async function saveMovement(){
       })
     });
 
-    // Actualizar la máquina con la nueva ubicación
     await machineService.update(__MID, {
       ...machineData,
       currentLocationId: toId
@@ -133,7 +125,7 @@ async function saveMovement(){
 
     showAlert("Movimiento registrado correctamente","success");
     hideMoveForm();
-    loadDetail(); // refrescar todo
+    loadDetail();
   } catch(err){
     console.error("Error guardando movimiento:", err);
     showAlert("Error al guardar movimiento","danger");
