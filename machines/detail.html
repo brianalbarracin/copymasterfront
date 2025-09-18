@@ -22,7 +22,9 @@
         </div>
         <div class="card-body">
           <table class="table table-sm">
-            <tbody id="m-info"></tbody>
+            <tbody id="m-info">
+              <tr><td colspan="2" class="text-center text-muted">Cargando información...</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
@@ -34,9 +36,11 @@
         </div>
         <div class="card-body">
           <table class="table table-sm">
-            <tbody id="m-location"></tbody>
+            <tbody id="m-location">
+              <tr><td colspan="2" class="text-center text-muted">Cargando ubicación...</td></tr>
+            </tbody>
           </table>
-          <button class="btn btn-sm btn-primary mt-2" onclick="showMoveForm()">
+          <button class="btn btn-sm btn-primary mt-2" onclick="showMoveForm()" id="btn-move">
             <i class="fas fa-exchange-alt me-1"></i> Agregar movimiento
           </button>
           <div id="move-form" class="mt-3 p-3 border rounded" style="display:none;">
@@ -134,19 +138,27 @@ async function loadDetail(){
     // Mostrar loading
     document.getElementById("m-title").innerText = "Cargando...";
     document.getElementById("m-sub").innerText = "Por favor espere";
+    document.getElementById("btn-move").disabled = true;
 
-    // Obtener datos de la máquina
+    // Obtener datos de la máquina - DEBUG
+    console.log("Obteniendo máquina con ID:", id);
     const response = await machineService.get(id);
+    console.log("Respuesta de machineService.get:", response);
+    
     window.machineData = response.data || response;
     
     if (!window.machineData) {
       throw new Error("No se encontraron datos de la máquina");
     }
 
+    console.log("Datos de la máquina:", window.machineData);
+
     // Cargar ubicaciones si no están en cache
     if (!window.locationsCache || window.locationsCache.length === 0) {
       try {
+        console.log("Cargando ubicaciones...");
         window.locationsCache = await locationService.list();
+        console.log("Ubicaciones cargadas:", window.locationsCache);
       } catch (err) {
         console.warn("Error cargando ubicaciones:", err);
         window.locationsCache = [];
@@ -179,6 +191,9 @@ async function loadDetail(){
       <tr><th>Cliente Actual</th><td>${window.machineData.currentCustomerId || 'N/A'}</td></tr>
     `;
 
+    // Habilitar botón de movimiento
+    document.getElementById("btn-move").disabled = false;
+
     // Cargar movimientos
     await loadMovements(id);
     
@@ -190,12 +205,17 @@ async function loadDetail(){
     showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
     document.getElementById("m-title").innerText = "Error";
     document.getElementById("m-sub").innerText = "No se pudo cargar la información";
+    document.getElementById("m-info").innerHTML = '<tr><td colspan="2" class="text-center text-danger">Error cargando información</td></tr>';
+    document.getElementById("m-location").innerHTML = '<tr><td colspan="2" class="text-center text-danger">Error cargando ubicación</td></tr>';
   }
 }
 
 async function loadMovements(machineId) {
   try {
+    console.log("Cargando movimientos para máquina:", machineId);
     const moves = await machineService.movements(machineId);
+    console.log("Movimientos obtenidos:", moves);
+    
     const movesData = moves.data || moves || [];
     
     const tbody = document.querySelector("#m-movements tbody");
@@ -228,7 +248,10 @@ async function loadMovements(machineId) {
 
 async function loadMeterReadings(machineId) {
   try {
+    console.log("Cargando lecturas para máquina:", machineId);
     const meters = await machineService.meterReadings(machineId);
+    console.log("Lecturas obtenidas:", meters);
+    
     const metersData = meters.data || meters || [];
     
     const tbody = document.querySelector("#m-meter tbody");
@@ -256,6 +279,12 @@ async function loadMeterReadings(machineId) {
 }
 
 function showMoveForm() {
+  // Verificar que los datos de la máquina estén cargados
+  if (!window.machineData || !window.machineData.currentLocationId) {
+    showAlert("Primero debe cargarse la información de la máquina", "warning");
+    return;
+  }
+
   const select = document.getElementById("new-location");
   
   // Limpiar y llenar el select con ubicaciones
@@ -270,6 +299,8 @@ function showMoveForm() {
         select.appendChild(option);
       }
     });
+  } else {
+    showAlert("No hay ubicaciones disponibles", "warning");
   }
   
   document.getElementById("move-form").style.display = "block";
@@ -281,6 +312,12 @@ function hideMoveForm() {
 }
 
 async function saveMovement() {
+  // Verificar que los datos estén cargados
+  if (!window.machineData) {
+    showAlert("Los datos de la máquina no están cargados", "danger");
+    return;
+  }
+
   const toId = parseInt(document.getElementById("new-location").value);
   const reason = document.getElementById("move-reason").value.trim();
   
