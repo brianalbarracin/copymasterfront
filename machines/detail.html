@@ -126,98 +126,112 @@
     // Variable global para almacenar datos de la máquina
     window.machineData = null;
 
-    async function loadDetail(){
-        console.log("🔍 INICIANDO loadDetail()");
+    
+async function loadDetail(){
+    console.log("🔍 INICIANDO loadDetail()");
     console.log("📍 URL completa:", window.location.href);
     console.log("🔗 Query string:", window.location.search);
     
+    // Primero intentar obtener ID de la URL
     const params = new URLSearchParams(location.search);
-    const id = params.get("id");
+    let id = params.get("id");
     
-    console.log("📋 ID obtenido:", id);
+    console.log("📋 ID obtenido de URL:", id);
+    
+    // Si no está en URL, buscar en sessionStorage
+    if (!id) {
+        id = sessionStorage.getItem('selectedMachineId');
+        console.log("📦 ID obtenido de sessionStorage:", id);
+    }
     
     if(!id) {
-        console.error("❌ No se encontró ID en la URL");
+        console.error("❌ No se encontró ID en ningún lugar");
         showAlert("ID de máquina no especificado", "danger");
         return;
     }
-        
-        window.__MID = id;
+    
+    console.log("✅ ID que se usará:", id);
+    window.__MID = id;
 
-        try {
-            // Mostrar loading
-            document.getElementById("m-title").innerText = "Cargando...";
-            document.getElementById("m-sub").innerText = "Por favor espere";
-            document.getElementById("btn-move").disabled = true;
+    try {
+        // Mostrar loading
+        document.getElementById("m-title").innerText = "Cargando...";
+        document.getElementById("m-sub").innerText = "Por favor espere";
+        document.getElementById("btn-move").disabled = true;
 
-            // Obtener datos de la máquina
-            console.log("🖥️ Obteniendo máquina con ID:", id);
-            window.machineData = await machineService.get(id);
-            console.log("✅ Datos de la máquina obtenidos:", window.machineData);
+        // Obtener datos de la máquina
+        console.log("🖥️ Obteniendo máquina con ID:", id);
+        window.machineData = await machineService.get(id);
+        console.log("✅ Datos de la máquina obtenidos:", window.machineData);
 
-            if (!window.machineData) {
-                throw new Error("No se encontraron datos de la máquina");
-            }
-
-            // Cargar ubicaciones si no están en cache
-            if (!window.locationsCache || window.locationsCache.length === 0) {
-                try {
-                    console.log("📍 Cargando ubicaciones...");
-                    window.locationsCache = await locationService.list();
-                    console.log("✅ Ubicaciones cargadas:", window.locationsCache);
-                } catch (err) {
-                    console.warn("⚠️ Error cargando ubicaciones:", err);
-                    window.locationsCache = [];
-                }
-            }
-
-            // Actualizar información principal
-            document.getElementById("m-title").innerText = 
-                window.machineData.companySerial || `Máquina ${window.machineData.id}`;
-            document.getElementById("m-sub").innerText = 
-                `${window.machineData.brand || 'Sin marca'} ${window.machineData.model || 'Sin modelo'}`;
-
-            // Información básica
-            document.getElementById("m-info").innerHTML = `
-                <tr><th>ID</th><td>${window.machineData.id || 'N/A'}</td></tr>
-                <tr><th>Serial</th><td>${window.machineData.companySerial || 'N/A'}</td></tr>
-                <tr><th>Número</th><td>${window.machineData.companyNumber || 'N/A'}</td></tr>
-                <tr><th>Modelo</th><td>${window.machineData.model || 'N/A'}</td></tr>
-                <tr><th>Marca</th><td>${window.machineData.brand || 'N/A'}</td></tr>
-                <tr><th>Año</th><td>${window.machineData.year || 'N/A'}</td></tr>
-                <tr><th>Estado</th><td>${window.machineData.status || 'N/A'}</td></tr>
-                <tr><th>Notas</th><td>${window.machineData.notes || 'Sin notas'}</td></tr>
-            `;
-
-            // Información de ubicación
-            let locationName = 'No asignada';
-            if (window.locationsCache && window.locationsCache.length > 0) {
-                const location = window.locationsCache.find(l => l.id === window.machineData.currentLocationId);
-                locationName = location ? location.name : 'Ubicación no encontrada';
-            }
-            
-            document.getElementById("m-location").innerHTML = `
-                <tr><th>Ubicación Actual</th><td>${locationName}</td></tr>
-                <tr><th>ID Ubicación</th><td>${window.machineData.currentLocationId || 'N/A'}</td></tr>
-                <tr><th>Cliente Actual</th><td>${window.machineData.currentCustomerId || 'N/A'}</td></tr>
-            `;
-
-            // Habilitar botón de movimiento
-            document.getElementById("btn-move").disabled = false;
-
-            // Cargar movimientos
-            await loadMovements(id);
-            
-            // Cargar lecturas
-            await loadMeterReadings(id);
-
-            console.log("🎉 Carga completada exitosamente");
-
-        } catch(err) {
-            console.error("❌ Error cargando detalle:", err);
-            showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
+        if (!window.machineData) {
+            throw new Error("No se encontraron datos de la máquina");
         }
+
+        // Cargar ubicaciones si no están en cache
+        if (!window.locationsCache || window.locationsCache.length === 0) {
+            try {
+                console.log("📍 Cargando ubicaciones...");
+                window.locationsCache = await locationService.list();
+                console.log("✅ Ubicaciones cargadas:", window.locationsCache);
+            } catch (err) {
+                console.warn("⚠️ Error cargando ubicaciones:", err);
+                window.locationsCache = [];
+            }
+        }
+
+        // Actualizar información principal
+        document.getElementById("m-title").innerText = 
+            window.machineData.companySerial || `Máquina ${window.machineData.id}`;
+        document.getElementById("m-sub").innerText = 
+            `${window.machineData.brand || 'Sin marca'} ${window.machineData.model || 'Sin modelo'}`;
+
+        // Información básica
+        document.getElementById("m-info").innerHTML = `
+            <tr><th>ID</th><td>${window.machineData.id || 'N/A'}</td></tr>
+            <tr><th>Serial</th><td>${window.machineData.companySerial || 'N/A'}</td></tr>
+            <tr><th>Número</th><td>${window.machineData.companyNumber || 'N/A'}</td></tr>
+            <tr><th>Modelo</th><td>${window.machineData.model || 'N/A'}</td></tr>
+            <tr><th>Marca</th><td>${window.machineData.brand || 'N/A'}</td></tr>
+            <tr><th>Año</th><td>${window.machineData.year || 'N/A'}</td></tr>
+            <tr><th>Estado</th><td>${window.machineData.status || 'N/A'}</td></tr>
+            <tr><th>Notas</th><td>${window.machineData.notes || 'Sin notas'}</td></tr>
+        `;
+
+        // Información de ubicación
+        let locationName = 'No asignada';
+        if (window.locationsCache && window.locationsCache.length > 0) {
+            const location = window.locationsCache.find(l => l.id === window.machineData.currentLocationId);
+            locationName = location ? location.name : 'Ubicación no encontrada';
+        }
+        
+        document.getElementById("m-location").innerHTML = `
+            <tr><th>Ubicación Actual</th><td>${locationName}</td></tr>
+            <tr><th>ID Ubicación</th><td>${window.machineData.currentLocationId || 'N/A'}</td></tr>
+            <tr><th>Cliente Actual</th><td>${window.machineData.currentCustomerId || 'N/A'}</td></tr>
+        `;
+
+        // Habilitar botón de movimiento
+        document.getElementById("btn-move").disabled = false;
+
+        // Cargar movimientos
+        await loadMovements(id);
+        
+        // Cargar lecturas
+        await loadMeterReadings(id);
+
+        console.log("🎉 Carga completada exitosamente");
+
+    } catch(err) {
+        console.error("❌ Error cargando detalle:", err);
+        showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
     }
+}
+
+
+
+
+
 
     async function loadMovements(machineId) {
         try {
