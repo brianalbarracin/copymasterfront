@@ -64,14 +64,12 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
+(async () => {
   try {
-    // Cargar ubicaciones desde el backend
-    const res = await fetch(API_BASE + "/locations");
-    const locations = await res.json();
-
+    const locations = await locationService.list(); // usa tu locationService
     const select = document.getElementById("machine-location");
-    (locations || []).forEach(loc => {
+    select.innerHTML = '<option value="">Seleccione una ubicación</option>';
+    locations.forEach(loc => {
       const opt = document.createElement("option");
       opt.value = loc.id;
       opt.textContent = loc.name + (loc.address ? " - " + loc.address : "");
@@ -81,12 +79,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error cargando locations", err);
     showAlert("No se pudieron cargar las ubicaciones","danger");
   }
-});
+})();
 
 document.getElementById("form-create-machine").addEventListener("submit", async (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
-  data.year = data.year ? parseInt(data.year) : null;  // si tienes año como número
+  data.year = data.year ? parseInt(data.year) : null;
 
   try {
     await machineService.create(data);

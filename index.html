@@ -158,6 +158,12 @@ const customerService = {
     method: "DELETE"
   }).then(r => r.json()).then(res => res.data)
 };
+
+const locationService = {
+  list: () => fetch(API_BASE + "/locations")
+    .then(r => r.json())
+    .then(res => res || [])
+};
                 const technicianService = {
         list: () => fetch(API_BASE + "/technicians")
             .then(r => r.json()).then(res => res.data || []),
