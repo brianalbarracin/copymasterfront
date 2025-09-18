@@ -22,6 +22,13 @@
       <table class="table">
         <tbody id="m-location"></tbody>
       </table>
+      <button class="btn btn-sm btn-primary mt-2" onclick="showMoveForm()">Agregar movimiento</button>
+      <div id="move-form" class="mt-2" style="display:none;">
+        <select id="new-location" class="form-select mb-2"></select>
+        <input type="text" id="move-reason" class="form-control mb-2" placeholder="Razón del movimiento">
+        <button class="btn btn-success btn-sm" onclick="saveMovement()">Guardar movimiento</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="hideMoveForm()">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -33,26 +40,106 @@
 </div>
 
 <script>
+let machineData = null;
+let locationsCache = [];
+
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
   if(!id) return;
   window.__MID = id;
-  const m = await machineService.get(id).then(r=>r.data||r);
-  document.getElementById("m-title").innerText = m.companySerial || ('Máquina '+m.id);
-  document.getElementById("m-sub").innerText = `${m.brand||''} ${m.model||''}`;
+
+  // Cargar machine y locations
+  [machineData, locationsCache] = await Promise.all([
+    machineService.get(id).then(r=>r.data||r),
+    locationService.list()
+  ]);
+
+  document.getElementById("m-title").innerText = machineData.companySerial || ('Máquina '+machineData.id);
+  document.getElementById("m-sub").innerText = `${machineData.brand||''} ${machineData.model||''}`;
+
+  // Info básica
   document.getElementById("m-info").innerHTML = `
-    <tr><th>Serial</th><td>${m.companySerial||''}</td></tr>
-    <tr><th>Número</th><td>${m.companyNumber||''}</td></tr>
-    <tr><th>Año</th><td>${m.year||''}</td></tr>
-    <tr><th>Notas</th><td>${m.notes||''}</td></tr>
+    <tr><th>Serial</th><td>${machineData.companySerial||''}</td></tr>
+    <tr><th>Número</th><td>${machineData.companyNumber||''}</td></tr>
+    <tr><th>Año</th><td>${machineData.year||''}</td></tr>
+    <tr><th>Notas</th><td>${machineData.notes||''}</td></tr>
   `;
-  document.getElementById("m-location").innerHTML = `<tr><th>Ubicación</th><td>${m.currentLocationId||''}</td></tr><tr><th>Cliente</th><td>${m.currentCustomerId||''}</td></tr>`;
+
+  // Ubicación actual
+  const locName = locationsCache.find(l=>l.id===machineData.currentLocationId)?.name || 'N/A';
+  document.getElementById("m-location").innerHTML = `
+    <tr><th>Ubicación</th><td>${locName}</td></tr>
+    <tr><th>Cliente</th><td>${machineData.customerName||''}</td></tr>
+  `;
+
+  // Historial movimientos
   const moves = await machineService.movements(id).then(r=>r.data||r).catch(()=>[]);
   const mvT = document.getElementById("m-movements");
-  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ (moves||[]).map(x=>`<tr><td>${new Date(x.effectiveDate).toLocaleString()}</td><td>${x.fromLocationId||''}</td><td>${x.toLocationId||''}</td><td>${x.movementType||''}</td><td>${x.reason||''}</td></tr>`).join('') + '</tbody>';
+  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ 
+    (moves||[]).map(x=>{
+      const fromLoc = locationsCache.find(l=>l.id===x.fromLocationId)?.name || '';
+      const toLoc = locationsCache.find(l=>l.id===x.toLocationId)?.name || '';
+      return `<tr>
+        <td>${new Date(x.effectiveDate).toLocaleString()}</td>
+        <td>${fromLoc}</td>
+        <td>${toLoc}</td>
+        <td>${x.movementType||''}</td>
+        <td>${x.reason||''}</td>
+      </tr>`;
+    }).join('') + '</tbody>';
+
+  // Lecturas
   const meters = await machineService.meterReadings(id).then(r=>r.data||r).catch(()=>[]);
-  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
+  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + 
+    (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
 }
+
+function showMoveForm(){
+  const sel = document.getElementById("new-location");
+  sel.innerHTML = '<option value="">Seleccione ubicación</option>' +
+    locationsCache.map(l=>`<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById("move-form").style.display = "block";
+}
+
+function hideMoveForm(){
+  document.getElementById("move-form").style.display = "none";
+}
+
+async function saveMovement(){
+  const toId = parseInt(document.getElementById("new-location").value);
+  const reason = document.getElementById("move-reason").value;
+  if(!toId){ alert("Seleccione una ubicación destino"); return; }
+
+  try {
+    // Crear movimiento
+    await fetch(API_BASE + "/machine-movements", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        machineId: __MID,
+        fromLocationId: machineData.currentLocationId,
+        toLocationId: toId,
+        movementType: "REUBICACION",
+        reason: reason,
+        effectiveDate: new Date().toISOString()
+      })
+    });
+
+    // Actualizar la máquina con la nueva ubicación
+    await machineService.update(__MID, {
+      ...machineData,
+      currentLocationId: toId
+    });
+
+    showAlert("Movimiento registrado correctamente","success");
+    hideMoveForm();
+    loadDetail(); // refrescar todo
+  } catch(err){
+    console.error("Error guardando movimiento:", err);
+    showAlert("Error al guardar movimiento","danger");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", loadDetail);
 </script>
