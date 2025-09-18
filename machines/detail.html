@@ -128,14 +128,13 @@ async function loadDetail(){
   const params = new URLSearchParams(location.search);
   const id = params.get("id");
   
-  console.log("📋 Parámetros de URL:", location.search);
-  console.log("🆔 ID obtenido:", id);
+  console.log("📋 ID obtenido de URL:", id);
   
   if(!id) {
-    console.error("❌ No se encontró ID en la URL");
     showAlert("ID de máquina no especificado", "danger");
     return;
-  }  
+  }
+  
   // Guardar ID en variable global para reutilizar
   window.__MID = id;
 
@@ -145,17 +144,8 @@ async function loadDetail(){
     document.getElementById("m-sub").innerText = "Por favor espere";
     document.getElementById("btn-move").disabled = true;
 
-    // DEBUG: Ver la respuesta completa de la API
-    console.log("🔍 Obteniendo máquina con ID:", id);
-    const apiUrl = API_BASE + "/machines/" + id;
-    console.log("🌐 URL de la API:", apiUrl);
-    
-    const response = await fetch(apiUrl);
-    const rawResponse = await response.json();
-    console.log("📦 Respuesta completa de la API:", rawResponse);
-    
-    // Obtener datos usando el servicio
-    console.log("🖥️ Usando machineService.get...");
+    // Obtener datos de la máquina usando el servicio corregido
+    console.log("🖥️ Obteniendo máquina con ID:", id);
     window.machineData = await machineService.get(id);
     console.log("✅ Datos de la máquina obtenidos:", window.machineData);
 
@@ -167,9 +157,7 @@ async function loadDetail(){
     if (!window.locationsCache || window.locationsCache.length === 0) {
       try {
         console.log("📍 Cargando ubicaciones...");
-        const locationsResponse = await fetch(API_BASE + "/locations");
-        const locationsResult = await locationsResponse.json();
-        window.locationsCache = locationsResult.data || locationsResult || [];
+        window.locationsCache = await locationService.list();
         console.log("✅ Ubicaciones cargadas:", window.locationsCache);
       } catch (err) {
         console.warn("⚠️ Error cargando ubicaciones:", err);
@@ -235,7 +223,7 @@ async function loadMovements(machineId) {
     const moves = await machineService.movements(machineId);
     console.log("📦 Movimientos obtenidos:", moves);
     
-    const movesData = moves.data || moves || [];
+    const movesData = moves || [];
     
     const tbody = document.querySelector("#m-movements tbody");
     if (movesData.length === 0) {
@@ -271,7 +259,7 @@ async function loadMeterReadings(machineId) {
     const meters = await machineService.meterReadings(machineId);
     console.log("📦 Lecturas obtenidas:", meters);
     
-    const metersData = meters.data || meters || [];
+    const metersData = meters || [];
     
     const tbody = document.querySelector("#m-meter tbody");
     if (metersData.length === 0) {
