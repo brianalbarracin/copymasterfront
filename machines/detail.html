@@ -140,27 +140,34 @@ async function loadDetail(){
     document.getElementById("m-sub").innerText = "Por favor espere";
     document.getElementById("btn-move").disabled = true;
 
-    // Obtener datos de la máquina - DEBUG
-    console.log("Obteniendo máquina con ID:", id);
-    const response = await machineService.get(id);
-    console.log("Respuesta de machineService.get:", response);
+    // DEBUG: Ver la respuesta completa de la API
+    console.log("🔍 Obteniendo máquina con ID:", id);
+    const apiUrl = API_BASE + "/machines/" + id;
+    console.log("🌐 URL de la API:", apiUrl);
     
-    window.machineData = response.data || response;
+    const response = await fetch(apiUrl);
+    const rawResponse = await response.json();
+    console.log("📦 Respuesta completa de la API:", rawResponse);
     
+    // Obtener datos usando el servicio
+    console.log("🖥️ Usando machineService.get...");
+    window.machineData = await machineService.get(id);
+    console.log("✅ Datos de la máquina obtenidos:", window.machineData);
+
     if (!window.machineData) {
       throw new Error("No se encontraron datos de la máquina");
     }
 
-    console.log("Datos de la máquina:", window.machineData);
-
     // Cargar ubicaciones si no están en cache
     if (!window.locationsCache || window.locationsCache.length === 0) {
       try {
-        console.log("Cargando ubicaciones...");
-        window.locationsCache = await locationService.list();
-        console.log("Ubicaciones cargadas:", window.locationsCache);
+        console.log("📍 Cargando ubicaciones...");
+        const locationsResponse = await fetch(API_BASE + "/locations");
+        const locationsResult = await locationsResponse.json();
+        window.locationsCache = locationsResult.data || locationsResult || [];
+        console.log("✅ Ubicaciones cargadas:", window.locationsCache);
       } catch (err) {
-        console.warn("Error cargando ubicaciones:", err);
+        console.warn("⚠️ Error cargando ubicaciones:", err);
         window.locationsCache = [];
       }
     }
@@ -184,7 +191,12 @@ async function loadDetail(){
     `;
 
     // Información de ubicación
-    const locationName = window.locationsCache.find(l => l.id === window.machineData.currentLocationId)?.name || 'No asignada';
+    let locationName = 'No asignada';
+    if (window.locationsCache && window.locationsCache.length > 0) {
+        const location = window.locationsCache.find(l => l.id === window.machineData.currentLocationId);
+        locationName = location ? location.name : 'Ubicación no encontrada';
+    }
+    
     document.getElementById("m-location").innerHTML = `
       <tr><th>Ubicación Actual</th><td>${locationName}</td></tr>
       <tr><th>ID Ubicación</th><td>${window.machineData.currentLocationId || 'N/A'}</td></tr>
@@ -200,8 +212,10 @@ async function loadDetail(){
     // Cargar lecturas
     await loadMeterReadings(id);
 
+    console.log("🎉 Carga completada exitosamente");
+
   } catch(err) {
-    console.error("Error cargando detalle:", err);
+    console.error("❌ Error cargando detalle:", err);
     showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
     document.getElementById("m-title").innerText = "Error";
     document.getElementById("m-sub").innerText = "No se pudo cargar la información";
@@ -212,9 +226,9 @@ async function loadDetail(){
 
 async function loadMovements(machineId) {
   try {
-    console.log("Cargando movimientos para máquina:", machineId);
+    console.log("🔄 Cargando movimientos para máquina:", machineId);
     const moves = await machineService.movements(machineId);
-    console.log("Movimientos obtenidos:", moves);
+    console.log("📦 Movimientos obtenidos:", moves);
     
     const movesData = moves.data || moves || [];
     
@@ -240,17 +254,17 @@ async function loadMovements(machineId) {
       `;
     }).join('');
   } catch (err) {
-    console.error("Error cargando movimientos:", err);
+    console.error("❌ Error cargando movimientos:", err);
     document.querySelector("#m-movements tbody").innerHTML = 
-      '<tr><td colspan="5" class="text-center text-danger">Error cargando movimientos</td></tr>';
+      '<tr><td colspan="5" class="text-center text-warning">No se pudieron cargar los movimientos</td></tr>';
   }
 }
 
 async function loadMeterReadings(machineId) {
   try {
-    console.log("Cargando lecturas para máquina:", machineId);
+    console.log("📊 Cargando lecturas para máquina:", machineId);
     const meters = await machineService.meterReadings(machineId);
-    console.log("Lecturas obtenidas:", meters);
+    console.log("📦 Lecturas obtenidas:", meters);
     
     const metersData = meters.data || meters || [];
     
@@ -272,9 +286,9 @@ async function loadMeterReadings(machineId) {
       `;
     }).join('');
   } catch (err) {
-    console.error("Error cargando lecturas:", err);
+    console.error("❌ Error cargando lecturas:", err);
     document.querySelector("#m-meter tbody").innerHTML = 
-      '<tr><td colspan="3" class="text-center text-danger">Error cargando lecturas</td></tr>';
+      '<tr><td colspan="3" class="text-center text-warning">No se pudieron cargar las lecturas</td></tr>';
   }
 }
 
@@ -361,7 +375,7 @@ async function saveMovement() {
     await loadDetail();
     
   } catch(err) {
-    console.error("Error guardando movimiento:", err);
+    console.error("❌ Error guardando movimiento:", err);
     showAlert("Error al guardar el movimiento: " + err.message, "danger");
   }
 }

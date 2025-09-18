@@ -1092,112 +1092,340 @@ document.getElementById("form-create-request").addEventListener("submit", async 
       <p class="text-muted" id="m-sub">Detalle de máquina</p>
     </div>
     <div>
-      <button class="btn btn-outline-secondary" onclick="appLoad('machines/edit.html?id='+__MID)">Editar</button>
-      <button class="btn btn-success" onclick="appLoad('machines/service_requests.html')">Ver solicitudes</button>
+      <button class="btn btn-outline-secondary me-2" onclick="appLoad('machines/edit.html?id='+window.__MID)">
+        <i class="fas fa-edit me-1"></i> Editar
+      </button>
+      <button class="btn btn-success" onclick="appLoad('machines/service_requests.html')">
+        <i class="fas fa-tools me-1"></i> Ver solicitudes
+      </button>
     </div>
   </div>
 
-  <div class="row mb-3">
+  <div class="row mb-4">
     <div class="col-md-6">
-      <h6>Información</h6>
-      <table class="table">
-        <tbody id="m-info"></tbody>
-      </table>
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">Información de la Máquina</h6>
+        </div>
+        <div class="card-body">
+          <table class="table table-sm">
+            <tbody id="m-info">
+              <tr><td colspan="2" class="text-center text-muted">Cargando información...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
     <div class="col-md-6">
-      <h6>Estado y ubicación</h6>
-      <table class="table">
-        <tbody id="m-location"></tbody>
-      </table>
-      <button class="btn btn-sm btn-primary mt-2" onclick="showMoveForm()">Agregar movimiento</button>
-      <div id="move-form" class="mt-2" style="display:none;">
-        <select id="new-location" class="form-select mb-2"></select>
-        <input type="text" id="move-reason" class="form-control mb-2" placeholder="Razón del movimiento">
-        <button class="btn btn-success btn-sm" onclick="saveMovement()">Guardar movimiento</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="hideMoveForm()">Cancelar</button>
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">Estado y Ubicación</h6>
+        </div>
+        <div class="card-body">
+          <table class="table table-sm">
+            <tbody id="m-location">
+              <tr><td colspan="2" class="text-center text-muted">Cargando ubicación...</td></tr>
+            </tbody>
+          </table>
+          <button class="btn btn-sm btn-primary mt-2" onclick="showMoveForm()" id="btn-move">
+            <i class="fas fa-exchange-alt me-1"></i> Agregar movimiento
+          </button>
+          <div id="move-form" class="mt-3 p-3 border rounded" style="display:none;">
+            <h6 class="mb-2">Nuevo Movimiento</h6>
+            <select id="new-location" class="form-select mb-2">
+              <option value="">Seleccione ubicación destino</option>
+            </select>
+            <input type="text" id="move-reason" class="form-control mb-2" placeholder="Razón del movimiento">
+            <div class="d-flex gap-2">
+              <button class="btn btn-success btn-sm" onclick="saveMovement()">
+                <i class="fas fa-save me-1"></i> Guardar
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" onclick="hideMoveForm()">
+                <i class="fas fa-times me-1"></i> Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <h5>Historial de movimientos</h5>
-  <div class="table-responsive mb-3"><table class="table" id="m-movements"></table></div>
-
-  <h5>Lecturas (meter readings)</h5>
-  <div class="table-responsive"><table class="table" id="m-meter"></table></div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">Historial de Movimientos</h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm" id="m-movements">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>De</th>
+                  <th>A</th>
+                  <th>Tipo</th>
+                  <th>Razón</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" class="text-center text-muted">Cargando movimientos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">Historial de Lecturas</h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm" id="m-meter">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Lectura</th>
+                  <th>Notas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="3" class="text-center text-muted">Cargando lecturas...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-var machineData = null; // 👈 usamos locationsCache global definida en index.html
+// Variable global para almacenar datos de la máquina
+window.machineData = null;
 
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
-  const id = params.get('id');
-  if(!id) return;
+  const id = params.get("id");
+  if(!id) {
+    showAlert("ID de máquina no especificado", "danger");
+    return;
+  }
+  
+  // Guardar ID en variable global para reutilizar
   window.__MID = id;
 
-  machineData = await machineService.get(id).then(r=>r.data||r);
-  if (!locationsCache || locationsCache.length === 0) {
-    locationsCache = await locationService.list();
+  try {
+    // Mostrar loading
+    document.getElementById("m-title").innerText = "Cargando...";
+    document.getElementById("m-sub").innerText = "Por favor espere";
+    document.getElementById("btn-move").disabled = true;
+
+    // Obtener datos de la máquina - DEBUG
+    console.log("Obteniendo máquina con ID:", id);
+    const response = await machineService.get(id);
+    console.log("Respuesta de machineService.get:", response);
+    
+    window.machineData = response.data || response;
+    
+    if (!window.machineData) {
+      throw new Error("No se encontraron datos de la máquina");
+    }
+
+    console.log("Datos de la máquina:", window.machineData);
+
+    // Cargar ubicaciones si no están en cache
+    if (!window.locationsCache || window.locationsCache.length === 0) {
+      try {
+        console.log("Cargando ubicaciones...");
+        window.locationsCache = await locationService.list();
+        console.log("Ubicaciones cargadas:", window.locationsCache);
+      } catch (err) {
+        console.warn("Error cargando ubicaciones:", err);
+        window.locationsCache = [];
+      }
+    }
+
+    // Actualizar información principal
+    document.getElementById("m-title").innerText = 
+      window.machineData.companySerial || `Máquina ${window.machineData.id}`;
+    document.getElementById("m-sub").innerText = 
+      `${window.machineData.brand || 'Sin marca'} ${window.machineData.model || 'Sin modelo'}`;
+
+    // Información básica
+    document.getElementById("m-info").innerHTML = `
+      <tr><th>ID</th><td>${window.machineData.id || 'N/A'}</td></tr>
+      <tr><th>Serial</th><td>${window.machineData.companySerial || 'N/A'}</td></tr>
+      <tr><th>Número</th><td>${window.machineData.companyNumber || 'N/A'}</td></tr>
+      <tr><th>Modelo</th><td>${window.machineData.model || 'N/A'}</td></tr>
+      <tr><th>Marca</th><td>${window.machineData.brand || 'N/A'}</td></tr>
+      <tr><th>Año</th><td>${window.machineData.year || 'N/A'}</td></tr>
+      <tr><th>Estado</th><td>${window.machineData.status || 'N/A'}</td></tr>
+      <tr><th>Notas</th><td>${window.machineData.notes || 'Sin notas'}</td></tr>
+    `;
+
+    // Información de ubicación
+    const locationName = window.locationsCache.find(l => l.id === window.machineData.currentLocationId)?.name || 'No asignada';
+    document.getElementById("m-location").innerHTML = `
+      <tr><th>Ubicación Actual</th><td>${locationName}</td></tr>
+      <tr><th>ID Ubicación</th><td>${window.machineData.currentLocationId || 'N/A'}</td></tr>
+      <tr><th>Cliente Actual</th><td>${window.machineData.currentCustomerId || 'N/A'}</td></tr>
+    `;
+
+    // Habilitar botón de movimiento
+    document.getElementById("btn-move").disabled = false;
+
+    // Cargar movimientos
+    await loadMovements(id);
+    
+    // Cargar lecturas
+    await loadMeterReadings(id);
+
+  } catch(err) {
+    console.error("Error cargando detalle:", err);
+    showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
+    document.getElementById("m-title").innerText = "Error";
+    document.getElementById("m-sub").innerText = "No se pudo cargar la información";
+    document.getElementById("m-info").innerHTML = '<tr><td colspan="2" class="text-center text-danger">Error cargando información</td></tr>';
+    document.getElementById("m-location").innerHTML = '<tr><td colspan="2" class="text-center text-danger">Error cargando ubicación</td></tr>';
+  }
+}
+
+async function loadMovements(machineId) {
+  try {
+    console.log("Cargando movimientos para máquina:", machineId);
+    const moves = await machineService.movements(machineId);
+    console.log("Movimientos obtenidos:", moves);
+    
+    const movesData = moves.data || moves || [];
+    
+    const tbody = document.querySelector("#m-movements tbody");
+    if (movesData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay movimientos registrados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = movesData.map(move => {
+      const fromLoc = window.locationsCache.find(l => l.id === move.fromLocationId)?.name || 'Desconocida';
+      const toLoc = window.locationsCache.find(l => l.id === move.toLocationId)?.name || 'Desconocida';
+      const date = move.effectiveDate ? new Date(move.effectiveDate).toLocaleDateString() : 'N/A';
+      
+      return `
+        <tr>
+          <td>${date}</td>
+          <td>${fromLoc}</td>
+          <td>${toLoc}</td>
+          <td>${move.movementType || 'N/A'}</td>
+          <td>${move.reason || 'Sin razón especificada'}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error("Error cargando movimientos:", err);
+    document.querySelector("#m-movements tbody").innerHTML = 
+      '<tr><td colspan="5" class="text-center text-danger">Error cargando movimientos</td></tr>';
+  }
+}
+
+async function loadMeterReadings(machineId) {
+  try {
+    console.log("Cargando lecturas para máquina:", machineId);
+    const meters = await machineService.meterReadings(machineId);
+    console.log("Lecturas obtenidas:", meters);
+    
+    const metersData = meters.data || meters || [];
+    
+    const tbody = document.querySelector("#m-meter tbody");
+    if (metersData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay lecturas registradas</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = metersData.map(meter => {
+      const date = meter.readingDate ? new Date(meter.readingDate).toLocaleDateString() : 'N/A';
+      
+      return `
+        <tr>
+          <td>${date}</td>
+          <td>${meter.reading || '0'}</td>
+          <td>${meter.notes || 'Sin notas'}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error("Error cargando lecturas:", err);
+    document.querySelector("#m-meter tbody").innerHTML = 
+      '<tr><td colspan="3" class="text-center text-danger">Error cargando lecturas</td></tr>';
+  }
+}
+
+function showMoveForm() {
+  // Verificar que los datos de la máquina estén cargados
+  if (!window.machineData || !window.machineData.currentLocationId) {
+    showAlert("Primero debe cargarse la información de la máquina", "warning");
+    return;
   }
 
-  document.getElementById("m-title").innerText = machineData.companySerial || ('Máquina '+machineData.id);
-  document.getElementById("m-sub").innerText = `${machineData.brand||''} ${machineData.model||''}`;
-
-  document.getElementById("m-info").innerHTML = `
-    <tr><th>Serial</th><td>${machineData.companySerial||''}</td></tr>
-    <tr><th>Número</th><td>${machineData.companyNumber||''}</td></tr>
-    <tr><th>Año</th><td>${machineData.year||''}</td></tr>
-    <tr><th>Notas</th><td>${machineData.notes||''}</td></tr>
-  `;
-
-  const locName = locationsCache.find(l=>l.id===machineData.currentLocationId)?.name || 'N/A';
-  document.getElementById("m-location").innerHTML = `
-    <tr><th>Ubicación</th><td>${locName}</td></tr>
-  `;
-
-  const moves = await machineService.movements(id).then(r=>r.data||r).catch(()=>[]);
-  const mvT = document.getElementById("m-movements");
-  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ 
-    (moves||[]).map(x=>{
-      const fromLoc = locationsCache.find(l=>l.id===x.fromLocationId)?.name || '';
-      const toLoc = locationsCache.find(l=>l.id===x.toLocationId)?.name || '';
-      return `<tr>
-        <td>${new Date(x.effectiveDate).toLocaleString()}</td>
-        <td>${fromLoc}</td>
-        <td>${toLoc}</td>
-        <td>${x.movementType||''}</td>
-        <td>${x.reason||''}</td>
-      </tr>`;
-    }).join('') + '</tbody>';
-
-  const meters = await machineService.meterReadings(id).then(r=>r.data||r).catch(()=>[]);
-  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + 
-    (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
-}
-
-function showMoveForm(){
-  const sel = document.getElementById("new-location");
-  sel.innerHTML = '<option value="">Seleccione ubicación</option>' +
-    locationsCache.map(l=>`<option value="${l.id}">${l.name}</option>`).join('');
+  const select = document.getElementById("new-location");
+  
+  // Limpiar y llenar el select con ubicaciones
+  select.innerHTML = '<option value="">Seleccione ubicación destino</option>';
+  
+  if (window.locationsCache && window.locationsCache.length > 0) {
+    window.locationsCache.forEach(loc => {
+      if (loc.id !== window.machineData.currentLocationId) {
+        const option = document.createElement("option");
+        option.value = loc.id;
+        option.textContent = `${loc.name}${loc.address ? ' - ' + loc.address : ''}`;
+        select.appendChild(option);
+      }
+    });
+  } else {
+    showAlert("No hay ubicaciones disponibles", "warning");
+  }
+  
   document.getElementById("move-form").style.display = "block";
+  document.getElementById("move-reason").value = "";
 }
 
-function hideMoveForm(){
+function hideMoveForm() {
   document.getElementById("move-form").style.display = "none";
 }
 
-async function saveMovement(){
+async function saveMovement() {
+  // Verificar que los datos estén cargados
+  if (!window.machineData) {
+    showAlert("Los datos de la máquina no están cargados", "danger");
+    return;
+  }
+
   const toId = parseInt(document.getElementById("new-location").value);
-  const reason = document.getElementById("move-reason").value;
-  if(!toId){ alert("Seleccione una ubicación destino"); return; }
+  const reason = document.getElementById("move-reason").value.trim();
+  
+  if (!toId) {
+    showAlert("Seleccione una ubicación destino válida", "warning");
+    return;
+  }
+  
+  if (!reason) {
+    showAlert("Ingrese la razón del movimiento", "warning");
+    return;
+  }
 
   try {
+    // Crear movimiento
     await fetch(API_BASE + "/machine-movements", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        machineId: __MID,
-        fromLocationId: machineData.currentLocationId,
+        machineId: window.__MID,
+        fromLocationId: window.machineData.currentLocationId,
         toLocationId: toId,
         movementType: "REUBICACION",
         reason: reason,
@@ -1205,20 +1433,27 @@ async function saveMovement(){
       })
     });
 
-    await machineService.update(__MID, {
-      ...machineData,
+    // Actualizar ubicación actual de la máquina
+    const updateData = {
+      ...window.machineData,
       currentLocationId: toId
-    });
+    };
+    
+    await machineService.update(window.__MID, updateData);
 
-    showAlert("Movimiento registrado correctamente","success");
+    showAlert("Movimiento registrado correctamente", "success");
     hideMoveForm();
-    loadDetail();
-  } catch(err){
+    
+    // Recargar datos
+    await loadDetail();
+    
+  } catch(err) {
     console.error("Error guardando movimiento:", err);
-    showAlert("Error al guardar movimiento","danger");
+    showAlert("Error al guardar el movimiento: " + err.message, "danger");
   }
 }
 
+// Cargar detalles cuando el documento esté listo
 document.addEventListener("DOMContentLoaded", loadDetail);
 </script>
 
@@ -1320,7 +1555,9 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
 </div>
 
 <script>
-    let locationsCache = [];
+    if (typeof locationsCache === 'undefined') {
+    locationsCache = [];
+}
 
     async function loadLocations() {
         try {
