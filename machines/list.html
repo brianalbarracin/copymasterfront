@@ -14,8 +14,9 @@
         <table class="table table-hover">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th>
-                    <th>Modelo</th>
+                    <th>Serial</th>
+                    <th>Número</th>
+                    <th>Modelo / Marca</th>
                     <th>Cliente</th>
                     <th>Ubicación</th>
                     <th>Acciones</th>
@@ -23,7 +24,7 @@
             </thead>
             <tbody id="machines-tbody">
                 <tr>
-                    <td colspan="5" class="text-center">Cargando máquinas...</td>
+                    <td colspan="6" class="text-center">Cargando máquinas...</td>
                 </tr>
             </tbody>
         </table>
@@ -31,22 +32,40 @@
 </div>
 
 <script>
-    async function loadMachines(query="") {
+    let locationsCache = [];
+
+    async function loadLocations() {
+        try {
+            locationsCache = await locationService.list();
+        } catch (err) {
+            console.error("Error cargando locations:", err);
+            showAlert("No se pudieron cargar las ubicaciones", "danger");
+            locationsCache = [];
+        }
+    }
+
+    async function loadMachines(query = "") {
         try {
             const machines = query 
                 ? await machineService.search(query) 
                 : await machineService.list();
+
             const tbody = document.getElementById("machines-tbody");
             tbody.innerHTML = "";
 
             if (machines && machines.length > 0) {
                 machines.forEach(m => {
+                    const loc = locationsCache.find(l => l.id === m.currentLocationId);
                     tbody.innerHTML += `
                         <tr>
-                            <td>${m.id}</td>
-                            <td>${m.model}</td>
+                            <td>${m.companySerial || 'N/A'}</td>
+                            <td>${m.companyNumber || ''}</td>
+                            <td>
+                                ${m.model || 'N/A'}<br>
+                                <small>${m.brand || ''}</small>
+                            </td>
                             <td>${m.customerName || 'N/A'}</td>
-                            <td>${m.location || ''}</td>
+                            <td>${loc ? loc.name : ''}</td>
                             <td>
                                 <button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id=${m.id}')">
                                     <i class="fas fa-eye"></i>
@@ -62,7 +81,7 @@
                     `;
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No se encontraron máquinas</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center">No se encontraron máquinas</td></tr>`;
             }
         } catch (error) {
             console.error("Error loading machines:", error);
@@ -82,8 +101,11 @@
         }
     }
 
-    // 🚀 Cargar inmediatamente cuando se inyecta la vista
-    loadMachines();
+    // 🚀 Cargar locations primero y luego machines
+    (async () => {
+        await loadLocations();
+        await loadMachines();
+    })();
 
     document.getElementById("machine-search").addEventListener("input", (e) => {
         loadMachines(e.target.value);
