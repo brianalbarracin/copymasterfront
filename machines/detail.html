@@ -41,7 +41,7 @@
 
 <script>
 let machineData = null;
-let locationsCache = [];
+indow.locationsCache = window.locationsCache || [];
 
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
