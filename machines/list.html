@@ -32,7 +32,9 @@
 </div>
 
 <script>
-    let locationsCache = [];
+    if (typeof locationsCache === 'undefined') {
+    locationsCache = [];
+}
 
     async function loadLocations() {
         try {
