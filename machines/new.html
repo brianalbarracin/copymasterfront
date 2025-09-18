@@ -49,6 +49,13 @@
       </select>
     </div>
 
+<div class="col-md-6">
+  <label class="form-label">Ubicación actual</label>
+  <select class="form-select" name="currentLocationId" id="machine-location" required>
+    <option value="">Seleccione una ubicación</option>
+  </select>
+</div>
+
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
       <button class="btn btn-outline-secondary" type="button" onclick="appLoad('machines/list.html')">Cancelar</button>
@@ -57,27 +64,36 @@
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    // Cargar ubicaciones desde el backend
+    const res = await fetch(API_BASE + "/locations");
+    const locations = await res.json();
+
+    const select = document.getElementById("machine-location");
+    (locations || []).forEach(loc => {
+      const opt = document.createElement("option");
+      opt.value = loc.id;
+      opt.textContent = loc.name + (loc.address ? " - " + loc.address : "");
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error cargando locations", err);
+    showAlert("No se pudieron cargar las ubicaciones","danger");
+  }
+});
+
 document.getElementById("form-create-machine").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const form = e.target;
-
-  if (!form.checkValidity()) {
-    form.classList.add('was-validated');
-    return;
-  }
-
-  const data = Object.fromEntries(new FormData(form));
-
-  // Convertir valores numéricos
-  if (data.year) data.year = parseInt(data.year);
-  if (data.initialReading) data.initialReading = parseInt(data.initialReading);
+  const data = Object.fromEntries(new FormData(e.target));
+  data.year = data.year ? parseInt(data.year) : null;  // si tienes año como número
 
   try {
     await machineService.create(data);
-    alert("✅ Máquina creada correctamente");
-    appLoad('machines/list.html');
+    showAlert("Máquina creada correctamente","success");
+    appLoad("machines/list.html");
   } catch (err) {
-    alert("❌ Error al crear máquina: " + err.message);
+    showAlert("Error creando máquina: " + err.message,"danger");
   }
 });
 </script>

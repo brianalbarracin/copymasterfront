@@ -246,11 +246,16 @@ const customerService = {
             .then(r => r.json()).then(res => res.data),
 
         create: (data) => fetch(API_BASE + "/machines", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
-
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+}).then(async r => {
+    if (!r.ok) {
+        const text = await r.text();
+        throw new Error("Error en backend: " + text);
+    }
+    return r.json();
+}).then(res => res.data),
         update: (id, data) => fetch(API_BASE + "/machines/" + id, {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
@@ -1281,11 +1286,11 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadMachines();
-        document.getElementById("machine-search").addEventListener("input", (e) => {
-            loadMachines(e.target.value);
-        });
+    // 🚀 Cargar inmediatamente cuando se inyecta la vista
+    loadMachines();
+
+    document.getElementById("machine-search").addEventListener("input", (e) => {
+        loadMachines(e.target.value);
     });
 </script>
 
@@ -1330,8 +1335,16 @@ document.getElementById("form-edit-machine").addEventListener("submit", async (e
       <input class="form-control" name="readingNotes" placeholder="Ej: Lectura inicial al instalar">
     </div>
 
-    <!-- Estado oculto (por defecto ACTIVE) -->
-    <input type="hidden" name="status" value="ACTIVE">
+    <!-- 🔹 Selector de estado -->
+    <div class="col-md-6">
+      <label class="form-label">Estado</label>
+      <select class="form-select" name="status" required>
+        <option value="BODEGA" selected>Bodega</option>
+        <option value="INSTALADA">Instalada</option>
+        <option value="MANTENIMIENTO">Mantenimiento</option>
+        <option value="RETIRADA">Retirada</option>
+      </select>
+    </div>
 
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
