@@ -127,16 +127,20 @@
     window.machineData = null;
 
     async function loadDetail(){
-        console.log("🔍 INICIANDO loadDetail()");
-        const params = new URLSearchParams(location.search);
-        const id = params.get("id");
-        
-        console.log("📋 ID obtenido de URL:", id);
-        
-        if(!id) {
-            showAlert("ID de máquina no especificado", "danger");
-            return;
-        }
+        onsole.log("🔍 INICIANDO loadDetail()");
+    console.log("📍 URL completa:", window.location.href);
+    console.log("🔗 Query string:", window.location.search);
+    
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    
+    console.log("📋 ID obtenido:", id);
+    
+    if(!id) {
+        console.error("❌ No se encontró ID en la URL");
+        showAlert("ID de máquina no especificado", "danger");
+        return;
+    }
         
         window.__MID = id;
 
