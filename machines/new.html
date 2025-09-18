@@ -66,9 +66,10 @@
 <script>
 (async () => {
   try {
-    const locations = await locationService.list(); // usa tu locationService
+    const locations = await locationService.list();
     const select = document.getElementById("machine-location");
     select.innerHTML = '<option value="">Seleccione una ubicación</option>';
+    
     locations.forEach(loc => {
       const opt = document.createElement("option");
       opt.value = loc.id;
@@ -77,7 +78,7 @@
     });
   } catch (err) {
     console.error("Error cargando locations", err);
-    showAlert("No se pudieron cargar las ubicaciones","danger");
+    showAlert("No se pudieron cargar las ubicaciones", "danger");
   }
 })();
 
@@ -88,10 +89,10 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
 
   try {
     await machineService.create(data);
-    showAlert("Máquina creada correctamente","success");
+    showAlert("Máquina creada correctamente", "success");
     appLoad("machines/list.html");
   } catch (err) {
-    showAlert("Error creando máquina: " + err.message,"danger");
+    showAlert("Error creando máquina: " + err.message, "danger");
   }
 });
 </script>
