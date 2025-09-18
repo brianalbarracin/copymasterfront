@@ -1,5 +1,4 @@
-
-<<div class="card p-3">
+<div class="card p-3"> detail
   <div class="d-flex justify-content-between align-items-start mb-3">
     <div>
       <h4 id="m-title">Máquina</h4>
@@ -41,144 +40,52 @@
 </div>
 
 <script>
-let machineData = null;
-let locationsCache = [];
-
-async function loadLocations() {
-  try {
-    const response = await fetch(API_BASE + "/locations");
-    if (!response.ok) throw new Error("Error cargando ubicaciones");
-    locationsCache = await response.json();
-  } catch (err) {
-    console.error("Error loading locations:", err);
-    showAlert("Error cargando ubicaciones", "danger");
-  }
-}
+var machineData = null; // 👈 usamos locationsCache global definida en index.html
 
 async function loadDetail(){
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
-  if(!id) {
-    showAlert("ID de máquina no especificado", "danger");
-    return;
-  }
-  
+  if(!id) return;
   window.__MID = id;
 
-  try {
-    // Cargar ubicaciones primero
-    await loadLocations();
-    
-    // Cargar datos de la máquina
-    const response = await fetch(API_BASE + "/machines/" + id);
-    if (!response.ok) throw new Error("Error cargando máquina");
-    
-    const result = await response.json();
-    machineData = result.data || result;
-    
-    if (!machineData) {
-      showAlert("Máquina no encontrada", "danger");
-      return;
-    }
-
-    document.getElementById("m-title").innerText = machineData.companySerial || ('Máquina '+machineData.id);
-    document.getElementById("m-sub").innerText = `${machineData.brand||''} ${machineData.model||''}`;
-
-    document.getElementById("m-info").innerHTML = `
-      <tr><th>Serial</th><td>${machineData.companySerial||''}</td></tr>
-      <tr><th>Número</th><td>${machineData.companyNumber||''}</td></tr>
-      <tr><th>Año</th><td>${machineData.year||''}</td></tr>
-      <tr><th>Notas</th><td>${machineData.notes||''}</td></tr>
-    `;
-
-    const locName = locationsCache.find(l=>l.id===machineData.currentLocationId)?.name || 'N/A';
-    document.getElementById("m-location").innerHTML = `
-      <tr><th>Ubicación</th><td>${locName}</td></tr>
-      <tr><th>Estado</th><td>${machineData.status || 'N/A'}</td></tr>
-    `;
-
-    // Cargar movimientos
-    await loadMovements(id);
-    
-    // Cargar lecturas
-    await loadMeterReadings(id);
-
-  } catch(err){
-    console.error("Error cargando detalle:", err);
-    showAlert("Error cargando máquina: " + err.message,"danger");
+  machineData = await machineService.get(id).then(r=>r.data||r);
+  if (!locationsCache || locationsCache.length === 0) {
+    locationsCache = await locationService.list();
   }
-}
 
-async function loadMovements(machineId) {
-  try {
-    const response = await fetch(API_BASE + "/machine-movements?machineId=" + machineId);
-    if (!response.ok) throw new Error("Error cargando movimientos");
-    
-    const result = await response.json();
-    const moves = result.data || result || [];
-    
-    const mvT = document.getElementById("m-movements");
-    mvT.innerHTML = `
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>De</th>
-          <th>A</th>
-          <th>Tipo</th>
-          <th>Razón</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${moves.map(x => {
-          const fromLoc = locationsCache.find(l=>l.id===x.fromLocationId)?.name || x.fromLocationId || '';
-          const toLoc = locationsCache.find(l=>l.id===x.toLocationId)?.name || x.toLocationId || '';
-          return `
-            <tr>
-              <td>${x.effectiveDate ? new Date(x.effectiveDate).toLocaleString() : 'N/A'}</td>
-              <td>${fromLoc}</td>
-              <td>${toLoc}</td>
-              <td>${x.movementType||''}</td>
-              <td>${x.reason||''}</td>
-            </tr>`;
-        }).join('') || '<tr><td colspan="5" class="text-center">No hay movimientos</td></tr>'}
-      </tbody>
-    `;
-  } catch(err) {
-    console.error("Error cargando movimientos:", err);
-    document.getElementById("m-movements").innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error cargando movimientos</td></tr>';
-  }
-}
+  document.getElementById("m-title").innerText = machineData.companySerial || ('Máquina '+machineData.id);
+  document.getElementById("m-sub").innerText = `${machineData.brand||''} ${machineData.model||''}`;
 
-async function loadMeterReadings(machineId) {
-  try {
-    const response = await fetch(API_BASE + "/meter-readings?machineId=" + machineId);
-    if (!response.ok) throw new Error("Error cargando lecturas");
-    
-    const result = await response.json();
-    const meters = result.data || result || [];
-    
-    document.getElementById("m-meter").innerHTML = `
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Lectura</th>
-          <th>Notas</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${meters.map(mr => `
-          <tr>
-            <td>${mr.readingDate ? new Date(mr.readingDate).toLocaleString() : 'N/A'}</td>
-            <td>${mr.reading || 'N/A'}</td>
-            <td>${mr.notes || ''}</td>
-          </tr>`
-        ).join('') || '<tr><td colspan="3" class="text-center">No hay lecturas</td></tr>'}
-      </tbody>
-    `;
-  } catch(err) {
-    console.error("Error cargando lecturas:", err);
-    document.getElementById("m-meter").innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error cargando lecturas</td></tr>';
-  }
+  document.getElementById("m-info").innerHTML = `
+    <tr><th>Serial</th><td>${machineData.companySerial||''}</td></tr>
+    <tr><th>Número</th><td>${machineData.companyNumber||''}</td></tr>
+    <tr><th>Año</th><td>${machineData.year||''}</td></tr>
+    <tr><th>Notas</th><td>${machineData.notes||''}</td></tr>
+  `;
+
+  const locName = locationsCache.find(l=>l.id===machineData.currentLocationId)?.name || 'N/A';
+  document.getElementById("m-location").innerHTML = `
+    <tr><th>Ubicación</th><td>${locName}</td></tr>
+  `;
+
+  const moves = await machineService.movements(id).then(r=>r.data||r).catch(()=>[]);
+  const mvT = document.getElementById("m-movements");
+  mvT.innerHTML = '<thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Tipo</th><th>Razón</th></tr></thead><tbody>'+ 
+    (moves||[]).map(x=>{
+      const fromLoc = locationsCache.find(l=>l.id===x.fromLocationId)?.name || '';
+      const toLoc = locationsCache.find(l=>l.id===x.toLocationId)?.name || '';
+      return `<tr>
+        <td>${new Date(x.effectiveDate).toLocaleString()}</td>
+        <td>${fromLoc}</td>
+        <td>${toLoc}</td>
+        <td>${x.movementType||''}</td>
+        <td>${x.reason||''}</td>
+      </tr>`;
+    }).join('') + '</tbody>';
+
+  const meters = await machineService.meterReadings(id).then(r=>r.data||r).catch(()=>[]);
+  document.getElementById("m-meter").innerHTML = '<thead><tr><th>Fecha</th><th>Lectura</th><th>Técnico</th></tr></thead><tbody>' + 
+    (meters||[]).map(mr=>`<tr><td>${new Date(mr.readingDate).toLocaleString()}</td><td>${mr.reading}</td><td>${mr.technicianId||''}</td></tr>`).join('') + '</tbody>';
 }
 
 function showMoveForm(){
@@ -193,64 +100,37 @@ function hideMoveForm(){
 }
 
 async function saveMovement(){
-  const toId = document.getElementById("new-location").value;
+  const toId = parseInt(document.getElementById("new-location").value);
   const reason = document.getElementById("move-reason").value;
-  
-  if(!toId){
-    showAlert("Seleccione una ubicación destino", "warning");
-    return;
-  }
+  if(!toId){ alert("Seleccione una ubicación destino"); return; }
 
   try {
-    const movementData = {
-      machineId: __MID,
-      fromLocationId: machineData.currentLocationId,
-      toLocationId: parseInt(toId),
-      movementType: "REUBICACION",
-      reason: reason,
-      effectiveDate: new Date().toISOString()
-    };
-
-    // Crear movimiento
-    const response = await fetch(API_BASE + "/machine-movements", {
+    await fetch(API_BASE + "/machine-movements", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(movementData)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Error creando movimiento");
-    }
-
-    // Actualizar la ubicación actual de la máquina
-    const updateResponse = await fetch(API_BASE + "/machines/" + __MID, {
-      method: "PUT",
-      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        ...machineData,
-        currentLocationId: parseInt(toId)
+        machineId: __MID,
+        fromLocationId: machineData.currentLocationId,
+        toLocationId: toId,
+        movementType: "REUBICACION",
+        reason: reason,
+        effectiveDate: new Date().toISOString()
       })
     });
 
-    if (!updateResponse.ok) {
-      throw new Error("Error actualizando ubicación de la máquina");
-    }
+    await machineService.update(__MID, {
+      ...machineData,
+      currentLocationId: toId
+    });
 
     showAlert("Movimiento registrado correctamente","success");
     hideMoveForm();
-    
-    // Recargar los datos
-    await loadDetail();
-    
+    loadDetail();
   } catch(err){
     console.error("Error guardando movimiento:", err);
-    showAlert("Error al guardar movimiento: " + err.message,"danger");
+    showAlert("Error al guardar movimiento","danger");
   }
 }
 
-// Inicializar cuando se carga la página
-document.addEventListener("DOMContentLoaded", function() {
-  loadDetail();
-});
+document.addEventListener("DOMContentLoaded", loadDetail);
 </script>
