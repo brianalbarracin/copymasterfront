@@ -298,6 +298,64 @@ async function loadDetail(){
     // Ejecutar la carga
     await loadDetail();
 
+
+
+function showMoveForm() {
+  const form = document.getElementById("move-form");
+  form.style.display = "block";
+  const select = document.getElementById("new-location");
+  select.innerHTML = '<option value="">Seleccione ubicación destino</option>';
+  (window.locationsCache || []).forEach(l => {
+    select.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+  });
+}
+
+function hideMoveForm() {
+  document.getElementById("move-form").style.display = "none";
+}
+
+async function saveMovement() {
+  const toLocationId = document.getElementById("new-location").value;
+  const reason = document.getElementById("move-reason").value;
+
+  if (!toLocationId) {
+    alert("Debe seleccionar una ubicación destino");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/machine-movements`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        machineId: parseInt(window.__MID),
+        fromLocationId: window.machineData.currentLocationId,
+        toLocationId: parseInt(toLocationId),
+        movementType: "TRASLADO",
+        reason: reason
+      })
+    });
+
+    if (!res.ok) throw new Error("Error guardando movimiento");
+
+    await loadMovements(window.__MID);
+    await loadDetail(); // refresca info de máquina (ubicación actual)
+
+    hideMoveForm();
+    document.getElementById("move-reason").value = "";
+  } catch (err) {
+    console.error("❌ Error guardando movimiento:", err);
+    alert("Error guardando movimiento");
+  }
+}
+
+
+
+
+
+
+
+
 })();
 
 
