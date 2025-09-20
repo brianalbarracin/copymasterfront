@@ -94,22 +94,16 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
   data.year = data.year ? parseInt(data.year) : null;
   data.currentLocationId = data.currentLocationId ? parseInt(data.currentLocationId) : null;
 
-  // Buscar cliente asociado a la ubicación
+  // 🔹 Buscar el cliente según la ubicación elegida
   let selectedCustomerId = null;
-  if (data.currentLocationId) {
-    try {
-      const customerResponse = await fetch(`${API_BASE}/customers/by-location/${data.currentLocationId}`);
-      if (customerResponse.ok) {
-        const customerData = await customerResponse.json();
-        if (customerData.data) {
-          selectedCustomerId = customerData.data.id;
-        }
-      }
-    } catch (err) {
-      console.warn("⚠️ No se pudo obtener cliente para la ubicación:", err);
+  if (window.customersCache && data.currentLocationId) {
+    const customer = window.customersCache.find(c => c.location && c.location.id === data.currentLocationId);
+    if (customer) {
+      selectedCustomerId = customer.id;
     }
   }
 
+  // 🔹 Asignar el cliente al payload
   data.currentCustomerId = selectedCustomerId;
 
   try {
