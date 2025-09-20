@@ -340,6 +340,7 @@
         currentCustomerId: newCustomerId !== undefined ? newCustomerId : null
       };
 
+      console.log("📤 Payload final al update:", JSON.stringify(updatePayload, null, 2));
       console.log("📤 PUT /machines payload:", updatePayload);
 
       const upd = await machineService.update(window.__MID, updatePayload);

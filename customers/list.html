@@ -30,7 +30,7 @@
 <script>
     async function loadCustomers(){
         try {
-            const customers = await customerService.list(); // ahora devuelve el array
+            const customers = await customerService.list();
             const tbody = document.getElementById("customers-tbody");
             tbody.innerHTML = "";
 
@@ -50,8 +50,15 @@
                         <td>${c.email || ""}</td>
                         <td>${c.address || ""}</td>
                         <td class="table-actions text-end">
-                            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-info" onclick="loadCustomerDetail(${c.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="appLoad('customers/edit.html?id=${c.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -72,6 +79,12 @@
             showAlert("Error eliminando: " + err.message,"danger");
         }
     }
+
+    function loadCustomerDetail(id) {
+        sessionStorage.setItem('selectedCustomerId', id);
+        appLoad('customers/detail.html');
+    }
+
 
     // Autoejecutar inmediatamente cuando el snippet se inyecta
     (async function(){

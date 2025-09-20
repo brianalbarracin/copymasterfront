@@ -1,29 +1,44 @@
+<!-- service_requests/new.html - Versión mejorada -->
 <div class="card p-3">
   <h4>Nueva Solicitud</h4>
   <form id="form-new-request" class="row g-3">
-    <div class="col-md-6"><label class="form-label">Máquina ID *</label>
-      <input class="form-control" name="machineId" required></div>
-    <div class="col-md-6"><label class="form-label">Cliente ID</label>
-      <input class="form-control" name="customerId"></div>
-    <div class="col-md-6"><label class="form-label">Canal</label>
+    <div class="col-md-6">
+      <label class="form-label">Máquina ID *</label>
+      <input class="form-control" name="machineId" id="machine-id" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cliente ID</label>
+      <input class="form-control" name="customerId" id="customer-id">
+    </div>
+    
+    <!-- Resto del formulario sin cambios -->
+    <div class="col-md-6">
+      <label class="form-label">Canal</label>
       <select name="reportedChannel" class="form-select">
         <option value="telefono">Teléfono</option>
         <option value="whatsapp">WhatsApp</option>
         <option value="email">Email</option>
         <option value="portal">Portal</option>
-      </select></div>
-    <div class="col-md-6"><label class="form-label">Tipo de Servicio</label>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Tipo de Servicio</label>
       <select name="serviceType" class="form-select">
         <option value="correctivo">Correctivo</option>
         <option value="preventivo">Preventivo</option>
         <option value="diagnostico">Diagnóstico</option>
         <option value="toner">Toner</option>
         <option value="otro">Otro</option>
-      </select></div>
-    <div class="col-12"><label class="form-label">Descripción</label>
-      <textarea class="form-control" name="description" rows="3"></textarea></div>
-    <div class="col-12"><label class="form-label">Causa Raíz</label>
-      <input class="form-control" name="rootCause"></div>
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Descripción</label>
+      <textarea class="form-control" name="description" rows="3"></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Causa Raíz</label>
+      <input class="form-control" name="rootCause">
+    </div>
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
       <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
@@ -32,6 +47,34 @@
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", async function() {
+  // Verificar si hay máquina y cliente seleccionados
+  const machineId = sessionStorage.getItem('selectedMachineId');
+  const customerId = sessionStorage.getItem('selectedCustomerId');
+  
+  if (machineId) {
+    document.getElementById('machine-id').value = machineId;
+    
+    // Intentar obtener información de la máquina para mostrar detalles
+    try {
+      const machine = await machineService.get(machineId);
+      // Podrías mostrar información de la máquina al usuario si lo deseas
+      console.log("Máquina seleccionada:", machine);
+    } catch (err) {
+      console.error("Error obteniendo información de la máquina:", err);
+    }
+  }
+  
+  if (customerId) {
+    document.getElementById('customer-id').value = customerId;
+  }
+  
+  // Limpiar el sessionStorage después de usar los valores
+  sessionStorage.removeItem('selectedMachineId');
+  sessionStorage.removeItem('selectedCustomerId');
+});
+
+// El resto del script sin cambios
 document.getElementById("form-new-request").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
