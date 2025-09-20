@@ -23,9 +23,7 @@
         <div class="card-body">
           <table class="table table-sm">
             <tbody id="m-info">
-              <tr>
-                <td colspan="2" class="text-center text-muted">Cargando información...</td>
-              </tr>
+              <tr><td colspan="2" class="text-center text-muted">Cargando información...</td></tr>
             </tbody>
           </table>
         </div>
@@ -39,9 +37,7 @@
         <div class="card-body">
           <table class="table table-sm">
             <tbody id="m-location">
-              <tr>
-                <td colspan="2" class="text-center text-muted">Cargando ubicación...</td>
-              </tr>
+              <tr><td colspan="2" class="text-center text-muted">Cargando ubicación...</td></tr>
             </tbody>
           </table>
           <button class="btn btn-sm btn-primary mt-2" onclick="showMoveForm()" id="btn-move">
@@ -124,44 +120,42 @@
 </div>
 
 <script>
-  (async function () {
+(async function() {
     console.log("🔍 Iniciando carga de detalle de máquina");
     window.machineData = null;
 
-    async function loadDetail() {
-      console.log("🔍 INICIANDO loadDetail()");
-      const params = new URLSearchParams(location.search);
-      const id = params.get("id");
-      if (!id) {
-        showAlert("ID de máquina no especificado", "danger");
-        return;
-      }
-      window.__MID = id;
-
-      try {
-        document.getElementById("m-title").innerText = "Cargando...";
-        document.getElementById("m-sub").innerText = "Por favor espere";
-        document.getElementById("btn-move").disabled = true;
-
-        window.machineData = await machineService.get(id);
-
-        // Cargar ubicaciones si no están en cache
-        if (!window.locationsCache || window.locationsCache.length === 0) {
-          window.locationsCache = await locationService.list();
+    async function loadDetail(){
+        const params = new URLSearchParams(location.search);
+        let id = params.get("id") || sessionStorage.getItem('selectedMachineId');
+        if(!id) {
+            showAlert("ID de máquina no especificado", "danger");
+            return;
         }
-        // Cargar clientes si no están en cache
-        if (!window.customersCache || window.customersCache.length === 0) {
-          window.customersCache = await customerService.list();
-          console.log("📥 Clientes cargados:", window.customersCache.length);
-        }
+        window.__MID = id;
 
-        // Info básica
-        document.getElementById("m-title").innerText =
-          window.machineData.companySerial || `Máquina ${window.machineData.id}`;
-        document.getElementById("m-sub").innerText =
-          `${window.machineData.brand || 'Sin marca'} ${window.machineData.model || 'Sin modelo'}`;
+        try {
+            document.getElementById("m-title").innerText = "Cargando...";
+            document.getElementById("m-sub").innerText = "Por favor espere";
+            document.getElementById("btn-move").disabled = true;
 
-        document.getElementById("m-info").innerHTML = `
+            window.machineData = await machineService.get(id);
+
+            // Cargar ubicaciones si no están en cache
+            if (!window.locationsCache || window.locationsCache.length === 0) {
+                window.locationsCache = await locationService.list();
+            }
+            // Cargar clientes si no están en cache
+            if (!window.customersCache || window.customersCache.length === 0) {
+                window.customersCache = await customerService.list();
+            }
+
+            // Info básica
+            document.getElementById("m-title").innerText = 
+                window.machineData.companySerial || `Máquina ${window.machineData.id}`;
+            document.getElementById("m-sub").innerText = 
+                `${window.machineData.brand || 'Sin marca'} ${window.machineData.model || 'Sin modelo'}`;
+
+            document.getElementById("m-info").innerHTML = `
                 <tr><th>ID</th><td>${window.machineData.id || 'N/A'}</td></tr>
                 <tr><th>Serial</th><td>${window.machineData.companySerial || 'N/A'}</td></tr>
                 <tr><th>Número</th><td>${window.machineData.companyNumber || 'N/A'}</td></tr>
@@ -172,45 +166,45 @@
                 <tr><th>Notas</th><td>${window.machineData.notes || 'Sin notas'}</td></tr>
             `;
 
-        // Ubicación + Cliente
-        let locationName = "No asignada";
-        const location = window.locationsCache.find(l => l.id === window.machineData.currentLocationId);
-        if (location) locationName = location.name;
+            // Ubicación + Cliente
+            let locationName = "No asignada";
+            const location = window.locationsCache.find(l => l.id === window.machineData.currentLocationId);
+            if (location) locationName = location.name;
 
-        let customerName = "Cliente no asignado";
-        if (window.machineData.currentCustomerId) {
-          const customer = window.customersCache.find(c => c.id === window.machineData.currentCustomerId);
-          customerName = customer ? customer.name : `ID ${window.machineData.currentCustomerId}`;
-        }
+            let customerName = "Cliente no asignado";
+            if (window.machineData.currentCustomerId) {
+                const customer = window.customersCache.find(c => c.id === window.machineData.currentCustomerId);
+                customerName = customer ? customer.name : `ID ${window.machineData.currentCustomerId}`;
+            }
 
-        document.getElementById("m-location").innerHTML = `
+            document.getElementById("m-location").innerHTML = `
                 <tr><th>Ubicación Actual</th><td>${locationName}</td></tr>
                 <tr><th>ID Ubicación</th><td>${window.machineData.currentLocationId || 'N/A'}</td></tr>
                 <tr><th>Cliente Actual</th><td>${customerName}</td></tr>
             `;
 
-        document.getElementById("btn-move").disabled = false;
-        await loadMovements(id);
-        await loadMeterReadings(id);
+            document.getElementById("btn-move").disabled = false;
+            await loadMovements(id);
+            await loadMeterReadings(id);
 
-      } catch (err) {
-        console.error("❌ Error cargando detalle:", err);
-        showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
-      }
+        } catch(err) {
+            console.error("❌ Error cargando detalle:", err);
+            showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
+        }
     }
 
     async function loadMovements(machineId) {
-      const moves = await machineService.movements(machineId);
-      const tbody = document.querySelector("#m-movements tbody");
-      if (!moves || moves.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay movimientos registrados</td></tr>';
-        return;
-      }
-      tbody.innerHTML = moves.map(move => {
-        const fromLoc = window.locationsCache.find(l => l.id === move.fromLocationId)?.name || 'Desconocida';
-        const toLoc = window.locationsCache.find(l => l.id === move.toLocationId)?.name || 'Desconocida';
-        const date = move.effectiveDate ? new Date(move.effectiveDate).toLocaleDateString() : 'N/A';
-        return `
+        const moves = await machineService.movements(machineId);
+        const tbody = document.querySelector("#m-movements tbody");
+        if (!moves || moves.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay movimientos registrados</td></tr>';
+            return;
+        }
+        tbody.innerHTML = moves.map(move => {
+            const fromLoc = window.locationsCache.find(l => l.id === move.fromLocationId)?.name || 'Desconocida';
+            const toLoc = window.locationsCache.find(l => l.id === move.toLocationId)?.name || 'Desconocida';
+            const date = move.effectiveDate ? new Date(move.effectiveDate).toLocaleDateString() : 'N/A';
+            return `
                 <tr>
                     <td>${date}</td>
                     <td>${fromLoc}</td>
@@ -219,122 +213,103 @@
                     <td>${move.reason || 'Sin razón especificada'}</td>
                 </tr>
             `;
-      }).join('');
+        }).join('');
     }
 
     async function loadMeterReadings(machineId) {
-      const meters = await machineService.meterReadings(machineId);
-      const tbody = document.querySelector("#m-meter tbody");
-      if (!meters || meters.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay lecturas registradas</td></tr>';
-        return;
-      }
-      tbody.innerHTML = meters.map(meter => {
-        const date = meter.readingDate ? new Date(meter.readingDate).toLocaleDateString() : 'N/A';
-        return `
+        const meters = await machineService.meterReadings(machineId);
+        const tbody = document.querySelector("#m-meter tbody");
+        if (!meters || meters.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay lecturas registradas</td></tr>';
+            return;
+        }
+        tbody.innerHTML = meters.map(meter => {
+            const date = meter.readingDate ? new Date(meter.readingDate).toLocaleDateString() : 'N/A';
+            return `
                 <tr>
                     <td>${date}</td>
                     <td>${meter.reading || '0'}</td>
                     <td>${meter.notes || 'Sin notas'}</td>
                 </tr>
             `;
-      }).join('');
+        }).join('');
     }
 
     await loadDetail();
-  })();
+})();
 
-  function showMoveForm() {
-    const form = document.getElementById("move-form");
-    form.style.display = "block";
-    const select = document.getElementById("new-location");
-    select.innerHTML = '<option value="">Seleccione ubicación destino</option>';
-    (window.locationsCache || []).forEach(l => {
-      if (l.id !== window.machineData.currentLocationId) {
-        select.innerHTML += `<option value="${l.id}">${l.name}</option>`;
-      }
+function showMoveForm() {
+  const form = document.getElementById("move-form");
+  form.style.display = "block";
+  const select = document.getElementById("new-location");
+  select.innerHTML = '<option value="">Seleccione ubicación destino</option>';
+  (window.locationsCache || []).forEach(l => {
+    if (l.id !== window.machineData.currentLocationId) {
+      select.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+    }
+  });
+}
+
+function hideMoveForm() {
+  document.getElementById("move-form").style.display = "none";
+}
+
+async function saveMovement() {
+  const toLocationId = parseInt(document.getElementById("new-location").value);
+  const reason = document.getElementById("move-reason").value;
+
+  if (!toLocationId) {
+    alert("Debe seleccionar una ubicación destino");
+    return;
+  }
+
+  // Buscar el cliente asociado al nuevo location (si existe)
+  let newCustomerId = null;
+  if (window.customersCache) {
+    const cust = window.customersCache.find(
+      c => c.location && c.location.id === toLocationId
+    );
+    if (cust) {
+      newCustomerId = cust.id;
+    }
+  }
+
+  console.log("📌 Movimiento hacia locationId:", toLocationId);
+  console.log("📌 Cliente asociado encontrado:", newCustomerId ?? "Ninguno (bodega u otra ubicación)");
+
+  try {
+    // 1. Guardar el movimiento en historial
+    const res = await fetch(`${API_BASE}/machine-movements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        machineId: parseInt(window.__MID),
+        fromLocationId: window.machineData.currentLocationId,
+        toLocationId: toLocationId,
+        movementType: "TRASLADO",
+        reason: reason
+      })
     });
+
+    if (!res.ok) throw new Error("Error guardando movimiento");
+    await res.json();
+
+    // 2. Actualizar la máquina con la nueva ubicación y cliente (o null si no aplica)
+    await machineService.update(window.__MID, {
+      ...window.machineData,
+      currentLocationId: toLocationId,
+      currentCustomerId: newCustomerId // puede ser null si no hay cliente
+    });
+
+    console.log("✅ Máquina actualizada con locationId:", toLocationId, "y customerId:", newCustomerId);
+
+    // 3. Refrescar la vista
+    await appLoad(`machines/detail.html?id=${window.__MID}`);
+  } catch (err) {
+    console.error("❌ Error guardando movimiento:", err);
+    alert("Error guardando movimiento");
   }
+}
 
-  function hideMoveForm() {
-    document.getElementById("move-form").style.display = "none";
-  }
-
-  async function saveMovement() {
-    const toLocationId = parseInt(document.getElementById("new-location").value);
-    const reason = document.getElementById("move-reason").value;
-
-    if (!toLocationId) {
-      alert("Debe seleccionar una ubicación destino");
-      return;
-    }
-
-    try {
-      // 1) Buscar si hay un cliente asociado a esta ubicación
-      let newCustomerId = null;
-
-      // Primero intentamos usar el cache de clientes si está disponible
-      if (window.customersCache && window.customersCache.length > 0) {
-        const customer = window.customersCache.find(c => c.location && parseInt(c.location.id) === toLocationId);
-        if (customer) {
-          newCustomerId = customer.id;
-          console.log("✅ Cliente encontrado en cache:", customer.name, "ID:", newCustomerId);
-        }
-      } else {
-        // Si no hay cache, cargamos los clientes
-        console.log("📥 Cargando clients desde backend...");
-        window.customersCache = await customerService.list();
-        const customer = window.customersCache.find(c => c.location && parseInt(c.location.id) === toLocationId);
-        if (customer) {
-          newCustomerId = customer.id;
-          console.log("✅ Cliente encontrado después de cargar:", customer.name, "ID:", newCustomerId);
-        }
-      }
-
-      // Si no se encontró cliente, la ubicación es probablemente una bodega
-      if (newCustomerId === null) {
-        console.log("ℹ️  Ubicación sin cliente asociado (probablemente bodega)");
-      }
-
-      // 2) Guardar movimiento en historial
-      const mvResp = await fetch(`${API_BASE}/machine-movements`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          machineId: parseInt(window.__MID),
-          fromLocationId: window.machineData.currentLocationId,
-          toLocationId: toLocationId,
-          movementType: "TRASLADO",
-          reason: reason
-        })
-      });
-
-      if (!mvResp.ok) {
-        const txt = await mvResp.text().catch(() => mvResp.statusText);
-        throw new Error("Error guardando movimiento: " + mvResp.status + " " + txt);
-      }
-      await mvResp.json();
-
-      // 3) Actualizar la máquina con la nueva ubicación Y el cliente (si existe)
-      const updateData = {
-        ...window.machineData,
-        currentLocationId: toLocationId,
-        currentCustomerId: newCustomerId // Puede ser null para bodegas
-      };
-
-      console.log("📤 Actualizando máquina con:", updateData);
-
-      const updatedMachine = await machineService.update(window.__MID, updateData);
-
-      // 4) Refrescar la vista
-      showAlert("Movimiento registrado correctamente", "success");
-      hideMoveForm();
-      await loadDetail();
-
-    } catch (err) {
-      console.error("❌ Error guardando movimiento:", err);
-      showAlert("Error guardando movimiento: " + (err.message || err), "danger");
-    }
-  }
 
 </script>
