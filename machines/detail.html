@@ -263,23 +263,34 @@ async function saveMovement() {
     return;
   }
 
-  // Buscar el cliente asociado al nuevo location (si existe)
-  let newCustomerId = null;
-  if (window.customersCache) {
-    const cust = window.customersCache.find(
-      c => c.location && c.location.id === toLocationId
-    );
-    if (cust) {
-      newCustomerId = cust.id;
+  // Asegurarnos de tener customers en cache (si no, los cargamos)
+  if (!window.customersCache || !Array.isArray(window.customersCache) || window.customersCache.length === 0) {
+    try {
+      console.log("📥 Cargando customers desde backend...");
+      window.customersCache = await customerService.list();
+      console.log("📥 customers cargados:", (window.customersCache || []).length);
+    } catch (err) {
+      console.warn("⚠️ No se pudieron cargar customers:", err);
+      window.customersCache = [];
     }
   }
 
-  console.log("📌 Movimiento hacia locationId:", toLocationId);
-  console.log("📌 Cliente asociado encontrado:", newCustomerId ?? "Ninguno (bodega u otra ubicación)");
+  // Buscar el cliente asociado al nuevo location (si existe)
+  let newCustomerId = null;
+  if (window.customersCache && window.customersCache.length > 0) {
+    // log para depuración
+    console.log("🔎 Buscando customer para locationId:", toLocationId);
+    // muestra algunos entries para inspección si falla
+    if (window.customersCache.length <= 10) console.log("customersCache:", window.customersCache);
+    const cust = window.customersCache.find(c => c.location && parseInt(c.location.id) === toLocationId);
+    if (cust) newCustomerId = cust.id;
+  }
+
+  console.log("📌 Movimiento hacia locationId:", toLocationId, " -> customerId encontrado:", newCustomerId);
 
   try {
-    // 1. Guardar el movimiento en historial
-    const res = await fetch(`${API_BASE}/machine-movements`, {
+    // 1) Guardar movimiento en historial
+    const mvResp = await fetch(`${API_BASE}/machine-movements`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -291,25 +302,41 @@ async function saveMovement() {
       })
     });
 
-    if (!res.ok) throw new Error("Error guardando movimiento");
-    await res.json();
+    if (!mvResp.ok) {
+      const txt = await mvResp.text().catch(() => mvResp.statusText);
+      throw new Error("Error guardando movimiento: " + mvResp.status + " " + txt);
+    }
+    await mvResp.json(); // consumimos respuesta (no la usamos)
 
-    // 2. Actualizar la máquina con la nueva ubicación y cliente (o null si no aplica)
-    await machineService.update(window.__MID, {
-      ...window.machineData,
+    // 2) Armar payload EXPLÍCITO para actualizar la máquina (sobrescribe siempre currentCustomerId)
+    // No confiar ciegamente en ...window.machineData (puede traer cosas que backend no espera).
+    const payload = {
+      companySerial: window.machineData.companySerial || null,
+      companyNumber: window.machineData.companyNumber || null,
+      model: window.machineData.model || null,
+      brand: window.machineData.brand || null,
+      year: window.machineData.year || null,
+      status: window.machineData.status || null,
+      notes: window.machineData.notes || null,
+      initialReading: window.machineData.initialReading || null,
+      readingNotes: window.machineData.readingNotes || null,
       currentLocationId: toLocationId,
-      currentCustomerId: newCustomerId // puede ser null si no hay cliente
-    });
+      currentCustomerId: newCustomerId // puede ser null (bodega)
+    };
 
-    console.log("✅ Máquina actualizada con locationId:", toLocationId, "y customerId:", newCustomerId);
+    console.log("📤 PUT /machines payload:", payload);
 
-    // 3. Refrescar la vista
+    const upd = await machineService.update(window.__MID, payload);
+
+    // Debug: mostrar respuesta del backend (si la hay)
+    console.log("🔁 Respuesta update machine:", upd);
+
+    // 3) Refrescar la vista
     await appLoad(`machines/detail.html?id=${window.__MID}`);
   } catch (err) {
     console.error("❌ Error guardando movimiento:", err);
-    alert("Error guardando movimiento");
+    alert("Error guardando movimiento: " + (err.message || err));
   }
 }
-
 
 </script>
