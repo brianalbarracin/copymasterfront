@@ -66,7 +66,9 @@
 <script>
 (async () => {
   try {
+    // 🔹 Cargar ubicaciones
     const locations = await locationService.list();
+    window.locationsCache = locations; // cache opcional
     const select = document.getElementById("machine-location");
     select.innerHTML = '<option value="">Seleccione una ubicación</option>';
     
@@ -76,9 +78,13 @@
       opt.textContent = loc.name + (loc.address ? " - " + loc.address : "");
       select.appendChild(opt);
     });
+
+    // 🔹 Cargar clientes y cachearlos
+    window.customersCache = await customerService.list();
+
   } catch (err) {
-    console.error("Error cargando locations", err);
-    showAlert("No se pudieron cargar las ubicaciones", "danger");
+    console.error("Error cargando datos", err);
+    showAlert("No se pudieron cargar ubicaciones/clientes", "danger");
   }
 })();
 
@@ -86,6 +92,19 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
   data.year = data.year ? parseInt(data.year) : null;
+  data.currentLocationId = data.currentLocationId ? parseInt(data.currentLocationId) : null;
+
+  // 🔹 Buscar el cliente según la ubicación elegida
+  let selectedCustomerId = null;
+  if (window.customersCache && data.currentLocationId) {
+    const customer = window.customersCache.find(c => c.location && c.location.id === data.currentLocationId);
+    if (customer) {
+      selectedCustomerId = customer.id;
+    }
+  }
+
+  // 🔹 Asignar el cliente al payload
+  data.currentCustomerId = selectedCustomerId;
 
   try {
     await machineService.create(data);
@@ -95,4 +114,5 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
     showAlert("Error creando máquina: " + err.message, "danger");
   }
 });
+
 </script>
