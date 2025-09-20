@@ -263,7 +263,7 @@ async function saveMovement() {
     return;
   }
 
-  // Buscar el cliente asociado al nuevo location
+  // Buscar el cliente asociado al nuevo location (si existe)
   let newCustomerId = null;
   if (window.customersCache) {
     const cust = window.customersCache.find(
@@ -275,13 +275,13 @@ async function saveMovement() {
   }
 
   console.log("📌 Movimiento hacia locationId:", toLocationId);
-  console.log("📌 Cliente encontrado:", newCustomerId);
+  console.log("📌 Cliente asociado encontrado:", newCustomerId ?? "Ninguno (bodega u otra ubicación)");
 
   try {
-    // Guardar movimiento
+    // 1. Guardar el movimiento en historial
     const res = await fetch(`${API_BASE}/machine-movements`, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         machineId: parseInt(window.__MID),
         fromLocationId: window.machineData.currentLocationId,
@@ -294,16 +294,16 @@ async function saveMovement() {
     if (!res.ok) throw new Error("Error guardando movimiento");
     await res.json();
 
-    // Actualizar la máquina con nuevo location + nuevo customer
+    // 2. Actualizar la máquina con la nueva ubicación y cliente (o null si no aplica)
     await machineService.update(window.__MID, {
       ...window.machineData,
       currentLocationId: toLocationId,
-      currentCustomerId: newCustomerId || null  // ✅ se sobrescribe siempre
+      currentCustomerId: newCustomerId // puede ser null si no hay cliente
     });
 
     console.log("✅ Máquina actualizada con locationId:", toLocationId, "y customerId:", newCustomerId);
 
-    // Refrescar pantalla
+    // 3. Refrescar la vista
     await appLoad(`machines/detail.html?id=${window.__MID}`);
   } catch (err) {
     console.error("❌ Error guardando movimiento:", err);
