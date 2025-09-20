@@ -1143,25 +1143,103 @@ document.getElementById("form-create-customer").addEventListener("submit", async
 <div class="card p-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 id="c-name">Cliente</h4>
-    <button class="btn btn-outline-secondary" onclick="appLoad('customers/edit.html?id='+__CID)">
-      <i class="fas fa-edit me-1"></i> Editar
-    </button>
+    <div>
+      <button class="btn btn-outline-secondary me-2" onclick="appLoad('customers/edit.html?id='+__CID)">
+        <i class="fas fa-edit me-1"></i> Editar
+      </button>
+      <button class="btn btn-outline-secondary" onclick="appLoad('customers/list.html')">
+        <i class="fas fa-arrow-left me-1"></i> Volver
+      </button>
+    </div>
   </div>
 
-  <table class="table">
-    <tbody id="c-info"></tbody>
-  </table>
+  <!-- Información básica del cliente -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Información del Cliente</h6>
+    </div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <tbody id="c-info"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Máquinas del cliente -->
+  <div class="card mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h6 class="mb-0">Máquinas Asociadas</h6>
+      <span class="badge bg-primary" id="machine-count">0 máquinas</span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm">
+          <thead>
+            <tr>
+              <th>Serial</th>
+              <th>Modelo/Marca</th>
+              <th>Estado</th>
+              <th>Ubicación</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="customer-machines">
+            <tr><td colspan="5" class="text-center text-muted">Cargando máquinas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solicitudes del cliente -->
+  <div class="card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h6 class="mb-0">Solicitudes de Servicio</h6>
+      <span class="badge bg-primary" id="request-count">0 solicitudes</span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm">
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Máquina</th>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="customer-requests">
+            <tr><td colspan="6" class="text-center text-muted">Cargando solicitudes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
+// Variable global para almacenar datos del cliente
+window.customerData = null;
+
 async function loadCustomerDetail(){
   const params = new URLSearchParams(location.search);
-  const id = params.get("id");
-  if(!id) return;
-  window.__CID = id; // guardar id para reusar en editar
+  let id = params.get("id") || sessionStorage.getItem('selectedCustomerId');
+  
+  if(!id) {
+    showAlert("ID de cliente no especificado", "danger");
+    appLoad('customers/list.html');
+    return;
+  }
+  
+  window.__CID = id; // guardar id para reusar
 
   try {
+    // Cargar información del cliente
     const c = await customerService.get(id);
+    window.customerData = c;
+    
     document.getElementById("c-name").innerText = c.name || ("Cliente " + c.id);
     document.getElementById("c-info").innerHTML = `
       <tr><th>ID</th><td>${c.id}</td></tr>
@@ -1172,10 +1250,117 @@ async function loadCustomerDetail(){
       <tr><th>Email</th><td>${c.email || ""}</td></tr>
       <tr><th>Dirección</th><td>${c.address || ""}</td></tr>
     `;
+
+    // Cargar máquinas del cliente
+    await loadCustomerMachines(id);
+    
+    // Cargar solicitudes del cliente
+    await loadCustomerRequests(id);
+
   } catch(err){
-    showAlert("Error cargando cliente: " + err.message,"danger");
+    console.error("Error cargando cliente:", err);
+    showAlert("Error cargando cliente: " + err.message, "danger");
   }
 }
+
+async function loadCustomerMachines(customerId) {
+  try {
+    // Obtener todas las máquinas y filtrar por cliente
+    const allMachines = await machineService.list();
+    const customerMachines = allMachines.filter(m => m.currentCustomerId == customerId);
+    
+    document.getElementById("machine-count").innerText = `${customerMachines.length} máquinas`;
+    
+    const tbody = document.getElementById("customer-machines");
+    
+    if (customerMachines.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay máquinas asociadas</td></tr>';
+      return;
+    }
+    
+    // Cargar ubicaciones si no están en cache
+    if (!window.locationsCache || window.locationsCache.length === 0) {
+      window.locationsCache = await locationService.list();
+    }
+    
+    tbody.innerHTML = customerMachines.map(machine => {
+      const location = window.locationsCache.find(l => l.id === machine.currentLocationId);
+      return `
+        <tr>
+          <td>${machine.companySerial || 'N/A'}</td>
+          <td>${machine.model || 'N/A'} / ${machine.brand || 'N/A'}</td>
+          <td><span class="badge bg-secondary">${machine.status || 'N/A'}</span></td>
+          <td>${location ? location.name : 'Ubicación no disponible'}</td>
+          <td>
+            <button class="btn btn-sm btn-primary me-1" onclick="loadMachineDetail(${machine.id})">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-success" onclick="createServiceRequestForMachine(${machine.id}, ${customerId})">
+              <i class="fas fa-tools"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error("Error cargando máquinas del cliente:", err);
+    document.getElementById("customer-machines").innerHTML = 
+      '<tr><td colspan="5" class="text-center text-danger">Error cargando máquinas</td></tr>';
+  }
+}
+
+async function loadCustomerRequests(customerId) {
+  try {
+    // Obtener solicitudes del cliente
+    const requests = await serviceRequestService.list();
+    const customerRequests = requests.filter(r => r.customerId == customerId);
+    
+    document.getElementById("request-count").innerText = `${customerRequests.length} solicitudes`;
+    
+    const tbody = document.getElementById("customer-requests");
+    
+    if (customerRequests.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes registradas</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = customerRequests.map(request => {
+      const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
+      return `
+        <tr>
+          <td>${request.requestNumber || request.id}</td>
+          <td>${request.companySerial || 'N/A'}</td>
+          <td>${date}</td>
+          <td>${request.serviceType || 'N/A'}</td>
+          <td><span class="badge ${request.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${request.status || 'N/A'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="appLoad('service_requests/detail.html?id=${request.id}')">
+              <i class="fas fa-info-circle"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error("Error cargando solicitudes del cliente:", err);
+    document.getElementById("customer-requests").innerHTML = 
+      '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes</td></tr>';
+  }
+}
+
+// Función para crear solicitud para una máquina específica
+function createServiceRequestForMachine(machineId, customerId) {
+  sessionStorage.setItem('selectedMachineId', machineId);
+  sessionStorage.setItem('selectedCustomerId', customerId);
+  appLoad('service_requests/new.html');
+}
+
+// Función para cargar detalle de máquina (reutilizada)
+function loadMachineDetail(id) {
+  sessionStorage.setItem('selectedMachineId', id);
+  appLoad('machines/detail.html');
+}
+
 document.addEventListener("DOMContentLoaded", loadCustomerDetail);
 </script>
 
@@ -1271,7 +1456,7 @@ document.addEventListener("DOMContentLoaded", loadCustomerEdit);
 <script>
     async function loadCustomers(){
         try {
-            const customers = await customerService.list(); // ahora devuelve el array
+            const customers = await customerService.list();
             const tbody = document.getElementById("customers-tbody");
             tbody.innerHTML = "";
 
@@ -1291,8 +1476,15 @@ document.addEventListener("DOMContentLoaded", loadCustomerEdit);
                         <td>${c.email || ""}</td>
                         <td>${c.address || ""}</td>
                         <td class="table-actions text-end">
-                            <button class="btn btn-sm btn-primary" onclick="appLoad('customers/edit.html?id=${c.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-info" onclick="loadCustomerDetail(${c.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="appLoad('customers/edit.html?id=${c.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -1313,6 +1505,12 @@ document.addEventListener("DOMContentLoaded", loadCustomerEdit);
             showAlert("Error eliminando: " + err.message,"danger");
         }
     }
+
+    function loadCustomerDetail(id) {
+        sessionStorage.setItem('selectedCustomerId', id);
+        appLoad('customers/detail.html');
+    }
+
 
     // Autoejecutar inmediatamente cuando el snippet se inyecta
     (async function(){
@@ -2303,32 +2501,47 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\new.html =====
+<!-- service_requests/new.html - Versión mejorada -->
 <div class="card p-3">
   <h4>Nueva Solicitud</h4>
   <form id="form-new-request" class="row g-3">
-    <div class="col-md-6"><label class="form-label">Máquina ID *</label>
-      <input class="form-control" name="machineId" required></div>
-    <div class="col-md-6"><label class="form-label">Cliente ID</label>
-      <input class="form-control" name="customerId"></div>
-    <div class="col-md-6"><label class="form-label">Canal</label>
+    <div class="col-md-6">
+      <label class="form-label">Máquina ID *</label>
+      <input class="form-control" name="machineId" id="machine-id" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cliente ID</label>
+      <input class="form-control" name="customerId" id="customer-id">
+    </div>
+    
+    <!-- Resto del formulario sin cambios -->
+    <div class="col-md-6">
+      <label class="form-label">Canal</label>
       <select name="reportedChannel" class="form-select">
         <option value="telefono">Teléfono</option>
         <option value="whatsapp">WhatsApp</option>
         <option value="email">Email</option>
         <option value="portal">Portal</option>
-      </select></div>
-    <div class="col-md-6"><label class="form-label">Tipo de Servicio</label>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Tipo de Servicio</label>
       <select name="serviceType" class="form-select">
         <option value="correctivo">Correctivo</option>
         <option value="preventivo">Preventivo</option>
         <option value="diagnostico">Diagnóstico</option>
         <option value="toner">Toner</option>
         <option value="otro">Otro</option>
-      </select></div>
-    <div class="col-12"><label class="form-label">Descripción</label>
-      <textarea class="form-control" name="description" rows="3"></textarea></div>
-    <div class="col-12"><label class="form-label">Causa Raíz</label>
-      <input class="form-control" name="rootCause"></div>
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Descripción</label>
+      <textarea class="form-control" name="description" rows="3"></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Causa Raíz</label>
+      <input class="form-control" name="rootCause">
+    </div>
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
       <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
@@ -2337,6 +2550,34 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", async function() {
+  // Verificar si hay máquina y cliente seleccionados
+  const machineId = sessionStorage.getItem('selectedMachineId');
+  const customerId = sessionStorage.getItem('selectedCustomerId');
+  
+  if (machineId) {
+    document.getElementById('machine-id').value = machineId;
+    
+    // Intentar obtener información de la máquina para mostrar detalles
+    try {
+      const machine = await machineService.get(machineId);
+      // Podrías mostrar información de la máquina al usuario si lo deseas
+      console.log("Máquina seleccionada:", machine);
+    } catch (err) {
+      console.error("Error obteniendo información de la máquina:", err);
+    }
+  }
+  
+  if (customerId) {
+    document.getElementById('customer-id').value = customerId;
+  }
+  
+  // Limpiar el sessionStorage después de usar los valores
+  sessionStorage.removeItem('selectedMachineId');
+  sessionStorage.removeItem('selectedCustomerId');
+});
+
+// El resto del script sin cambios
 document.getElementById("form-new-request").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
