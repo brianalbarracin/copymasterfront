@@ -324,9 +324,20 @@
 
       // 2) Actualizar la máquina con la nueva ubicación Y el cliente (si existe)
       const updatePayload = {
-        ...window.machineData,
+        id: window.machineData.id,
+        companySerial: window.machineData.companySerial,
+        companyNumber: window.machineData.companyNumber,
+        model: window.machineData.model,
+        brand: window.machineData.brand,
+        year: window.machineData.year,
+        status: window.machineData.status,
+        notes: window.machineData.notes,
+        initialReading: window.machineData.initialReading,
+        readingNotes: window.machineData.readingNotes,
+
+        // 👇 forzamos que se manden los correctos
         currentLocationId: toLocationId,
-        currentCustomerId: newCustomerId // Puede ser null (bodega)
+        currentCustomerId: newCustomerId !== undefined ? newCustomerId : null
       };
 
       console.log("📤 PUT /machines payload:", updatePayload);
