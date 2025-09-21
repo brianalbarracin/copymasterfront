@@ -104,7 +104,7 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async function() {
+(async function() {
   // Cargar datos precargados desde sessionStorage
   const machineId = sessionStorage.getItem('selectedMachineId');
   const customerId = sessionStorage.getItem('selectedCustomerId');
@@ -135,12 +135,11 @@ document.addEventListener("DOMContentLoaded", async function() {
   sessionStorage.removeItem('selectedMachineNumber');
   sessionStorage.removeItem('selectedCustomerName');
   sessionStorage.removeItem('selectedCustomerNit');
-});
+})();
 
 async function loadPreviousRequests(machineId) {
   try {
     const requests = await serviceRequestService.list();
-    // Filtrar solicitudes para esta máquina
     const machineRequests = requests.filter(r => r.machineId == machineId);
     
     const tbody = document.getElementById('previous-requests');
