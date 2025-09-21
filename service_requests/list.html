@@ -29,7 +29,7 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
+(async function() {
   const tbody = document.getElementById("requests-table");
   try {
     const requests = await serviceRequestService.list();
@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error cargando solicitudes:", err);
     tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error cargando solicitudes</td></tr>`;
   }
-});
+})();
 
 function viewRequest(id) {
   sessionStorage.setItem("selectedRequestId", id);
