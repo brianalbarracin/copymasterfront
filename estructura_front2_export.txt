@@ -1184,7 +1184,9 @@ document.getElementById("form-create-customer").addEventListener("submit", async
             </tr>
           </thead>
           <tbody id="customer-machines">
-            <tr><td colspan="5" class="text-center text-muted">Cargando máquinas...</td></tr>
+            <tr>
+              <td colspan="5" class="text-center text-muted">Cargando máquinas...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -1211,7 +1213,9 @@ document.getElementById("form-create-customer").addEventListener("submit", async
             </tr>
           </thead>
           <tbody id="customer-requests">
-            <tr><td colspan="6" class="text-center text-muted">Cargando solicitudes...</td></tr>
+            <tr>
+              <td colspan="6" class="text-center text-muted">Cargando solicitudes...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -1220,28 +1224,32 @@ document.getElementById("form-create-customer").addEventListener("submit", async
 </div>
 
 <script>
-// Variable global para almacenar datos del cliente
-window.customerData = null;
+  // Variable global para almacenar datos del cliente
+  window.customerData = null;
 
-async function loadCustomerDetail(){
-  const params = new URLSearchParams(location.search);
-  let id = params.get("id") || sessionStorage.getItem('selectedCustomerId');
-  
-  if(!id) {
-    showAlert("ID de cliente no especificado", "danger");
-    appLoad('customers/list.html');
-    return;
-  }
-  
-  window.__CID = id; // guardar id para reusar
+  async function loadCustomerDetail() {
+    let id = sessionStorage.getItem('selectedCustomerId');
 
-  try {
-    // Cargar información del cliente
-    const c = await customerService.get(id);
-    window.customerData = c;
-    
-    document.getElementById("c-name").innerText = c.name || ("Cliente " + c.id);
-    document.getElementById("c-info").innerHTML = `
+    if (!id) {
+      showAlert("ID de cliente no especificado", "danger");
+      appLoad('customers/list.html');
+      return;
+    }
+
+    window.__CID = id; // guardar id para reusar
+    try {
+      // Cargar información del cliente
+      const c = await customerService.get(id);
+      if (!c) {
+        showAlert("Cliente no encontrado", "warning");
+        appLoad('customers/list.html');
+        return;
+      }
+
+      window.customerData = c;
+
+      document.getElementById("c-name").innerText = c.name || ("Cliente " + c.id);
+      document.getElementById("c-info").innerHTML = `
       <tr><th>ID</th><td>${c.id}</td></tr>
       <tr><th>NIT</th><td>${c.nit || ""}</td></tr>
       <tr><th>Nombre</th><td>${c.name || ""}</td></tr>
@@ -1251,41 +1259,41 @@ async function loadCustomerDetail(){
       <tr><th>Dirección</th><td>${c.address || ""}</td></tr>
     `;
 
-    // Cargar máquinas del cliente
-    await loadCustomerMachines(id);
-    
-    // Cargar solicitudes del cliente
-    await loadCustomerRequests(id);
+      // Cargar máquinas del cliente
+      await loadCustomerMachines(id);
 
-  } catch(err){
-    console.error("Error cargando cliente:", err);
-    showAlert("Error cargando cliente: " + err.message, "danger");
+      // Cargar solicitudes del cliente
+      await loadCustomerRequests(id);
+
+    } catch (err) {
+      console.error("Error cargando cliente:", err);
+      showAlert("Error cargando cliente: " + err.message, "danger");
+    }
   }
-}
 
-async function loadCustomerMachines(customerId) {
-  try {
-    // Obtener todas las máquinas y filtrar por cliente
-    const allMachines = await machineService.list();
-    const customerMachines = allMachines.filter(m => m.currentCustomerId == customerId);
-    
-    document.getElementById("machine-count").innerText = `${customerMachines.length} máquinas`;
-    
-    const tbody = document.getElementById("customer-machines");
-    
-    if (customerMachines.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay máquinas asociadas</td></tr>';
-      return;
-    }
-    
-    // Cargar ubicaciones si no están en cache
-    if (!window.locationsCache || window.locationsCache.length === 0) {
-      window.locationsCache = await locationService.list();
-    }
-    
-    tbody.innerHTML = customerMachines.map(machine => {
-      const location = window.locationsCache.find(l => l.id === machine.currentLocationId);
-      return `
+  async function loadCustomerMachines(customerId) {
+    try {
+      // Obtener todas las máquinas y filtrar por cliente
+      const allMachines = await machineService.list();
+      const customerMachines = allMachines.filter(m => m.currentCustomerId == customerId);
+
+      document.getElementById("machine-count").innerText = `${customerMachines.length} máquinas`;
+
+      const tbody = document.getElementById("customer-machines");
+
+      if (customerMachines.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay máquinas asociadas</td></tr>';
+        return;
+      }
+
+      // Cargar ubicaciones si no están en cache
+      if (!window.locationsCache || window.locationsCache.length === 0) {
+        window.locationsCache = await locationService.list();
+      }
+
+      tbody.innerHTML = customerMachines.map(machine => {
+        const location = window.locationsCache.find(l => l.id === machine.currentLocationId);
+        return `
         <tr>
           <td>${machine.companySerial || 'N/A'}</td>
           <td>${machine.model || 'N/A'} / ${machine.brand || 'N/A'}</td>
@@ -1301,32 +1309,32 @@ async function loadCustomerMachines(customerId) {
           </td>
         </tr>
       `;
-    }).join('');
-  } catch (err) {
-    console.error("Error cargando máquinas del cliente:", err);
-    document.getElementById("customer-machines").innerHTML = 
-      '<tr><td colspan="5" class="text-center text-danger">Error cargando máquinas</td></tr>';
-  }
-}
-
-async function loadCustomerRequests(customerId) {
-  try {
-    // Obtener solicitudes del cliente
-    const requests = await serviceRequestService.list();
-    const customerRequests = requests.filter(r => r.customerId == customerId);
-    
-    document.getElementById("request-count").innerText = `${customerRequests.length} solicitudes`;
-    
-    const tbody = document.getElementById("customer-requests");
-    
-    if (customerRequests.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes registradas</td></tr>';
-      return;
+      }).join('');
+    } catch (err) {
+      console.error("Error cargando máquinas del cliente:", err);
+      document.getElementById("customer-machines").innerHTML =
+        '<tr><td colspan="5" class="text-center text-danger">Error cargando máquinas</td></tr>';
     }
-    
-    tbody.innerHTML = customerRequests.map(request => {
-      const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
-      return `
+  }
+
+  async function loadCustomerRequests(customerId) {
+    try {
+      // Obtener solicitudes del cliente
+      const requests = await serviceRequestService.list();
+      const customerRequests = requests.filter(r => r.customerId == customerId);
+
+      document.getElementById("request-count").innerText = `${customerRequests.length} solicitudes`;
+
+      const tbody = document.getElementById("customer-requests");
+
+      if (customerRequests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes registradas</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = customerRequests.map(request => {
+        const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
+        return `
         <tr>
           <td>${request.requestNumber || request.id}</td>
           <td>${request.companySerial || 'N/A'}</td>
@@ -1340,28 +1348,28 @@ async function loadCustomerRequests(customerId) {
           </td>
         </tr>
       `;
-    }).join('');
-  } catch (err) {
-    console.error("Error cargando solicitudes del cliente:", err);
-    document.getElementById("customer-requests").innerHTML = 
-      '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes</td></tr>';
+      }).join('');
+    } catch (err) {
+      console.error("Error cargando solicitudes del cliente:", err);
+      document.getElementById("customer-requests").innerHTML =
+        '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes</td></tr>';
+    }
   }
-}
 
-// Función para crear solicitud para una máquina específica
-function createServiceRequestForMachine(machineId, customerId) {
-  sessionStorage.setItem('selectedMachineId', machineId);
-  sessionStorage.setItem('selectedCustomerId', customerId);
-  appLoad('service_requests/new.html');
-}
+  // Función para crear solicitud para una máquina específica
+  function createServiceRequestForMachine(machineId, customerId) {
+    sessionStorage.setItem('selectedMachineId', machineId);
+    sessionStorage.setItem('selectedCustomerId', customerId);
+    appLoad('service_requests/new.html');
+  }
 
-// Función para cargar detalle de máquina (reutilizada)
-function loadMachineDetail(id) {
-  sessionStorage.setItem('selectedMachineId', id);
-  appLoad('machines/detail.html');
-}
+  // Función para cargar detalle de máquina (reutilizada)
+  function loadMachineDetail(id) {
+    sessionStorage.setItem('selectedMachineId', id);
+    appLoad('machines/detail.html');
+  }
 
-document.addEventListener("DOMContentLoaded", loadCustomerDetail);
+  loadCustomerDetail();
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\customers\edit.html =====

@@ -215,11 +215,15 @@
   }
 
   // Función para crear solicitud para una máquina específica
-  function createServiceRequestForMachine(machineId, customerId) {
-    sessionStorage.setItem('selectedMachineId', machineId);
-    sessionStorage.setItem('selectedCustomerId', customerId);
-    appLoad('service_requests/new.html');
-  }
+ function createServiceRequestForMachine(machineId, customerId, machineSerial, machineNumber, customerName, customerNit) {
+  sessionStorage.setItem('selectedMachineId', machineId);
+  sessionStorage.setItem('selectedCustomerId', customerId);
+  sessionStorage.setItem('selectedMachineSerial', machineSerial);
+  sessionStorage.setItem('selectedMachineNumber', machineNumber);
+  sessionStorage.setItem('selectedCustomerName', customerName);
+  sessionStorage.setItem('selectedCustomerNit', customerNit);
+  appLoad('service_requests/new.html');
+}
 
   // Función para cargar detalle de máquina (reutilizada)
   function loadMachineDetail(id) {
