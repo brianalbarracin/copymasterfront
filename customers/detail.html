@@ -161,9 +161,17 @@
             <button class="btn btn-sm btn-primary me-1" onclick="loadMachineDetail(${machine.id})">
               <i class="fas fa-eye"></i>
             </button>
-            <button class="btn btn-sm btn-success" onclick="createServiceRequestForMachine(${machine.id}, ${customerId})">
-              <i class="fas fa-tools"></i>
-            </button>
+            <button class="btn btn-sm btn-success" 
+  onclick="createServiceRequestForMachine(
+    ${machine.id}, 
+    ${customerId}, 
+    '${machine.companySerial || ''}', 
+    '${machine.companyNumber || ''}', 
+    '${window.customerData?.name || ''}', 
+    '${window.customerData?.nit || ''}'
+  )">
+  <i class="fas fa-tools"></i>
+</button>
           </td>
         </tr>
       `;
@@ -215,15 +223,15 @@
   }
 
   // Función para crear solicitud para una máquina específica
- function createServiceRequestForMachine(machineId, customerId, machineSerial, machineNumber, customerName, customerNit) {
-  sessionStorage.setItem('selectedMachineId', machineId);
-  sessionStorage.setItem('selectedCustomerId', customerId);
-  sessionStorage.setItem('selectedMachineSerial', machineSerial);
-  sessionStorage.setItem('selectedMachineNumber', machineNumber);
-  sessionStorage.setItem('selectedCustomerName', customerName);
-  sessionStorage.setItem('selectedCustomerNit', customerNit);
-  appLoad('service_requests/new.html');
-}
+  function createServiceRequestForMachine(machineId, customerId, machineSerial, machineNumber, customerName, customerNit) {
+    sessionStorage.setItem('selectedMachineId', machineId);
+    sessionStorage.setItem('selectedCustomerId', customerId);
+    sessionStorage.setItem('selectedMachineSerial', machineSerial);
+    sessionStorage.setItem('selectedMachineNumber', machineNumber);
+    sessionStorage.setItem('selectedCustomerName', customerName);
+    sessionStorage.setItem('selectedCustomerNit', customerNit);
+    appLoad('service_requests/new.html');
+  }
 
   // Función para cargar detalle de máquina (reutilizada)
   function loadMachineDetail(id) {
