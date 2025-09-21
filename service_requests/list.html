@@ -29,9 +29,16 @@
 </div>
 
 <script>
+let customersCache = [];
+let machinesCache = [];
+
 (async function() {
   const tbody = document.getElementById("requests-table");
   try {
+    // Cargar clientes y máquinas primero
+    customersCache = await customerService.list();
+    machinesCache = await machineService.list();
+
     const requests = await serviceRequestService.list();
 
     if (!requests || requests.length === 0) {
@@ -43,11 +50,15 @@
     for (const r of requests) {
       const date = r.reportedAt ? new Date(r.reportedAt).toLocaleDateString() : "N/A";
 
+      // Buscar cliente y máquina por ID
+      const customer = customersCache.find(c => c.id === r.customerId);
+      const machine = machinesCache.find(m => m.id === r.machineId);
+
       tbody.innerHTML += `
         <tr>
           <td>${r.requestNumber || r.id}</td>
-          <td>${r.customerName || "Cliente N/A"}</td>
-          <td>${r.machineSerial || "Máquina N/A"}</td>
+          <td>${customer ? customer.name : "Cliente N/A"}</td>
+          <td>${machine ? machine.companySerial : "Máquina N/A"}</td>
           <td>${date}</td>
           <td>${r.serviceType || "N/A"}</td>
           <td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td>
