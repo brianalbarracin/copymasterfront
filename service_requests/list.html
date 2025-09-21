@@ -29,15 +29,19 @@
 </div>
 
 <script>
-let customersCache = [];
-let machinesCache = [];
-
+    
 (async function() {
   const tbody = document.getElementById("requests-table");
+
   try {
-    // Cargar clientes y máquinas primero
-    customersCache = await customerService.list();
-    machinesCache = await machineService.list();
+    // 👉 Definir caches globales para no re-declarar
+    if (!window.customersCache || window.customersCache.length === 0) {
+      window.customersCache = await customerService.list();
+    }
+
+    if (!window.machinesCache || window.machinesCache.length === 0) {
+      window.machinesCache = await machineService.list();
+    }
 
     const requests = await serviceRequestService.list();
 
@@ -50,9 +54,9 @@ let machinesCache = [];
     for (const r of requests) {
       const date = r.reportedAt ? new Date(r.reportedAt).toLocaleDateString() : "N/A";
 
-      // Buscar cliente y máquina por ID
-      const customer = customersCache.find(c => c.id === r.customerId);
-      const machine = machinesCache.find(m => m.id === r.machineId);
+      // Buscar cliente y máquina en caches
+      const customer = window.customersCache.find(c => c.id === r.customerId);
+      const machine = window.machinesCache.find(m => m.id === r.machineId);
 
       tbody.innerHTML += `
         <tr>
