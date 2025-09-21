@@ -1,99 +1,94 @@
 <div class="card p-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">Solicitudes de Servicio</h4>
-        <button class="btn btn-success btn-sm" onclick="appLoad('service_requests/new.html')">
-            <i class="fas fa-plus me-1"></i> Nueva Solicitud
-        </button>
-    </div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Solicitudes de Servicio</h4>
+    <button class="btn btn-success btn-sm" onclick="appLoad('service_requests/new.html')">
+      <i class="fas fa-plus me-1"></i> Nueva Solicitud
+    </button>
+  </div>
 
-    <div class="mb-3">
-        <input type="text" id="service-search" class="form-control" placeholder="Buscar por cliente o máquina...">
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Máquina</th>
-                    <th>Descripción</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="requests-tbody">
-                <tr>
-                    <td colspan="6" class="text-center">Cargando solicitudes...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Cliente</th>
+          <th>Máquina</th>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="requests-table">
+        <tr>
+          <td colspan="7" class="text-center text-muted">Cargando solicitudes...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-    async function loadRequests(query="") {
-        try {
-            const requests = await serviceRequestService.list();
-            const tbody = document.getElementById("requests-tbody");
-            tbody.innerHTML = "";
+document.addEventListener("DOMContentLoaded", async () => {
+  const tbody = document.getElementById("requests-table");
+  try {
+    const requests = await serviceRequestService.list();
 
-            const filtered = query
-                ? requests.filter(r => (r.customerName || "").toLowerCase().includes(query.toLowerCase()) 
-                                     || (r.machineModel || "").toLowerCase().includes(query.toLowerCase()))
-                : requests;
-
-            if (filtered.length > 0) {
-                filtered.forEach(r => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${r.id}</td>
-                            <td>${r.customerName || "N/A"}</td>
-                            <td>${r.machineModel || "N/A"}</td>
-                            <td>${r.description || ""}</td>
-                            <td>
-                                <span class="badge ${r.status === "CERRADA" ? "bg-success" : "bg-warning"}">
-                                    ${r.status}
-                                </span>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="appLoad('service_requests/detail.html?id=${r.id}')">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-warning" onclick="appLoad('service_requests/edit.html?id=${r.id}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center">No se encontraron solicitudes</td></tr>`;
-            }
-        } catch (error) {
-            console.error("Error loading requests:", error);
-            showAlert("Error cargando solicitudes", "danger");
-        }
+    if (!requests || requests.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No hay solicitudes registradas</td></tr>`;
+      return;
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadRequests();
-        document.getElementById("service-search").addEventListener("input", (e) => {
-            loadRequests(e.target.value);
-        });
-    });
-</script>
+    tbody.innerHTML = "";
+    for (const r of requests) {
+      const date = r.reportedAt ? new Date(r.reportedAt).toLocaleDateString() : "N/A";
 
-<script>
-document.getElementById("form-create-machine").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const form = e.target;
-  if(!form.checkValidity()) { form.classList.add('was-validated'); return; }
-  const data = Object.fromEntries(new FormData(form));
-  try{
-    await machineService.create(data);
-    alert("Máquina creada");
-    appLoad('machines/list.html');
-  }catch(err){ alert("Error al crear: "+err.message); }
+      tbody.innerHTML += `
+        <tr>
+          <td>${r.requestNumber || r.id}</td>
+          <td>${r.customerName || "Cliente N/A"}</td>
+          <td>${r.machineSerial || "Máquina N/A"}</td>
+          <td>${date}</td>
+          <td>${r.serviceType || "N/A"}</td>
+          <td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td>
+          <td class="text-end">
+            <button class="btn btn-outline-primary btn-sm me-1" onclick="viewRequest(${r.id})">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm me-1" onclick="editRequest(${r.id})">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="deleteRequest(${r.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+  } catch (err) {
+    console.error("Error cargando solicitudes:", err);
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error cargando solicitudes</td></tr>`;
+  }
 });
+
+function viewRequest(id) {
+  sessionStorage.setItem("selectedRequestId", id);
+  appLoad("service_requests/detail.html");
+}
+
+function editRequest(id) {
+  sessionStorage.setItem("selectedRequestId", id);
+  appLoad("service_requests/edit.html");
+}
+
+async function deleteRequest(id) {
+  if (!confirm("¿Seguro que deseas eliminar esta solicitud?")) return;
+  try {
+    await serviceRequestService.remove(id);
+    showAlert("Solicitud eliminada correctamente", "success");
+    appLoad("service_requests/list.html");
+  } catch (err) {
+    showAlert("Error al eliminar: " + err.message, "danger");
+  }
+}
 </script>

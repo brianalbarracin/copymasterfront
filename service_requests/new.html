@@ -73,6 +73,7 @@
         <option value="correctivo">Correctivo</option>
         <option value="preventivo">Preventivo</option>
         <option value="diagnostico">Diagnóstico</option>
+        <option value="toma_contador">Diagnóstico</option>
         <option value="toner">Toner</option>
         <option value="otro">Otro</option>
       </select>
@@ -192,7 +193,7 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
   const data = Object.fromEntries(formData);
   
   // Agregar la fecha de asignación automáticamente
-  data.assignedAt = new Date().toISOString();
+  //data.assignedAt = new Date().toISOString();
   
   try {
     await serviceRequestService.create(data);

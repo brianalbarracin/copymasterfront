@@ -1303,9 +1303,17 @@ document.getElementById("form-create-customer").addEventListener("submit", async
             <button class="btn btn-sm btn-primary me-1" onclick="loadMachineDetail(${machine.id})">
               <i class="fas fa-eye"></i>
             </button>
-            <button class="btn btn-sm btn-success" onclick="createServiceRequestForMachine(${machine.id}, ${customerId})">
-              <i class="fas fa-tools"></i>
-            </button>
+            <button class="btn btn-sm btn-success" 
+  onclick="createServiceRequestForMachine(
+    ${machine.id}, 
+    ${customerId}, 
+    '${machine.companySerial || ''}', 
+    '${machine.companyNumber || ''}', 
+    '${window.customerData?.name || ''}', 
+    '${window.customerData?.nit || ''}'
+  )">
+  <i class="fas fa-tools"></i>
+</button>
           </td>
         </tr>
       `;
@@ -1357,9 +1365,13 @@ document.getElementById("form-create-customer").addEventListener("submit", async
   }
 
   // Función para crear solicitud para una máquina específica
-  function createServiceRequestForMachine(machineId, customerId) {
+  function createServiceRequestForMachine(machineId, customerId, machineSerial, machineNumber, customerName, customerNit) {
     sessionStorage.setItem('selectedMachineId', machineId);
     sessionStorage.setItem('selectedCustomerId', customerId);
+    sessionStorage.setItem('selectedMachineSerial', machineSerial);
+    sessionStorage.setItem('selectedMachineNumber', machineNumber);
+    sessionStorage.setItem('selectedCustomerName', customerName);
+    sessionStorage.setItem('selectedCustomerNit', customerNit);
     appLoad('service_requests/new.html');
   }
 
@@ -2509,32 +2521,78 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\new.html =====
-<!-- service_requests/new.html - Versión mejorada -->
 <div class="card p-3">
   <h4>Nueva Solicitud</h4>
+  
+  <!-- Información precargada (solo lectura) -->
+  <div class="card mb-3">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Información Precargada</h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <strong>Cliente:</strong> 
+          <span id="preloaded-customer-name"></span> 
+          <small id="preloaded-customer-nit" class="text-muted"></small>
+        </div>
+        <div class="col-md-6">
+          <strong>Máquina:</strong> 
+          <span id="preloaded-machine-serial"></span> 
+          <small id="preloaded-machine-number" class="text-muted"></small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de solicitudes para esta máquina -->
+  <div class="card mb-3">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Solicitudes Anteriores de esta Máquina</h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Seleccionar</th>
+              <th>Número</th>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Causa Raíz</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="previous-requests">
+            <tr>
+              <td colspan="6" class="text-center">Cargando solicitudes anteriores...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario para completar -->
   <form id="form-new-request" class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Máquina ID *</label>
-      <input class="form-control" name="machineId" id="machine-id" required>
-    </div>
-    <div class="col-md-6">
-      <label class="form-label">Cliente ID</label>
-      <input class="form-control" name="customerId" id="customer-id">
-    </div>
+    <input type="hidden" name="machineId" id="machine-id">
+    <input type="hidden" name="customerId" id="customer-id">
     
-    <!-- Resto del formulario sin cambios -->
     <div class="col-md-6">
-      <label class="form-label">Canal</label>
-      <select name="reportedChannel" class="form-select">
+      <label class="form-label">Canal *</label>
+      <select name="reportedChannel" class="form-select" required>
+        <option value="">Seleccione un canal</option>
         <option value="telefono">Teléfono</option>
         <option value="whatsapp">WhatsApp</option>
         <option value="email">Email</option>
         <option value="portal">Portal</option>
       </select>
     </div>
+    
     <div class="col-md-6">
-      <label class="form-label">Tipo de Servicio</label>
-      <select name="serviceType" class="form-select">
+      <label class="form-label">Tipo de Servicio *</label>
+      <select name="serviceType" class="form-select" required>
+        <option value="">Seleccione un tipo</option>
         <option value="correctivo">Correctivo</option>
         <option value="preventivo">Preventivo</option>
         <option value="diagnostico">Diagnóstico</option>
@@ -2542,59 +2600,129 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
         <option value="otro">Otro</option>
       </select>
     </div>
+    
     <div class="col-12">
-      <label class="form-label">Descripción</label>
-      <textarea class="form-control" name="description" rows="3"></textarea>
+      <label class="form-label">Causa Raíz *</label>
+      <input class="form-control" name="rootCause" required>
     </div>
+    
     <div class="col-12">
-      <label class="form-label">Causa Raíz</label>
-      <input class="form-control" name="rootCause">
+      <label class="form-label">Descripción *</label>
+      <textarea class="form-control" name="description" rows="3" required></textarea>
     </div>
+    
     <div class="col-12">
-      <button class="btn btn-success" type="submit">Crear</button>
+      <label class="form-label">Solicitud repetida de (opcional)</label>
+      <select name="repeatedOfRequestId" class="form-select" id="repeated-request">
+        <option value="">No es una solicitud repetida</option>
+        <!-- Las opciones se llenarán con JavaScript -->
+      </select>
+    </div>
+    
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear Solicitud</button>
       <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
     </div>
   </form>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async function() {
-  // Verificar si hay máquina y cliente seleccionados
+(async function() {
+  // Cargar datos precargados desde sessionStorage
   const machineId = sessionStorage.getItem('selectedMachineId');
   const customerId = sessionStorage.getItem('selectedCustomerId');
+  const machineSerial = sessionStorage.getItem('selectedMachineSerial');
+  const machineNumber = sessionStorage.getItem('selectedMachineNumber');
+  const customerName = sessionStorage.getItem('selectedCustomerName');
+  const customerNit = sessionStorage.getItem('selectedCustomerNit');
   
+  // Mostrar información precargada
+  document.getElementById('preloaded-customer-name').textContent = customerName || 'N/A';
+  document.getElementById('preloaded-customer-nit').textContent = customerNit ? `(NIT: ${customerNit})` : '';
+  document.getElementById('preloaded-machine-serial').textContent = machineSerial || 'N/A';
+  document.getElementById('preloaded-machine-number').textContent = machineNumber ? `(Número: ${machineNumber})` : '';
+  
+  // Establecer valores en campos ocultos
+  if (machineId) document.getElementById('machine-id').value = machineId;
+  if (customerId) document.getElementById('customer-id').value = customerId;
+  
+  // Cargar solicitudes anteriores para esta máquina
   if (machineId) {
-    document.getElementById('machine-id').value = machineId;
-    
-    // Intentar obtener información de la máquina para mostrar detalles
-    try {
-      const machine = await machineService.get(machineId);
-      // Podrías mostrar información de la máquina al usuario si lo deseas
-      console.log("Máquina seleccionada:", machine);
-    } catch (err) {
-      console.error("Error obteniendo información de la máquina:", err);
-    }
-  }
-  
-  if (customerId) {
-    document.getElementById('customer-id').value = customerId;
+    await loadPreviousRequests(machineId);
   }
   
   // Limpiar el sessionStorage después de usar los valores
   sessionStorage.removeItem('selectedMachineId');
   sessionStorage.removeItem('selectedCustomerId');
-});
+  sessionStorage.removeItem('selectedMachineSerial');
+  sessionStorage.removeItem('selectedMachineNumber');
+  sessionStorage.removeItem('selectedCustomerName');
+  sessionStorage.removeItem('selectedCustomerNit');
+})();
 
-// El resto del script sin cambios
-document.getElementById("form-new-request").addEventListener("submit", async (e)=>{
+async function loadPreviousRequests(machineId) {
+  try {
+    const requests = await serviceRequestService.list();
+    const machineRequests = requests.filter(r => r.machineId == machineId);
+    
+    const tbody = document.getElementById('previous-requests');
+    const select = document.getElementById('repeated-request');
+    
+    if (machineRequests.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes anteriores para esta máquina</td></tr>';
+      return;
+    }
+    
+    // Limpiar y llenar la tabla y el select
+    tbody.innerHTML = '';
+    select.innerHTML = '<option value="">No es una solicitud repetida</option>';
+    
+    machineRequests.forEach(request => {
+      const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
+      
+      // Agregar a la tabla
+      tbody.innerHTML += `
+        <tr>
+          <td>
+            <input type="radio" name="selectedPreviousRequest" value="${request.id}" 
+                   onchange="document.getElementById('repeated-request').value = this.value">
+          </td>
+          <td>${request.requestNumber || request.id}</td>
+          <td>${date}</td>
+          <td>${request.serviceType || 'N/A'}</td>
+          <td>${request.rootCause || 'N/A'}</td>
+          <td><span class="badge ${request.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${request.status || 'N/A'}</span></td>
+        </tr>
+      `;
+      
+      // Agregar al select
+      const option = document.createElement('option');
+      option.value = request.id;
+      option.textContent = `${request.requestNumber || request.id} - ${request.rootCause || 'Sin causa'} (${date})`;
+      select.appendChild(option);
+    });
+    
+  } catch (err) {
+    console.error("Error cargando solicitudes anteriores:", err);
+    document.getElementById('previous-requests').innerHTML = 
+      '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes anteriores</td></tr>';
+  }
+}
+
+document.getElementById("form-new-request").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target));
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  
+  // Agregar la fecha de asignación automáticamente
+  data.assignedAt = new Date().toISOString();
+  
   try {
     await serviceRequestService.create(data);
-    alert("Solicitud creada correctamente");
+    showAlert("Solicitud creada correctamente", "success");
     appLoad('service_requests/list.html');
   } catch(err) {
-    alert("Error al crear: "+err.message);
+    showAlert("Error al crear: " + err.message, "danger");
   }
 });
 </script>
