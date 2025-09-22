@@ -72,9 +72,9 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => initNewVisit());
 
-async function initNewVisit() {
+
+(async function initNewVisit() {
   const requestId = sessionStorage.getItem("selectedRequestId");
   if (!requestId) {
     showAlert("No se encontró la solicitud seleccionada.", "danger");
@@ -144,7 +144,7 @@ async function initNewVisit() {
       btn.innerHTML = '<i class="fas fa-save me-1"></i> Registrar Visita';
     }
   });
-}
+})();
 
 async function loadRequestInfo(requestId) {
   const req = await serviceRequestService.get(requestId);
