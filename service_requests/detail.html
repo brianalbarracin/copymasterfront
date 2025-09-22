@@ -125,7 +125,8 @@
 
       // Crear visita
       document.getElementById("btn-create-visit").onclick = () => {
-        appLoad(`service_visits/new.html?requestId=${id}`);
+        sessionStorage.setItem("selectedRequestId", id);
+        appLoad("service_visits/new.html");
       };
 
     } catch (err) {

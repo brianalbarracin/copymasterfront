@@ -1,4 +1,4 @@
-<div class="card p-3">
+<div class="card p-3"> 
   <h4>Nueva Visita Técnica</h4>
   <form id="visit-form">
     <div class="mb-3">
@@ -35,19 +35,14 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
-  // base del API (definido en index.html). Si no existe, queda vacío.
   const API = (typeof API_BASE !== "undefined") ? API_BASE.replace(/\/$/, '') : "";
-
-  // Obtener requestId desde query string o fallback a sessionStorage
-  const params = new URLSearchParams(location.search);
-  const requestId = params.get("requestId") || sessionStorage.getItem("selectedRequestId");
+  const requestId = sessionStorage.getItem("selectedRequestId");
 
   if (!requestId) {
-    showAlert("No se encontró el ID de la solicitud (requestId).", "danger");
-    return;
+    showAlert("No se encontró la solicitud seleccionada.", "danger");
+    return appLoad("service_requests/list.html");
   }
 
-  // elementos
   const techniciansSelect = document.getElementById("technicians");
   const chkMeter = document.getElementById("chk-meter");
   const meterFields = document.getElementById("meter-fields");
@@ -55,33 +50,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnSave = document.getElementById("btn-save");
   const btnCancel = document.getElementById("btn-cancel");
 
-  // cancelar vuelve al detalle (guardamos el id para compatibilidad con detail.html)
+  // cancelar → vuelve al detalle
   btnCancel.addEventListener("click", () => {
-    sessionStorage.setItem("selectedRequestId", requestId);
-    appLoad(`service_requests/detail.html`);
+    appLoad("service_requests/detail.html");
   });
 
-  // cargar técnicos (usa el servicio si existe, si no fetch directo)
+  // cargar técnicos
   try {
     let techs = [];
     if (typeof technicianService !== "undefined" && technicianService.list) {
       techs = await technicianService.list();
     } else {
       const res = await fetch(API + "/technicians");
-      techs = (await res.json())?.data || (await res.json()) || [];
+      const json = await res.json();
+      techs = json?.data || json || [];
     }
-    techniciansSelect.innerHTML = techs.map(t => `<option value="${t.id}">${t.fullName || t.name || t.identification || t.id}</option>`).join("") || "<option value=''>-- No hay técnicos --</option>";
+    techniciansSelect.innerHTML = techs.map(t => 
+      `<option value="${t.id}">${t.fullName || t.name || t.identification || t.id}</option>`
+    ).join("") || "<option value=''>-- No hay técnicos --</option>";
   } catch (err) {
     console.error("Error cargando técnicos:", err);
     techniciansSelect.innerHTML = "<option value=''>-- Error cargando técnicos --</option>";
   }
 
-  // mostrar/ocultar campos de contador
+  // toggle de campos de contador
   chkMeter.addEventListener("change", (e) => {
     meterFields.style.display = e.target.checked ? "block" : "none";
   });
 
-  // submit
+  // guardar visita
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     btnSave.disabled = true;
@@ -98,7 +95,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         meterReadingAfter: chkMeter.checked ? (fd.get("meterAfter") ? Number(fd.get("meterAfter")) : null) : null,
       };
 
-      // validación simple
       if (!dto.technicianId) {
         showAlert("Selecciona un técnico.", "warning");
         btnSave.disabled = false;
@@ -106,7 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // Crear la visita
+      // crear visita
       const createRes = await fetch(API + "/visits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -118,17 +114,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error("Error creando visita: " + (txt || createRes.status));
       }
 
-      // Actualizar estado de la solicitud a EN_PROCESO (según tu controlador: espera ?status=)
-      const statusRes = await fetch(`${API}/service-requests/${requestId}/status?status=EN_PROCESO`, {
-        method: "PUT"
-      });
-
-      if (!statusRes.ok) {
-        console.warn("No fue posible actualizar el estado de la solicitud, continuar igual.");
-      }
-
-      // Para que detail.html pueda leer el id (si detail usa sessionStorage)
-      sessionStorage.setItem("selectedRequestId", requestId);
+      // actualizar estado de la solicitud
+      await fetch(`${API}/service-requests/${requestId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "EN_PROCESO" })
+      }).catch(()=>console.warn("No se pudo actualizar estado"));
 
       showAlert("Visita creada correctamente", "success");
       appLoad("service_requests/detail.html");
