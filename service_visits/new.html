@@ -27,14 +27,14 @@
     </div>
   </div>
 
-  <form id="visit-form" class="row g-3">
+  <!-- Formulario nueva visita -->
+  <form id="visit-form" class="row g-3" novalidate>
     <input type="hidden" name="serviceRequestId" id="service-request-id">
     
     <div class="col-md-6">
       <label class="form-label">Técnico *</label>
       <select class="form-select" id="technicians" name="technicianId" required>
         <option value="">Seleccione un técnico</option>
-        <!-- Las opciones se cargarán dinámicamente -->
       </select>
       <div class="invalid-feedback">Por favor seleccione un técnico</div>
     </div>
@@ -47,13 +47,13 @@
 
     <div class="col-12">
       <label class="form-label">Notas de la Visita *</label>
-      <textarea class="form-control" name="visitNotes" rows="4" placeholder="Describa los trabajos realizados, observaciones, repuestos utilizados, etc." required></textarea>
+      <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4" placeholder="Describa los trabajos realizados, observaciones, repuestos utilizados, etc." required></textarea>
       <div class="invalid-feedback">Por favor ingrese las notas de la visita</div>
     </div>
 
     <div class="col-12">
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="solved" id="solved" value="true">
+        <input class="form-check-input" type="checkbox" name="solved" id="solved">
         <label class="form-check-label" for="solved">
           <strong>¿Solicitud resuelta?</strong> (Marcar si el problema fue solucionado completamente)
         </label>
@@ -72,189 +72,132 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => initNewVisit());
+
+async function initNewVisit() {
   const requestId = sessionStorage.getItem("selectedRequestId");
-  
   if (!requestId) {
     showAlert("No se encontró la solicitud seleccionada.", "danger");
     appLoad("service_requests/list.html");
     return;
   }
 
-  // Elementos del DOM
-  const form = document.getElementById("visit-form");
-  const techniciansSelect = document.getElementById("technicians");
-  const btnSubmit = document.getElementById("btn-submit");
-  const requestInfo = document.getElementById("request-info");
+  // set id en hidden
+  document.getElementById('service-request-id').value = requestId;
 
-  // Establecer fecha y hora actual por defecto
+  // set datetime default
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   document.getElementById('visit-datetime').value = now.toISOString().slice(0, 16);
 
-  // Establecer el ID de la solicitud en el formulario
-  document.getElementById('service-request-id').value = requestId;
-
   try {
-    // Cargar información de la solicitud
     await loadRequestInfo(requestId);
-    
-    // Cargar lista de técnicos
     await loadTechnicians();
-    
-  } catch (error) {
-    console.error("Error inicializando formulario:", error);
-    showAlert("Error al cargar los datos del formulario", "danger");
+  } catch (err) {
+    console.error("Error inicializando:", err);
+    showAlert("Error al cargar datos iniciales", "danger");
   }
 
-  // Manejar envío del formulario
-  form.addEventListener("submit", async (e) => {
+  document.getElementById("visit-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    
+    const form = e.target;
+
     if (!form.checkValidity()) {
       e.stopPropagation();
-      form.classList.add('was-validated');
+      form.classList.add("was-validated");
       return;
     }
 
-    btnSubmit.disabled = true;
-    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
+    const btn = document.getElementById("btn-submit");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
 
     try {
-      const formData = new FormData(form);
       const visitData = {
         serviceRequestId: parseInt(requestId),
-        technicianId: parseInt(formData.get("technicianId")),
-        visitDatetime: formData.get("visitDatetime"),
-        visitNotes: formData.get("visitNotes"),
-        solved: formData.get("solved") === "true"
+        technicianId: parseInt(document.getElementById("technicians").value),
+        visitDatetime: document.getElementById("visit-datetime").value,
+        visitNotes: document.getElementById("visit-notes").value,
+        solved: document.getElementById("solved").checked
       };
 
-      console.log("Datos de la visita a enviar:", visitData);
+      console.log("Enviando visita:", visitData);
 
-      // Crear la visita
       const visitResult = await serviceVisitService.create(visitData);
-      
-      if (visitResult && visitResult.id) {
-        // Actualizar el estado de la solicitud a "EN_PROCESO"
+
+      if (visitResult?.id) {
         try {
-          await serviceRequestService.update(requestId, { 
-            status: "EN_PROCESO" 
-          });
-          console.log("Estado de la solicitud actualizado a EN_PROCESO");
-        } catch (updateError) {
-          console.warn("No se pudo actualizar el estado de la solicitud:", updateError);
+          await serviceRequestService.update(requestId, { status: "EN_PROCESO" });
+        } catch (err2) {
+          console.warn("No se pudo actualizar solicitud:", err2);
         }
 
-        showAlert("Visita técnica registrada correctamente", "success");
-        
-        // Redirigir al detalle de la solicitud después de 1.5 segundos
-        setTimeout(() => {
-          appLoad("service_requests/detail.html");
-        }, 1500);
+        showAlert("Visita registrada correctamente", "success");
+        setTimeout(() => appLoad("service_requests/detail.html"), 1500);
       } else {
-        throw new Error("No se recibió confirmación del servidor");
+        throw new Error("Respuesta inválida del servidor");
       }
-
-    } catch (error) {
-      console.error("Error registrando visita:", error);
-      showAlert("Error al registrar la visita: " + (error.message || "Error desconocido"), "danger");
-      btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<i class="fas fa-save me-1"></i> Registrar Visita';
+    } catch (err) {
+      console.error("Error registrando visita:", err);
+      showAlert("Error registrando visita: " + (err.message || "Error desconocido"), "danger");
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save me-1"></i> Registrar Visita';
     }
   });
-});
+}
 
 async function loadRequestInfo(requestId) {
-  try {
-    const request = await serviceRequestService.get(requestId);
-    
-    if (!request) {
-      throw new Error("Solicitud no encontrada");
+  const req = await serviceRequestService.get(requestId);
+  if (!req) throw new Error("Solicitud no encontrada");
+
+  document.getElementById("request-number").textContent = req.requestNumber || req.id;
+  document.getElementById("request-type").textContent = req.serviceType || "N/A";
+  document.getElementById("request-rootcause").textContent = req.rootCause || "N/A";
+  document.getElementById("request-status").textContent = req.status || "N/A";
+
+  if (req.customerId) {
+    try {
+      const cust = await customerService.get(req.customerId);
+      document.getElementById("request-customer").textContent = cust?.name || "Cliente no disponible";
+    } catch {
+      document.getElementById("request-customer").textContent = "Error cargando cliente";
     }
+  } else {
+    document.getElementById("request-customer").textContent = "No asignado";
+  }
 
-    // Actualizar información de la solicitud
-    document.getElementById("request-number").textContent = request.requestNumber || request.id;
-    document.getElementById("request-type").textContent = request.serviceType || "N/A";
-    document.getElementById("request-rootcause").textContent = request.rootCause || "N/A";
-    document.getElementById("request-status").textContent = request.status || "N/A";
-
-    // Cargar información del cliente si está disponible
-    if (request.customerId) {
-      try {
-        const customer = await customerService.get(request.customerId);
-        document.getElementById("request-customer").textContent = customer?.name || "Cliente no disponible";
-      } catch (error) {
-        document.getElementById("request-customer").textContent = "Error cargando cliente";
-      }
-    } else {
-      document.getElementById("request-customer").textContent = "No asignado";
+  if (req.machineId) {
+    try {
+      const mach = await machineService.get(req.machineId);
+      document.getElementById("request-machine").textContent =
+        `${mach?.companySerial || "N/A"} - ${mach?.model || ""}`;
+    } catch {
+      document.getElementById("request-machine").textContent = "Error cargando máquina";
     }
-
-    // Cargar información de la máquina si está disponible
-    if (request.machineId) {
-      try {
-        const machine = await machineService.get(request.machineId);
-        document.getElementById("request-machine").textContent = 
-          `${machine?.companySerial || "N/A"} - ${machine?.model || ""}`;
-      } catch (error) {
-        document.getElementById("request-machine").textContent = "Error cargando máquina";
-      }
-    } else {
-      document.getElementById("request-machine").textContent = "No asignada";
-    }
-
-  } catch (error) {
-    console.error("Error cargando información de la solicitud:", error);
-    document.getElementById("request-info").innerHTML = 
-      '<div class="col-12 text-center text-danger">Error cargando información de la solicitud</div>';
+  } else {
+    document.getElementById("request-machine").textContent = "No asignada";
   }
 }
 
 async function loadTechnicians() {
-  try {
-    const technicians = await technicianService.list();
-    const techniciansSelect = document.getElementById("technicians");
-    
-    techniciansSelect.innerHTML = '<option value="">Seleccione un técnico</option>';
-    
-    if (technicians && technicians.length > 0) {
-      technicians.forEach(tech => {
-        if (tech.active !== false) { // Solo técnicos activos
-          const option = document.createElement("option");
-          option.value = tech.id;
-          option.textContent = `${tech.fullName}${tech.specialty ? ` - ${tech.specialty}` : ''}`;
-          techniciansSelect.appendChild(option);
-        }
-      });
-      
-      if (techniciansSelect.options.length === 1) {
-        techniciansSelect.innerHTML = '<option value="">No hay técnicos disponibles</option>';
+  const list = await technicianService.list();
+  const sel = document.getElementById("technicians");
+  sel.innerHTML = '<option value="">Seleccione un técnico</option>';
+  if (list?.length) {
+    list.forEach(t => {
+      if (t.active !== false) {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `${t.fullName}${t.specialty ? " - " + t.specialty : ""}`;
+        sel.appendChild(opt);
       }
-    } else {
-      techniciansSelect.innerHTML = '<option value="">No se encontraron técnicos</option>';
-    }
-  } catch (error) {
-    console.error("Error cargando técnicos:", error);
-    document.getElementById("technicians").innerHTML = 
-      '<option value="">Error cargando técnicos</option>';
-    showAlert("Error al cargar la lista de técnicos", "warning");
+    });
   }
 }
 </script>
 
 <style>
-.form-control:invalid, .form-select:invalid {
-  border-color: #dc3545;
-}
-
-.form-control:valid, .form-select:valid {
-  border-color: #198754;
-}
-
-#request-info strong {
-  color: #0f9d58;
-  min-width: 120px;
-  display: inline-block;
-}
+.form-control:invalid, .form-select:invalid { border-color: #dc3545; }
+.form-control:valid, .form-select:valid { border-color: #198754; }
+#request-info strong { color: #0f9d58; min-width: 120px; display: inline-block; }
 </style>

@@ -1,146 +1,140 @@
-<div class="card p-3"> 
-  <h4>Editar Visita Técnica</h4>
-  <form id="visit-form">
-    <div class="mb-3">
-      <label class="form-label">Técnico</label>
-      <select class="form-select" id="technicians" name="technicianId"></select>
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Editar Visita Técnica</h4>
+    <button class="btn btn-outline-secondary btn-sm" onclick="appLoad('service_requests/detail.html')">
+      <i class="fas fa-arrow-left me-1"></i> Volver a Solicitud
+    </button>
+  </div>
+
+  <form id="visit-form" class="row g-3">
+    <input type="hidden" name="id" id="visit-id">
+    <input type="hidden" name="serviceRequestId" id="service-request-id">
+
+    <div class="col-md-6">
+      <label class="form-label">Técnico *</label>
+      <select class="form-select" id="technicians" name="technicianId" required>
+        <option value="">Seleccione un técnico</option>
+      </select>
+      <div class="invalid-feedback">Seleccione un técnico</div>
     </div>
 
-    <div class="mb-3">
-      <label>Notas</label>
-      <textarea class="form-control" name="visitNotes"></textarea>
+    <div class="col-md-6">
+      <label class="form-label">Fecha y Hora de la Visita *</label>
+      <input type="datetime-local" class="form-control" name="visitDatetime" id="visit-datetime" required>
     </div>
 
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="chk-meter">
-      <label class="form-check-label" for="chk-meter">¿Se tomó lectura del contador?</label>
+    <div class="col-12">
+      <label class="form-label">Notas *</label>
+      <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4" required></textarea>
     </div>
 
-    <div id="meter-fields" style="display:none">
-      <input type="number" class="form-control mb-2" name="meterBefore" placeholder="Lectura antes">
-      <input type="number" class="form-control" name="meterAfter" placeholder="Lectura después">
+    <div class="col-12">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="solved" id="solved">
+        <label class="form-check-label" for="solved">
+          <strong>¿Solicitud resuelta?</strong>
+        </label>
+      </div>
     </div>
 
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" name="solved" id="solved">
-      <label class="form-check-label" for="solved">¿Resuelto?</label>
-    </div>
-
-    <div class="d-flex gap-2">
-      <button class="btn btn-primary" id="btn-save">Actualizar Visita</button>
-      <button type="button" class="btn btn-secondary" id="btn-cancel">Cancelar</button>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit" id="btn-submit">
+        <i class="fas fa-save me-1"></i> Guardar Cambios
+      </button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/detail.html')">
+        <i class="fas fa-times me-1"></i> Cancelar
+      </button>
     </div>
   </form>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const API = (typeof API_BASE !== "undefined") ? API_BASE.replace(/\/$/, '') : "";
-  const requestId = sessionStorage.getItem("selectedRequestId");
-  const visitId = sessionStorage.getItem("selectedVisitId");
-
-  if (!visitId || !requestId) {
-    showAlert("No se encontró la visita seleccionada.", "danger");
-    return appLoad("service_requests/detail.html");
-  }
-
-  const techniciansSelect = document.getElementById("technicians");
-  const chkMeter = document.getElementById("chk-meter");
-  const meterFields = document.getElementById("meter-fields");
-  const form = document.getElementById("visit-form");
-  const btnSave = document.getElementById("btn-save");
-  const btnCancel = document.getElementById("btn-cancel");
-
-  // cancelar → vuelve al detalle
-  btnCancel.addEventListener("click", () => {
+(async function () {
+  const params = new URLSearchParams(location.search);
+  const visitId = params.get("id");
+  if (!visitId) {
+    showAlert("No se encontró la visita.", "danger");
     appLoad("service_requests/detail.html");
-  });
-
-  // cargar técnicos
-  let techs = [];
-  try {
-    if (typeof technicianService !== "undefined" && technicianService.list) {
-      techs = await technicianService.list();
-    } else {
-      const res = await fetch(API + "/technicians");
-      const json = await res.json();
-      techs = json?.data || json || [];
-    }
-    techniciansSelect.innerHTML = techs.map(t => 
-      `<option value="${t.id}">${t.fullName || t.name || t.identification || t.id}</option>`
-    ).join("") || "<option value=''>-- No hay técnicos --</option>";
-  } catch (err) {
-    console.error("Error cargando técnicos:", err);
-    techniciansSelect.innerHTML = "<option value=''>-- Error cargando técnicos --</option>";
+    return;
   }
 
-  // cargar visita actual
+  const form = document.getElementById("visit-form");
+  const btnSubmit = document.getElementById("btn-submit");
+  const techniciansSelect = document.getElementById("technicians");
+
   try {
-    const res = await fetch(`${API}/visits/${visitId}`);
-    if (!res.ok) throw new Error("Error obteniendo visita");
-    const v = (await res.json())?.data || await res.json();
+    // 🔹 Cargar técnicos
+    const technicians = await technicianService.list();
+    techniciansSelect.innerHTML = '<option value="">Seleccione un técnico</option>';
+    technicians.forEach(tech => {
+      if (tech.active !== false) {
+        techniciansSelect.innerHTML += `
+          <option value="${tech.id}">
+            ${tech.fullName}${tech.specialty ? " - " + tech.specialty : ""}
+          </option>`;
+      }
+    });
 
-    // rellenar campos
-    form.technicianId.value = v.technicianId || "";
-    form.visitNotes.value = v.visitNotes || "";
-    form.solved.checked = !!v.solved;
+    // 🔹 Cargar datos de la visita
+    const visit = await serviceVisitService.get(visitId);
+    if (!visit) throw new Error("Visita no encontrada");
 
-    if (v.meterReadingBefore != null || v.meterReadingAfter != null) {
-      chkMeter.checked = true;
-      meterFields.style.display = "block";
-      form.meterBefore.value = v.meterReadingBefore || "";
-      form.meterAfter.value = v.meterReadingAfter || "";
+    document.getElementById("visit-id").value = visit.id;
+    document.getElementById("service-request-id").value = visit.serviceRequestId;
+
+    if (visit.visitDatetime) {
+      const dt = new Date(visit.visitDatetime);
+      dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+      document.getElementById("visit-datetime").value = dt.toISOString().slice(0, 16);
     }
+
+    document.getElementById("technicians").value = visit.technicianId || "";
+    document.getElementById("visit-notes").value = visit.visitNotes || "";
+    document.getElementById("solved").checked = visit.solved === true;
 
   } catch (err) {
     console.error("Error cargando visita:", err);
-    showAlert("Error cargando datos de la visita", "danger");
+    showAlert("Error cargando visita: " + err.message, "danger");
   }
 
-  // toggle contador
-  chkMeter.addEventListener("change", (e) => {
-    meterFields.style.display = e.target.checked ? "block" : "none";
-  });
-
-  // actualizar visita
+  // 🔹 Submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    btnSave.disabled = true;
-    btnSave.innerText = "Actualizando...";
+    if (!form.checkValidity()) {
+      form.classList.add("was-validated");
+      return;
+    }
+
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
 
     try {
-      const fd = new FormData(form);
+      const formData = new FormData(form);
       const dto = {
-        technicianId: fd.get("technicianId") ? Number(fd.get("technicianId")) : null,
-        visitNotes: fd.get("visitNotes") || null,
-        solved: form.solved.checked === true,
-        takeMeterReading: chkMeter.checked,
-        reading: chkMeter.checked && fd.get("meterAfter") ? Number(fd.get("meterAfter")) : null,
-        readingNotes: chkMeter.checked ? "Lectura actualizada desde frontend" : null,
-        meterReadingBefore: chkMeter.checked ? (fd.get("meterBefore") ? Number(fd.get("meterBefore")) : null) : null,
-        meterReadingAfter: chkMeter.checked ? (fd.get("meterAfter") ? Number(fd.get("meterAfter")) : null) : null,
+        id: parseInt(formData.get("id")),
+        serviceRequestId: parseInt(formData.get("serviceRequestId")),
+        technicianId: parseInt(formData.get("technicianId")),
+        visitDatetime: formData.get("visitDatetime"),
+        visitNotes: formData.get("visitNotes"),
+        solved: formData.get("solved") === "on"
       };
 
-      const updateRes = await fetch(`${API}/visits/${visitId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dto)
-      });
+      console.log("Enviando update:", dto);
 
-      if (!updateRes.ok) {
-        const txt = await updateRes.text().catch(()=>null);
-        throw new Error("Error actualizando visita: " + (txt || updateRes.status));
+      const updated = await serviceVisitService.update(dto.id, dto);
+      if (updated && updated.id) {
+        showAlert("Visita actualizada correctamente", "success");
+        setTimeout(() => appLoad("service_requests/detail.html"), 1200);
+      } else {
+        throw new Error("No se recibió confirmación del servidor");
       }
 
-      showAlert("Visita actualizada correctamente", "success");
-      appLoad("service_requests/detail.html");
-
     } catch (err) {
-      console.error(err);
-      showAlert(err.message || "Error actualizando visita", "danger");
-      btnSave.disabled = false;
-      btnSave.innerText = "Actualizar Visita";
+      console.error("Error actualizando visita:", err);
+      showAlert("Error actualizando visita: " + err.message, "danger");
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '<i class="fas fa-save me-1"></i> Guardar Cambios';
     }
   });
-});
+})();
 </script>
