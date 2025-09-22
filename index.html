@@ -275,25 +275,25 @@ const locationService = {
     };
 
     const serviceVisitService = {
-        list: () => fetch(API_BASE + "/service-visits")
+        list: () => fetch(API_BASE + "/visits/")
             .then(r => r.json()).then(res => res.data || []),
 
-        get: (id) => fetch(API_BASE + "/service-visits/" + id)
+        get: (id) => fetch(API_BASE + "/visits/" + id)
             .then(r => r.json()).then(res => res.data),
 
-        create: (data) => fetch(API_BASE + "/service-visits", {
+        create: (data) => fetch(API_BASE + "/visits", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => res.data),
 
-        update: (id, data) => fetch(API_BASE + "/service-visits/" + id, {
+        update: (id, data) => fetch(API_BASE + "/visits/" + id, {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => res.data),
 
-        byRequest: (requestId) => fetch(API_BASE + "/service-visits/request/" + requestId)
+        byRequest: (requestId) => fetch(API_BASE + "/request/" + requestId)
             .then(r => r.json()).then(res => res.data || []),
 
         byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId)
