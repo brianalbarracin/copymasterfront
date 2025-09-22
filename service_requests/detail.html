@@ -161,6 +161,9 @@
   try {
     const visits = await serviceVisitService.byRequest(requestId);
     const tbody = document.querySelector("#sr-visits tbody");
+     
+
+    console.log("Visitas recibidas:", visits);
 
     if (visits && visits.length > 0) {
       // Obtener todos los nombres de técnicos en paralelo

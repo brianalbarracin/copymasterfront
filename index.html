@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -9,36 +10,64 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
-        .container { max-width: 1100px; }
-        h1,h3,h4 { color: #0f9d58; }
-        .card { border-radius: 10px; }
-        .navbar-brand { font-weight:700; font-size:1.15rem; }
-        .link-success { color:#0f9d58 !important; }
-        .table-actions button { margin-right:6px; }
-        
+        body {
+            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        .container {
+            max-width: 1100px;
+        }
+
+        h1,
+        h3,
+        h4 {
+            color: #0f9d58;
+        }
+
+        .card {
+            border-radius: 10px;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+
+        .link-success {
+            color: #0f9d58 !important;
+        }
+
+        .table-actions button {
+            margin-right: 6px;
+        }
+
         /* Nuevos estilos para mejoras */
         .stat-card {
             text-align: center;
             padding: 20px;
             transition: transform 0.3s;
         }
+
         .stat-card:hover {
             transform: translateY(-5px);
         }
+
         .stat-card i {
             font-size: 2rem;
             margin-bottom: 10px;
             color: #0f9d58;
         }
+
         .stat-card .number {
             font-size: 1.8rem;
             font-weight: bold;
         }
+
         .stat-card .label {
             font-size: 0.9rem;
             color: #6c757d;
         }
+
         .technician-img {
             width: 80px;
             height: 80px;
@@ -46,6 +75,7 @@
             object-fit: cover;
             border: 3px solid #f1f1f1;
         }
+
         .performance-bar {
             height: 10px;
             background-color: #e9ecef;
@@ -53,14 +83,17 @@
             overflow: hidden;
             margin: 10px 0;
         }
+
         .performance-fill {
             height: 100%;
             background-color: #0f9d58;
             border-radius: 5px;
         }
+
         .dashboard-section {
             margin-bottom: 30px;
         }
+
         .section-title {
             border-left: 4px solid #0f9d58;
             padding-left: 10px;
@@ -73,6 +106,7 @@
     </script>
     <script src="assets/js/app.js" defer></script>
 </head>
+
 <body class="d-flex flex-column min-vh-100">
     <!-- Header -->
     <header class="bg-white shadow-sm">
@@ -87,24 +121,33 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="#" data-page="home.html">Inicio</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="machines/list.html">Máquinas</a></li>
-<li class="nav-item">
-  <a class="nav-link" href="#" data-page="customers/list.html">Clientes</a>
-</li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-page="service_requests/list.html">Solicitudes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="customers/list.html">Clientes</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#"
+                            data-page="service_requests/list.html">Solicitudes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="technicians/list.html">Técnicos</a>
+                    </li>
                     <li class="nav-item"><a class="nav-link" href="#" data-page="costs/analysis.html">Costos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-page="reports/generate.html">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-page="reports/generate.html">Reportes</a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center">
                     <div class="dropdown">
-                        <button class="btn btn-link text-muted text-decoration-none dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
+                        <button class="btn btn-link text-muted text-decoration-none dropdown-toggle" type="button"
+                            id="userMenu" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i> <span id="current-user"></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#" data-page="user/profile.html"><i class="fas fa-user me-2"></i>Mi perfil</a></li>
-                            <li><a class="dropdown-item" href="#" data-page="user/sessions.html"><i class="fas fa-clock me-2"></i>Sesiones activas</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" id="logout"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="#" data-page="user/profile.html"><i
+                                        class="fas fa-user me-2"></i>Mi perfil</a></li>
+                            <li><a class="dropdown-item" href="#" data-page="user/sessions.html"><i
+                                        class="fas fa-clock me-2"></i>Sesiones activas</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="#" id="logout"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
                         </ul>
                     </div>
                 </div>
@@ -127,220 +170,225 @@
 
     <!-- Bootstrap JS bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Script con todas las mejoras -->
     <script>
         // Servicios corregidos y mejorados
 
 
-const customerService = {
-  list: () => fetch(API_BASE + "/customers")
-    .then(r => r.json())
-    .then(res => res.data || []),
+        const customerService = {
+            list: () => fetch(API_BASE + "/customers")
+                .then(r => r.json())
+                .then(res => res.data || []),
 
-  get: (id) => fetch(API_BASE + "/customers/" + id)
-    .then(r => r.json())
-    .then(res => res.data),
+            get: (id) => fetch(API_BASE + "/customers/" + id)
+                .then(r => r.json())
+                .then(res => res.data),
 
-  create: (data) => fetch(API_BASE + "/customers", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-  }).then(r => r.json()).then(res => res.data),
+            create: (data) => fetch(API_BASE + "/customers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-  update: (id, data) => fetch(API_BASE + "/customers/" + id, {
-    method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-  }).then(r => r.json()).then(res => res.data),
+            update: (id, data) => fetch(API_BASE + "/customers/" + id, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-  delete: (id) => fetch(API_BASE + "/customers/" + id, {
-    method: "DELETE"
-  }).then(r => r.json()).then(res => res.data)
-};
+            delete: (id) => fetch(API_BASE + "/customers/" + id, {
+                method: "DELETE"
+            }).then(r => r.json()).then(res => res.data)
+        };
 
-const locationService = {
-  list: () => fetch(API_BASE + "/locations")
-    .then(r => r.json())
-    .then(res => res || [])
-};
-                const technicianService = {
-        list: () => fetch(API_BASE + "/technicians")
-            .then(r => r.json()).then(res => res.data || []),
+        const locationService = {
+            list: () => fetch(API_BASE + "/locations")
+                .then(r => r.json())
+                .then(res => res || [])
+        };
+        const technicianService = {
+            list: () => fetch(API_BASE + "/technicians")
+                .then(r => r.json()).then(res => res.data || []),
 
-        get: (id) => fetch(API_BASE + "/technicians/" + id)
-            .then(r => r.json()).then(res => res.data),
+            get: (id) => fetch(API_BASE + "/technicians/" + id)
+                .then(r => r.json()).then(res => res.data),
 
-        create: (data) => fetch(API_BASE + "/technicians", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            create: (data) => fetch(API_BASE + "/technicians", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            update: (id, data) => fetch(API_BASE + "/technicians/" + id, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        performance: (id, startDate, endDate) => {
-            const params = new URLSearchParams({
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
-            });
-            return fetch(`${API_BASE}/technicians/${id}/performance?${params}`)
-                .then(r => r.json()).then(res => res.data);
-        },
+            performance: (id, startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/technicians/${id}/performance?${params}`)
+                    .then(r => r.json()).then(res => res.data);
+            },
 
-        comparison: (startDate, endDate) => {
-            const params = new URLSearchParams({
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
-            });
-            return fetch(`${API_BASE}/technicians/comparison?${params}`)
-                .then(r => r.json()).then(res => res.data);
-        }
-    };
+            comparison: (startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/technicians/comparison?${params}`)
+                    .then(r => r.json()).then(res => res.data);
+            }
+        };
 
-    const machineService = {
-        list: () => fetch(API_BASE + "/machines")
-            .then(r => r.json()).then(res => res.data || []),
+        const machineService = {
+            list: () => fetch(API_BASE + "/machines")
+                .then(r => r.json()).then(res => res.data || []),
 
-        get: (id) => fetch(API_BASE + "/machines/" + id)
-    .then(r => r.json())
-    .then(res => {
-        // Si la respuesta tiene propiedad 'data', usarla
-        if (res && res.data !== undefined) {
-            return res.data;
-        }
-        // Si no, asumir que la respuesta es directamente los datos
-        return res;
-    }),
+            get: (id) => fetch(API_BASE + "/machines/" + id)
+                .then(r => r.json())
+                .then(res => {
+                    // Si la respuesta tiene propiedad 'data', usarla
+                    if (res && res.data !== undefined) {
+                        return res.data;
+                    }
+                    // Si no, asumir que la respuesta es directamente los datos
+                    return res;
+                }),
 
-        create: (data) => fetch(API_BASE + "/machines", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-}).then(async r => {
-    if (!r.ok) {
-        const text = await r.text();
-        throw new Error("Error en backend: " + text);
-    }
-    return r.json();
-}).then(res => res.data),
-        update: (id, data) => fetch(API_BASE + "/machines/" + id, {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            create: (data) => fetch(API_BASE + "/machines", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(async r => {
+                if (!r.ok) {
+                    const text = await r.text();
+                    throw new Error("Error en backend: " + text);
+                }
+                return r.json();
+            }).then(res => res.data),
+            update: (id, data) => fetch(API_BASE + "/machines/" + id, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        delete: (id) => fetch(API_BASE + "/machines/" + id, {
-            method: "DELETE"
-        }).then(r => r.json()).then(res => res.data),
+            delete: (id) => fetch(API_BASE + "/machines/" + id, {
+                method: "DELETE"
+            }).then(r => r.json()).then(res => res.data),
 
-        movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id)
-            .then(r => r.json()).then(res => res.data || []),
+            movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id)
+                .then(r => r.json()).then(res => res.data || []),
 
-        meterReadings: (id) => fetch(API_BASE + "/meter-readings/machine/" + id)
-            .then(r => r.json()).then(res => res.data || []),
+            meterReadings: (id) => fetch(API_BASE + "/meter-readings/machine/" + id)
+                .then(r => r.json()).then(res => res.data || []),
 
-        search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
-            .then(r => r.json()).then(res => res.data || [])
-    };
+            search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
+                .then(r => r.json()).then(res => res.data || [])
+        };
 
-    const serviceRequestService = {
-        list: () => fetch(API_BASE + "/service-requests")
-            .then(r => r.json()).then(res => res.data || []),
+        const serviceRequestService = {
+            list: () => fetch(API_BASE + "/service-requests")
+                .then(r => r.json()).then(res => res.data || []),
 
-        get: (id) => fetch(API_BASE + "/service-requests/" + id)
-            .then(r => r.json()).then(res => res.data),
+            get: (id) => fetch(API_BASE + "/service-requests/" + id)
+                .then(r => r.json()).then(res => res.data),
 
-        create: (data) => fetch(API_BASE + "/service-requests", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            create: (data) => fetch(API_BASE + "/service-requests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            update: (id, data) => fetch(API_BASE + "/service-requests/" + id, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId)
-            .then(r => r.json()).then(res => res.data || []),
+            byCustomer: (customerId) => fetch(API_BASE + "/service-requests/customer/" + customerId)
+                .then(r => r.json()).then(res => res.data || []),
 
-        byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId)
-            .then(r => r.json()).then(res => res.data || [])
-    };
+            byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId)
+                .then(r => r.json()).then(res => res.data || [])
+        };
 
-    const serviceVisitService = {
-        list: () => fetch(API_BASE + "/visits/")
-            .then(r => r.json()).then(res => res.data || []),
+        const serviceVisitService = {
+            list: () => fetch(API_BASE + "/visits/")
+                .then(r => r.json()).then(res => res.data || []),
 
-        get: (id) => fetch(API_BASE + "/visits/" + id)
-            .then(r => r.json()).then(res => res.data),
+            get: (id) => fetch(API_BASE + "/visits/" + id)
+                .then(r => r.json()).then(res => res.data),
 
-        create: (data) => fetch(API_BASE + "/visits", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            create: (data) => fetch(API_BASE + "/visits", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        update: (id, data) => fetch(API_BASE + "/visits/" + id, {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            update: (id, data) => fetch(API_BASE + "/visits/" + id, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        byRequest: (requestId) => fetch(API_BASE + "/visits/request/" + requestId)
-            .then(r => r.json()).then(res => res.data || []),
+            byRequest: (requestId) => fetch(API_BASE + "/visits/request/" + requestId)
+                .then(r => r.json()).then(res => {
+                    // Si tu backend devuelve array directamente
+                    if (Array.isArray(res)) return res;
+                    // Si devuelve ServerResponseDto con data
+                    return res.data || [];
+                }),
 
-        byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId)
-            .then(r => r.json()).then(res => res.data || [])
-    };
+            byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId)
+                .then(r => r.json()).then(res => res.data || [])
+        };
 
-    const costService = {
-        analysis: (startDate, endDate) => {
-            const params = new URLSearchParams({
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
-            });
-            return fetch(`${API_BASE}/costs/analysis?${params}`)
-                .then(r => r.json()).then(res => res.data);
-        },
-        comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`)
-            .then(r => r.json()).then(res => res.data || [])
-    };
+        const costService = {
+            analysis: (startDate, endDate) => {
+                const params = new URLSearchParams({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString()
+                });
+                return fetch(`${API_BASE}/costs/analysis?${params}`)
+                    .then(r => r.json()).then(res => res.data);
+            },
+            comparison: (months) => fetch(`${API_BASE}/costs/comparison?months=${months}`)
+                .then(r => r.json()).then(res => res.data || [])
+        };
 
-    const reportService = {
-        generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({type, params})
-        }).then(r => r.json()).then(res => res.data),
+        const reportService = {
+            generate: (type, params) => fetch(`${API_BASE}/reports/generate`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type, params })
+            }).then(r => r.json()).then(res => res.data),
 
-        list: () => fetch(API_BASE + "/reports")
-            .then(r => r.json()).then(res => res.data || [])
-    };
+            list: () => fetch(API_BASE + "/reports")
+                .then(r => r.json()).then(res => res.data || [])
+        };
 
-    const userService = {
-        getProfile: () => fetch(API_BASE + "/user/profile")
-            .then(r => r.json()).then(res => res.data),
+        const userService = {
+            getProfile: () => fetch(API_BASE + "/user/profile")
+                .then(r => r.json()).then(res => res.data),
 
-        updateProfile: (data) => fetch(API_BASE + "/user/profile", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => res.data),
+            updateProfile: (data) => fetch(API_BASE + "/user/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
 
-        getSessions: () => fetch(API_BASE + "/user/sessions")
-            .then(r => r.json()).then(res => res.data || []),
+            getSessions: () => fetch(API_BASE + "/user/sessions")
+                .then(r => r.json()).then(res => res.data || []),
 
-        terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
-            method: "DELETE"
-        }).then(r => r.json()).then(res => res.data)
-    };
+            terminateSession: (sessionId) => fetch(API_BASE + `/user/sessions/${sessionId}`, {
+                method: "DELETE"
+            }).then(r => r.json()).then(res => res.data)
+        };
 
         // Funciones de utilidad
         function showAlert(msg, type = 'info') {
@@ -374,19 +422,19 @@ const locationService = {
                 window.location = "login.html";
                 return;
             }
-            
+
             const userObj = JSON.parse(user);
             document.getElementById("current-user").innerText = userObj.username || userObj.fullName || "";
-            
+
             // Configurar sistema de navegación
-            window.appLoad = async function(path) {
+            window.appLoad = async function (path) {
                 try {
                     const res = await fetch(path);
                     if (!res.ok) throw new Error("No se pudo cargar " + path);
-                    
+
                     const html = await res.text();
                     document.getElementById("content-main").innerHTML = html;
-                    
+
                     // Ejecutar scripts incrustados
                     const tmp = document.createElement('div');
                     tmp.innerHTML = html;
@@ -430,4 +478,5 @@ const locationService = {
         });
     </script>
 </body>
+
 </html>
