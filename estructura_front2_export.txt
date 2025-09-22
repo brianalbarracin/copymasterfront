@@ -2495,66 +2495,124 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
 </div>
 
 <script>
-  (async function () {
-    const id = sessionStorage.getItem("selectedRequestId");
-    if (!id) return appLoad("service_requests/list.html");
+ (async function () {
+    // Obtener el ID de la solicitud de la URL o sessionStorage
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id") || sessionStorage.getItem("selectedRequestId");
+    
+    if (!id) {
+      showAlert("ID de solicitud no especificado", "danger");
+      return appLoad("service_requests/list.html");
+    }
+
+    // Guardar el ID para uso posterior
+    sessionStorage.setItem("selectedRequestId", id);
+    window.__SRID = id;
 
     try {
       const r = await serviceRequestService.get(id);
-      if (!r) return appLoad("service_requests/list.html");
+      if (!r) {
+        showAlert("Solicitud no encontrada", "warning");
+        return appLoad("service_requests/list.html");
+      }
 
       document.getElementById("sr-title").innerText = "Solicitud #" + (r.requestNumber || r.id);
+      document.getElementById("sr-sub").innerText = r.serviceType || "Solicitud de servicio";
 
+      // Información básica
       document.getElementById("sr-info").innerHTML = `
-      <tr><th>ID</th><td>${r.id}</td></tr>
-      <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
-      <tr><th>Estado</th><td><span class="badge bg-info">${r.status}</span></td></tr>
-      <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
-      <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
-    `;
+        <tr><th>ID</th><td>${r.id}</td></tr>
+        <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
+        <tr><th>Estado</th><td><span class="badge ${r.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${r.status || 'N/A'}</span></td></tr>
+        <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
+        <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
+        <tr><th>Causa raíz</th><td>${r.rootCause || "N/A"}</td></tr>
+      `;
 
       // Cliente
-      const c = r.customerId ? await customerService.get(r.customerId) : null;
-      document.getElementById("sr-customer").innerHTML = c ? `
-      <tr><th>Nombre</th><td>${c.name}</td></tr>
-      <tr><th>Contacto</th><td>${c.contactName}</td></tr>
-      <tr><th>Teléfono</th><td>${c.phone}</td></tr>
-    ` : `<tr><td colspan="2">Cliente no disponible</td></tr>`;
+      if (r.customerId) {
+        try {
+          const c = await customerService.get(r.customerId);
+          document.getElementById("sr-customer").innerHTML = c ? `
+            <tr><th>Nombre</th><td>${c.name || 'N/A'}</td></tr>
+            <tr><th>Contacto</th><td>${c.contactName || 'N/A'}</td></tr>
+            <tr><th>Teléfono</th><td>${c.phone || 'N/A'}</td></tr>
+            <tr><th>Email</th><td>${c.email || 'N/A'}</td></tr>
+          ` : `<tr><td colspan="2">Cliente no disponible</td></tr>`;
+        } catch (err) {
+          document.getElementById("sr-customer").innerHTML = `<tr><td colspan="2">Error cargando cliente</td></tr>`;
+        }
+      } else {
+        document.getElementById("sr-customer").innerHTML = `<tr><td colspan="2">No hay cliente asociado</td></tr>`;
+      }
 
       // Máquina
-      const m = r.machineId ? await machineService.get(r.machineId) : null;
-      document.getElementById("sr-machine").innerHTML = m ? `
-      <tr><th>Serial</th><td>${m.companySerial || ""}</td></tr>
-      <tr><th>Modelo</th><td>${m.model || ""}</td></tr>
-      <tr><th>Marca</th><td>${m.brand || ""}</td></tr>
-    ` : `<tr><td colspan="2">Máquina no disponible</td></tr>`;
+      if (r.machineId) {
+        try {
+          const m = await machineService.get(r.machineId);
+          document.getElementById("sr-machine").innerHTML = m ? `
+            <tr><th>Serial</th><td>${m.companySerial || "N/A"}</td></tr>
+            <tr><th>Modelo</th><td>${m.model || "N/A"}</td></tr>
+            <tr><th>Marca</th><td>${m.brand || "N/A"}</td></tr>
+            <tr><th>Estado</th><td>${m.status || "N/A"}</td></tr>
+          ` : `<tr><td colspan="2">Máquina no disponible</td></tr>`;
+        } catch (err) {
+          document.getElementById("sr-machine").innerHTML = `<tr><td colspan="2">Error cargando máquina</td></tr>`;
+        }
+      } else {
+        document.getElementById("sr-machine").innerHTML = `<tr><td colspan="2">No hay máquina asociada</td></tr>`;
+      }
 
-      // Visitas
-      const visits = await fetch(`/visits/request/${id}`).then(r => r.json());
-      const tbody = document.querySelector("#sr-visits tbody");
-      tbody.innerHTML = visits.length ? visits.map(v => `
-  <tr>
-    <td>${v.visitDatetime ? new Date(v.visitDatetime).toLocaleString() : "-"}</td>
-    <td>${v.technicianId || "-"}</td>
-    <td>${v.visitNotes || "-"}</td>
-    <td>${v.solved ? "✅" : "❌"}</td>
-    <td>
-      <button class="btn btn-sm btn-outline-primary"
-        onclick="appLoad('service_visits/edit.html?id=${v.id}')">Editar</button>
-    </td>
-  </tr>
-`).join("") : `<tr><td colspan="5" class="text-muted">Sin visitas</td></tr>`;
+      // Visitas técnicas
+      await loadVisits(id);
 
-      // Crear visita
+      // Configurar botón de crear visita
       document.getElementById("btn-create-visit").onclick = () => {
+        console.log("Crear visita para solicitud:", id);
         sessionStorage.setItem("selectedRequestId", id);
         appLoad("service_visits/new.html");
       };
 
     } catch (err) {
-      showAlert("Error cargando solicitud: " + err.message, "danger");
+      console.error("Error cargando solicitud:", err);
+      showAlert("Error cargando detalles de la solicitud: " + err.message, "danger");
     }
   })();
+
+  async function loadVisits(requestId) {
+    try {
+      const visits = await serviceVisitService.byRequest(requestId);
+      const tbody = document.querySelector("#sr-visits tbody");
+      
+      if (visits && visits.length > 0) {
+        tbody.innerHTML = visits.map(v => `
+          <tr>
+            <td>${v.visitDatetime ? new Date(v.visitDatetime).toLocaleString() : "-"}</td>
+            <td>${v.technicianId || "-"}</td>
+            <td>${v.visitNotes || "-"}</td>
+            <td>${v.solved ? "✅ Sí" : "❌ No"}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" 
+                      onclick="editVisit(${v.id})">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+            </td>
+          </tr>
+        `).join("");
+      } else {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No hay visitas registradas</td></tr>`;
+      }
+    } catch (err) {
+      console.error("Error cargando visitas:", err);
+      document.querySelector("#sr-visits tbody").innerHTML = 
+        `<tr><td colspan="5" class="text-center text-warning">Error cargando visitas</td></tr>`;
+    }
+  }
+
+  function editVisit(visitId) {
+    sessionStorage.setItem("selectedVisitId", visitId);
+    appLoad("service_visits/edit.html");
+  }
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\list.html =====
