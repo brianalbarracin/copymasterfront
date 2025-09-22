@@ -116,7 +116,7 @@
       const visitData = {
         serviceRequestId: parseInt(requestId),
         technicianId: parseInt(document.getElementById("technicians").value),
-        visitDatetime: document.getElementById("visit-datetime").value,
+        visitDatetime: document.getElementById("visit-datetime").value + "-05:00",
         visitNotes: document.getElementById("visit-notes").value,
         solved: document.getElementById("solved").checked
       };
