@@ -1,0 +1,69 @@
+<div class="card p-3">
+    <h4>Nueva Visita Técnica</h4>
+    <form id="visit-form">
+        <div class="mb-3">
+            <label class="form-label">Técnico</label>
+            <select class="form-select" id="technicians" name="technicianId"></select>
+        </div>
+        <div class="mb-3">
+            <label>Notas</label>
+            <textarea class="form-control" name="visitNotes"></textarea>
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="chk-meter">
+            <label class="form-check-label">¿Se tomó lectura del contador?</label>
+        </div>
+        <div id="meter-fields" style="display:none">
+            <input type="number" class="form-control mb-2" name="meterBefore" placeholder="Lectura antes">
+            <input type="number" class="form-control" name="meterAfter" placeholder="Lectura después">
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="solved" id="solved">
+            <label class="form-check-label" for="solved">¿Resuelto?</label>
+        </div>
+        <button class="btn btn-success">Guardar Visita</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const params = new URLSearchParams(location.search);
+        const requestId = params.get("requestId");
+
+        const techs = await technicianService.list();
+        document.getElementById("technicians").innerHTML =
+            techs.map(t => `<option value="${t.id}">${t.fullName}</option>`).join("");
+
+        document.getElementById("chk-meter").addEventListener("change", e => {
+            document.getElementById("meter-fields").style.display = e.target.checked ? "block" : "none";
+        });
+
+        document.getElementById("visit-form").addEventListener("submit", async e => {
+            e.preventDefault();
+            const form = e.target;
+            const dto = {
+                serviceRequestId: requestId,
+                technicianId: form.technicianId.value,
+                visitNotes: form.visitNotes.value,
+                solved: form.solved.checked,
+                meterReadingBefore: form.meterBefore.value || null,
+                meterReadingAfter: form.meterAfter.value || null
+            };
+
+            await fetch("/visits", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dto)
+            });
+
+            // actualizar estado del service_request
+            await fetch(`/service-requests/${requestId}/status`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "EN_PROCESO" })
+            });
+
+            showAlert("Visita creada", "success");
+            appLoad(`service_requests/detail.html`);
+        });
+</script>

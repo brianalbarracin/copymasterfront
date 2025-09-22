@@ -1,0 +1,62 @@
+<div class="card p-3">
+    <h4>Editar Visita Técnica</h4>
+    <form id="visit-edit-form">
+        <div class="mb-3">
+            <label>Técnico</label>
+            <select class="form-select" id="technicians" name="technicianId"></select>
+        </div>
+        <div class="mb-3">
+            <label>Notas</label>
+            <textarea class="form-control" name="visitNotes"></textarea>
+        </div>
+        <div class="mb-3">
+            <label>Repuestos usados</label>
+            <textarea class="form-control" name="partsUsed" placeholder='Ej: [{"part":"Cilindro","qty":1}]'></textarea>
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="solved" id="solved">
+            <label class="form-check-label">¿Resuelto?</label>
+        </div>
+        <button class="btn btn-primary">Actualizar Visita</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const params = new URLSearchParams(location.search);
+        const visitId = params.get("id");
+        const v = await fetch(`/visits/${visitId}`).then(r => r.json());
+
+        const form = document.getElementById("visit-edit-form");
+        form.technicianId.value = v.technicianId || "";
+        form.visitNotes.value = v.visitNotes || "";
+        form.solved.checked = v.solved || false;
+
+        if (v.meterReadingBefore || v.meterReadingAfter) {
+            document.getElementById("chk-meter").checked = true;
+            document.getElementById("meter-fields").style.display = "block";
+            form.meterBefore.value = v.meterReadingBefore || "";
+            form.meterAfter.value = v.meterReadingAfter || "";
+        }
+
+        form.addEventListener("submit", async e => {
+            e.preventDefault();
+            const dto = {
+                technicianId: form.technicianId.value,
+                visitNotes: form.visitNotes.value,
+                solved: form.solved.checked,
+                meterReadingBefore: form.meterBefore.value || null,
+                meterReadingAfter: form.meterAfter.value || null
+            };
+
+            await fetch(`/visits/${visitId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dto)
+            });
+
+            showAlert("Visita actualizada", "success");
+            appLoad(`service_requests/detail.html`);
+        });
+    });
+</script>

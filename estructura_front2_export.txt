@@ -2421,227 +2421,242 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\detail.html =====
 <div class="card p-3">
-  <div class="d-flex justify-content-between align-items-start mb-3">
-    <div>
-      <h4 id="request-title">Detalle Solicitud</h4>
-      <p class="text-muted" id="request-sub">Información completa de la solicitud</p>
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h4 id="sr-title">Solicitud de Servicio</h4>
+            <p class="text-muted" id="sr-sub">Detalle de solicitud</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-secondary me-2" onclick="editRequest()">
+                <i class="fas fa-edit me-1"></i> Editar
+            </button>
+            <button class="btn btn-outline-secondary" onclick="appLoad('service_requests/list.html')">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </button>
+        </div>
     </div>
-    <div>
-      <button class="btn btn-outline-secondary me-2" onclick="editRequest()">
-        <i class="fas fa-edit me-1"></i> Editar
-      </button>
-      <button class="btn btn-outline-dark" onclick="appLoad('service_requests/list.html')">
-        <i class="fas fa-arrow-left me-1"></i> Volver
-      </button>
+
+    <!-- Información básica -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">Información de la Solicitud</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <tbody id="sr-info"></tbody>
+            </table>
+        </div>
     </div>
-  </div>
 
-  <!-- Información de la Solicitud -->
-  <div class="card mb-3">
-    <div class="card-header bg-light">
-      <h6 class="mb-0">Información de la Solicitud</h6>
+    <!-- Cliente asociado -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">Cliente Asociado</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <tbody id="sr-customer"></tbody>
+            </table>
+        </div>
     </div>
-    <div class="card-body">
-      <dl class="row mb-0">
-        <dt class="col-sm-3">Número</dt>
-        <dd class="col-sm-9" id="req-number"></dd>
 
-        <dt class="col-sm-3">Estado</dt>
-        <dd class="col-sm-9" id="req-status"></dd>
-
-        <dt class="col-sm-3">Tipo</dt>
-        <dd class="col-sm-9" id="req-type"></dd>
-
-        <dt class="col-sm-3">Canal</dt>
-        <dd class="col-sm-9" id="req-channel"></dd>
-
-        <dt class="col-sm-3">Fecha Reporte</dt>
-        <dd class="col-sm-9" id="req-date"></dd>
-
-        <dt class="col-sm-3">Causa Raíz</dt>
-        <dd class="col-sm-9" id="req-root"></dd>
-
-        <dt class="col-sm-3">Descripción</dt>
-        <dd class="col-sm-9" id="req-desc"></dd>
-
-        <dt class="col-sm-3">Resolución</dt>
-        <dd class="col-sm-9" id="req-resolution"></dd>
-
-        <dt class="col-sm-3">Repetida de</dt>
-        <dd class="col-sm-9" id="req-repeated"></dd>
-      </dl>
+    <!-- Máquina asociada -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">Máquina Asociada</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <tbody id="sr-machine"></tbody>
+            </table>
+        </div>
     </div>
-  </div>
-
-  <!-- Información del Cliente -->
-  <div class="card mb-3">
-    <div class="card-header bg-light">
-      <h6 class="mb-0">Cliente Asociado</h6>
-    </div>
-    <div class="card-body">
-      <p><strong id="client-name"></strong> <span class="text-muted" id="client-nit"></span></p>
-    </div>
-  </div>
-
-  <!-- Información de la Máquina -->
-  <div class="card mb-3">
-    <div class="card-header bg-light">
-      <h6 class="mb-0">Máquina Asociada</h6>
-    </div>
-    <div class="card-body">
-      <p><strong id="machine-serial"></strong> <span class="text-muted" id="machine-number"></span></p>
-    </div>
-  </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const id = sessionStorage.getItem("selectedRequestId");
-  if (!id) {
-    showAlert("No se seleccionó solicitud", "warning");
-    appLoad("service_requests/list.html");
-    return;
-  }
+    (async function() {
+        // Obtener ID desde sessionStorage
+        const id = sessionStorage.getItem("selectedRequestId");
+        
+        if (!id) {
+            showAlert("ID de solicitud no especificado", "danger");
+            appLoad("service_requests/list.html");
+            return;
+        }
 
-  try {
-    const req = await serviceRequestService.get(id);
+        try {
+            const r = await serviceRequestService.get(id);
+            if (!r) {
+                showAlert("Solicitud no encontrada", "warning");
+                appLoad("service_requests/list.html");
+                return;
+            }
 
-    if (!req) {
-      showAlert("Solicitud no encontrada", "danger");
-      appLoad("service_requests/list.html");
-      return;
+            // Título
+            document.getElementById("sr-title").innerText = "Solicitud #" + (r.requestNumber || r.id);
+
+            // Info de la solicitud
+            document.getElementById("sr-info").innerHTML = `
+                <tr><th>ID</th><td>${r.id}</td></tr>
+                <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
+                <tr><th>Estado</th><td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td></tr>
+                <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
+                <tr><th>Canal</th><td>${r.reportedChannel || "N/A"}</td></tr>
+                <tr><th>Reportada en</th><td>${r.reportedAt ? new Date(r.reportedAt).toLocaleString() : "N/A"}</td></tr>
+                <tr><th>Causa Raíz</th><td>${r.rootCause || "N/A"}</td></tr>
+                <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
+                <tr><th>Resolución</th><td>${r.resolution || "-"}</td></tr>
+                <tr><th>Repetida de</th><td>${r.repeatedOfRequestId || "No"}</td></tr>
+            `;
+
+            // Cliente asociado
+            const c = r.customerId ? await customerService.get(r.customerId) : null;
+            document.getElementById("sr-customer").innerHTML = c ? `
+                <tr><th>ID</th><td>${c.id}</td></tr>
+                <tr><th>NIT</th><td>${c.nit || ""}</td></tr>
+                <tr><th>Nombre</th><td>${c.name || ""}</td></tr>
+                <tr><th>Contacto</th><td>${c.contactName || ""}</td></tr>
+                <tr><th>Teléfono</th><td>${c.phone || ""}</td></tr>
+                <tr><th>Email</th><td>${c.email || ""}</td></tr>
+                <tr><th>Dirección</th><td>${c.address || ""}</td></tr>
+            ` : `<tr><td colspan="2" class="text-muted">Cliente no disponible</td></tr>`;
+
+            // Máquina asociada
+            const m = r.machineId ? await machineService.get(r.machineId) : null;
+            document.getElementById("sr-machine").innerHTML = m ? `
+                <tr><th>ID</th><td>${m.id}</td></tr>
+                <tr><th>Serial</th><td>${m.companySerial || "N/A"}</td></tr>
+                <tr><th>Número</th><td>${m.companyNumber || "N/A"}</td></tr>
+                <tr><th>Modelo</th><td>${m.model || "N/A"}</td></tr>
+                <tr><th>Marca</th><td>${m.brand || "N/A"}</td></tr>
+                <tr><th>Estado</th><td>${m.status || "N/A"}</td></tr>
+            ` : `<tr><td colspan="2" class="text-muted">Máquina no disponible</td></tr>`;
+
+        } catch (err) {
+            console.error("Error cargando solicitud:", err);
+            showAlert("Error cargando solicitud: " + err.message, "danger");
+        }
+    })();
+
+    function editRequest() {
+        const id = sessionStorage.getItem("selectedRequestId");
+        
+        if (!id) {
+            showAlert("ID de solicitud no especificado", "danger");
+            return;
+        }
+        appLoad("service_requests/edit.html");
     }
-
-    // Título y subtítulo
-    document.getElementById("request-title").textContent = `Solicitud #${req.requestNumber}`;
-    document.getElementById("request-sub").textContent = req.description || "Detalle de la solicitud";
-
-    // Datos principales
-    document.getElementById("req-number").textContent = req.requestNumber || req.id;
-    document.getElementById("req-status").innerHTML = `<span class="badge ${req.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${req.status}</span>`;
-    document.getElementById("req-type").textContent = req.serviceType || "N/A";
-    document.getElementById("req-channel").textContent = req.reportedChannel || "N/A";
-    document.getElementById("req-date").textContent = req.reportedAt ? new Date(req.reportedAt).toLocaleString() : "N/A";
-    document.getElementById("req-root").textContent = req.rootCause || "N/A";
-    document.getElementById("req-desc").textContent = req.description || "N/A";
-    document.getElementById("req-resolution").textContent = req.resolution || "Pendiente";
-    document.getElementById("req-repeated").textContent = req.repeatedOfRequestId ? `#${req.repeatedOfRequestId}` : "No";
-
-    // Cliente asociado
-    document.getElementById("client-name").textContent = req.customerName || "Cliente N/A";
-    document.getElementById("client-nit").textContent = req.customerNit ? `(NIT: ${req.customerNit})` : "";
-
-    // Máquina asociada
-    document.getElementById("machine-serial").textContent = req.machineSerial || "Máquina N/A";
-    document.getElementById("machine-number").textContent = req.machineNumber ? `(Número: ${req.machineNumber})` : "";
-
-  } catch (err) {
-    console.error("Error cargando detalle:", err);
-    showAlert("Error cargando detalle", "danger");
-  }
-});
-
-function editRequest() {
-  const id = sessionStorage.getItem("selectedRequestId");
-  sessionStorage.setItem("selectedRequestId", id);
-  appLoad("service_requests/edit.html");
-}
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\list.html =====
 <div class="card p-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Solicitudes de Servicio</h4>
-    <button class="btn btn-success btn-sm" onclick="appLoad('service_requests/new.html')">
-      <i class="fas fa-plus me-1"></i> Nueva Solicitud
-    </button>
-  </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Solicitudes de Servicio</h4>
+        <button class="btn btn-success btn-sm" onclick="appLoad('service_requests/new.html')">
+            <i class="fas fa-plus me-1"></i> Nueva Solicitud
+        </button>
+    </div>
 
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>#</th>
-          <th>Cliente</th>
-          <th>Máquina</th>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>Estado</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="requests-table">
-        <tr>
-          <td colspan="7" class="text-center text-muted">Cargando solicitudes...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Cliente</th>
+                    <th>Máquina</th>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="requests-table">
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Cargando solicitudes...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const tbody = document.getElementById("requests-table");
-  try {
-    const requests = await serviceRequestService.list();
+    (async function () {
+        const tbody = document.getElementById("requests-table");
 
-    if (!requests || requests.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No hay solicitudes registradas</td></tr>`;
-      return;
+        try {
+            // 👉 Definir caches globales para no re-declarar
+            if (!window.customersCache || window.customersCache.length === 0) {
+                window.customersCache = await customerService.list();
+            }
+
+            if (!window.machinesCache || window.machinesCache.length === 0) {
+                window.machinesCache = await machineService.list();
+            }
+
+            const requests = await serviceRequestService.list();
+
+            if (!requests || requests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No hay solicitudes registradas</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            for (const r of requests) {
+                const date = r.reportedAt ? new Date(r.reportedAt).toLocaleDateString() : "N/A";
+
+                // Buscar cliente y máquina en caches
+                const customer = window.customersCache.find(c => c.id === r.customerId);
+                const machine = window.machinesCache.find(m => m.id === r.machineId);
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${r.requestNumber || r.id}</td>
+                        <td>${customer ? customer.name : "Cliente N/A"}</td>
+                        <td>${machine ? machine.companySerial : "Máquina N/A"}</td>
+                        <td>${date}</td>
+                        <td>${r.serviceType || "N/A"}</td>
+                        <td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-outline-primary btn-sm me-1" onclick="viewRequest(${r.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm me-1" onclick="editRequest(${r.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteRequest(${r.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+        } catch (err) {
+            console.error("Error cargando solicitudes:", err);
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error cargando solicitudes</td></tr>`;
+        }
+    })();
+
+    function viewRequest(id) {
+        sessionStorage.setItem("selectedRequestId", id);
+        appLoad("service_requests/detail.html");
     }
 
-    tbody.innerHTML = "";
-    for (const r of requests) {
-      const date = r.reportedAt ? new Date(r.reportedAt).toLocaleDateString() : "N/A";
-
-      tbody.innerHTML += `
-        <tr>
-          <td>${r.requestNumber || r.id}</td>
-          <td>${r.customerName || "Cliente N/A"}</td>
-          <td>${r.machineSerial || "Máquina N/A"}</td>
-          <td>${date}</td>
-          <td>${r.serviceType || "N/A"}</td>
-          <td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td>
-          <td class="text-end">
-            <button class="btn btn-outline-primary btn-sm me-1" onclick="viewRequest(${r.id})">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button class="btn btn-outline-secondary btn-sm me-1" onclick="editRequest(${r.id})">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-outline-danger btn-sm" onclick="deleteRequest(${r.id})">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `;
+    function editRequest(id) {
+        sessionStorage.setItem("selectedRequestId", id);
+        appLoad("service_requests/edit.html");
     }
-  } catch (err) {
-    console.error("Error cargando solicitudes:", err);
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error cargando solicitudes</td></tr>`;
-  }
-});
 
-function viewRequest(id) {
-  sessionStorage.setItem("selectedRequestId", id);
-  appLoad("service_requests/detail.html");
-}
-
-function editRequest(id) {
-  sessionStorage.setItem("selectedRequestId", id);
-  appLoad("service_requests/edit.html");
-}
-
-async function deleteRequest(id) {
-  if (!confirm("¿Seguro que deseas eliminar esta solicitud?")) return;
-  try {
-    await serviceRequestService.remove(id);
-    showAlert("Solicitud eliminada correctamente", "success");
-    appLoad("service_requests/list.html");
-  } catch (err) {
-    showAlert("Error al eliminar: " + err.message, "danger");
-  }
-}
+    async function deleteRequest(id) {
+        if (!confirm("¿Seguro que deseas eliminar esta solicitud?")) return;
+        try {
+            await serviceRequestService.remove(id);
+            showAlert("Solicitud eliminada correctamente", "success");
+            appLoad("service_requests/list.html");
+        } catch (err) {
+            showAlert("Error al eliminar: " + err.message, "danger");
+        }
+    }
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\new.html =====
@@ -2720,7 +2735,7 @@ async function deleteRequest(id) {
         <option value="correctivo">Correctivo</option>
         <option value="preventivo">Preventivo</option>
         <option value="diagnostico">Diagnóstico</option>
-        <option value="toma_contador">Diagnóstico</option>
+        <option value="toma_contador">Toma de contador</option>
         <option value="toner">Toner</option>
         <option value="otro">Otro</option>
       </select>

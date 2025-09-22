@@ -1,128 +1,135 @@
 <div class="card p-3">
-    <div class="d-flex justify-content-between align-items-start mb-3">
-        <div>
-            <h4 id="sr-title">Solicitud de Servicio</h4>
-            <p class="text-muted" id="sr-sub">Detalle de solicitud</p>
-        </div>
-        <div>
-            <button class="btn btn-outline-secondary me-2" onclick="editRequest()">
-                <i class="fas fa-edit me-1"></i> Editar
-            </button>
-            <button class="btn btn-outline-secondary" onclick="appLoad('service_requests/list.html')">
-                <i class="fas fa-arrow-left me-1"></i> Volver
-            </button>
-        </div>
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 id="sr-title">Solicitud de Servicio</h4>
+      <p class="text-muted" id="sr-sub">Detalle de solicitud</p>
     </div>
+    <div>
+      <button class="btn btn-success me-2" id="btn-create-visit">
+        <i class="fas fa-plus me-1"></i> Crear Visita Técnica
+      </button>
+      <button class="btn btn-outline-secondary" onclick="appLoad('service_requests/list.html')">
+        <i class="fas fa-arrow-left me-1"></i> Volver
+      </button>
+    </div>
+  </div>
 
-    <!-- Información básica -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">Información de la Solicitud</h6>
-        </div>
-        <div class="card-body">
-            <table class="table table-sm">
-                <tbody id="sr-info"></tbody>
-            </table>
-        </div>
+  <!-- Información básica -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Información de la Solicitud</h6>
     </div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <tbody id="sr-info"></tbody>
+      </table>
+    </div>
+  </div>
 
-    <!-- Cliente asociado -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">Cliente Asociado</h6>
-        </div>
-        <div class="card-body">
-            <table class="table table-sm">
-                <tbody id="sr-customer"></tbody>
-            </table>
-        </div>
+  <!-- Cliente -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Cliente Asociado</h6>
     </div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <tbody id="sr-customer"></tbody>
+      </table>
+    </div>
+  </div>
 
-    <!-- Máquina asociada -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">Máquina Asociada</h6>
-        </div>
-        <div class="card-body">
-            <table class="table table-sm">
-                <tbody id="sr-machine"></tbody>
-            </table>
-        </div>
+  <!-- Máquina -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Máquina Asociada</h6>
     </div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <tbody id="sr-machine"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Visitas técnicas -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Visitas Técnicas</h6>
+    </div>
+    <div class="card-body">
+      <table class="table table-sm" id="sr-visits">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Técnico</th>
+            <th>Notas</th>
+            <th>Resuelto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script>
-    (async function() {
-        // Obtener ID desde sessionStorage
-        const id = sessionStorage.getItem("selectedRequestId");
-        
-        if (!id) {
-            showAlert("ID de solicitud no especificado", "danger");
-            appLoad("service_requests/list.html");
-            return;
-        }
+  (async function () {
+    const id = sessionStorage.getItem("selectedRequestId");
+    if (!id) return appLoad("service_requests/list.html");
 
-        try {
-            const r = await serviceRequestService.get(id);
-            if (!r) {
-                showAlert("Solicitud no encontrada", "warning");
-                appLoad("service_requests/list.html");
-                return;
-            }
+    try {
+      const r = await serviceRequestService.get(id);
+      if (!r) return appLoad("service_requests/list.html");
 
-            // Título
-            document.getElementById("sr-title").innerText = "Solicitud #" + (r.requestNumber || r.id);
+      document.getElementById("sr-title").innerText = "Solicitud #" + (r.requestNumber || r.id);
 
-            // Info de la solicitud
-            document.getElementById("sr-info").innerHTML = `
-                <tr><th>ID</th><td>${r.id}</td></tr>
-                <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
-                <tr><th>Estado</th><td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td></tr>
-                <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
-                <tr><th>Canal</th><td>${r.reportedChannel || "N/A"}</td></tr>
-                <tr><th>Reportada en</th><td>${r.reportedAt ? new Date(r.reportedAt).toLocaleString() : "N/A"}</td></tr>
-                <tr><th>Causa Raíz</th><td>${r.rootCause || "N/A"}</td></tr>
-                <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
-                <tr><th>Resolución</th><td>${r.resolution || "-"}</td></tr>
-                <tr><th>Repetida de</th><td>${r.repeatedOfRequestId || "No"}</td></tr>
-            `;
+      document.getElementById("sr-info").innerHTML = `
+      <tr><th>ID</th><td>${r.id}</td></tr>
+      <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
+      <tr><th>Estado</th><td><span class="badge bg-info">${r.status}</span></td></tr>
+      <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
+      <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
+    `;
 
-            // Cliente asociado
-            const c = r.customerId ? await customerService.get(r.customerId) : null;
-            document.getElementById("sr-customer").innerHTML = c ? `
-                <tr><th>ID</th><td>${c.id}</td></tr>
-                <tr><th>NIT</th><td>${c.nit || ""}</td></tr>
-                <tr><th>Nombre</th><td>${c.name || ""}</td></tr>
-                <tr><th>Contacto</th><td>${c.contactName || ""}</td></tr>
-                <tr><th>Teléfono</th><td>${c.phone || ""}</td></tr>
-                <tr><th>Email</th><td>${c.email || ""}</td></tr>
-                <tr><th>Dirección</th><td>${c.address || ""}</td></tr>
-            ` : `<tr><td colspan="2" class="text-muted">Cliente no disponible</td></tr>`;
+      // Cliente
+      const c = r.customerId ? await customerService.get(r.customerId) : null;
+      document.getElementById("sr-customer").innerHTML = c ? `
+      <tr><th>Nombre</th><td>${c.name}</td></tr>
+      <tr><th>Contacto</th><td>${c.contactName}</td></tr>
+      <tr><th>Teléfono</th><td>${c.phone}</td></tr>
+    ` : `<tr><td colspan="2">Cliente no disponible</td></tr>`;
 
-            // Máquina asociada
-            const m = r.machineId ? await machineService.get(r.machineId) : null;
-            document.getElementById("sr-machine").innerHTML = m ? `
-                <tr><th>ID</th><td>${m.id}</td></tr>
-                <tr><th>Serial</th><td>${m.companySerial || "N/A"}</td></tr>
-                <tr><th>Número</th><td>${m.companyNumber || "N/A"}</td></tr>
-                <tr><th>Modelo</th><td>${m.model || "N/A"}</td></tr>
-                <tr><th>Marca</th><td>${m.brand || "N/A"}</td></tr>
-                <tr><th>Estado</th><td>${m.status || "N/A"}</td></tr>
-            ` : `<tr><td colspan="2" class="text-muted">Máquina no disponible</td></tr>`;
+      // Máquina
+      const m = r.machineId ? await machineService.get(r.machineId) : null;
+      document.getElementById("sr-machine").innerHTML = m ? `
+      <tr><th>Serial</th><td>${m.companySerial || ""}</td></tr>
+      <tr><th>Modelo</th><td>${m.model || ""}</td></tr>
+      <tr><th>Marca</th><td>${m.brand || ""}</td></tr>
+    ` : `<tr><td colspan="2">Máquina no disponible</td></tr>`;
 
-        } catch (err) {
-            console.error("Error cargando solicitud:", err);
-            showAlert("Error cargando solicitud: " + err.message, "danger");
-        }
-    })();
+      // Visitas
+      const visits = await fetch(`/visits/request/${id}`).then(r => r.json());
+      const tbody = document.querySelector("#sr-visits tbody");
+      tbody.innerHTML = visits.length ? visits.map(v => `
+  <tr>
+    <td>${v.visitDatetime ? new Date(v.visitDatetime).toLocaleString() : "-"}</td>
+    <td>${v.technicianId || "-"}</td>
+    <td>${v.visitNotes || "-"}</td>
+    <td>${v.solved ? "✅" : "❌"}</td>
+    <td>
+      <button class="btn btn-sm btn-outline-primary"
+        onclick="appLoad('service_visits/edit.html?id=${v.id}')">Editar</button>
+    </td>
+  </tr>
+`).join("") : `<tr><td colspan="5" class="text-muted">Sin visitas</td></tr>`;
 
-    function editRequest() {
-        const id = sessionStorage.getItem("selectedRequestId");
-        
-        if (!id) {
-            showAlert("ID de solicitud no especificado", "danger");
-            return;
-        }
-        appLoad("service_requests/edit.html");
+      // Crear visita
+      document.getElementById("btn-create-visit").onclick = () => {
+        appLoad(`service_visits/new.html?requestId=${id}`);
+      };
+
+    } catch (err) {
+      showAlert("Error cargando solicitud: " + err.message, "danger");
     }
+  })();
 </script>
