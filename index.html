@@ -241,7 +241,7 @@ const locationService = {
         movements: (id) => fetch(API_BASE + "/machine-movements?machineId=" + id)
             .then(r => r.json()).then(res => res.data || []),
 
-        meterReadings: (id) => fetch(API_BASE + "/meter-readings?machineId=" + id)
+        meterReadings: (id) => fetch(API_BASE + "/meter-readings/machine/" + id)
             .then(r => r.json()).then(res => res.data || []),
 
         search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))

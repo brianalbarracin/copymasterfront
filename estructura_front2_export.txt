@@ -2879,22 +2879,36 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
     <h4>Editar Visita Técnica</h4>
     <form id="visit-edit-form">
         <div class="mb-3">
-            <label>Técnico</label>
-            <select class="form-select" id="technicians" name="technicianId"></select>
+            <label class="form-label">Técnico</label>
+            <select class="form-select" name="technicianId" id="technicianId"></select>
         </div>
+
         <div class="mb-3">
             <label>Notas</label>
             <textarea class="form-control" name="visitNotes"></textarea>
         </div>
-        <div class="mb-3">
-            <label>Repuestos usados</label>
-            <textarea class="form-control" name="partsUsed" placeholder='Ej: [{"part":"Cilindro","qty":1}]'></textarea>
-        </div>
+
         <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" name="solved" id="solved">
-            <label class="form-check-label">¿Resuelto?</label>
+            <input class="form-check-input" type="checkbox" id="chk-meter" />
+            <label class="form-check-label" for="chk-meter">¿Se tomó medida del contador?</label>
         </div>
-        <button class="btn btn-primary">Actualizar Visita</button>
+
+        <div id="meter-fields" style="display:none">
+            <input type="number" class="form-control mb-2" name="readingValue" placeholder="Valor de la lectura" />
+        </div>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="chk-meter" />
+            <label class="form-check-label" for="chk-meter">¿Se tomó medida del contador?</label>
+        </div>
+
+        <div id="meter-fields" style="display:none">
+            <input type="number" class="form-control mb-2" name="reading" placeholder="Valor de la lectura" />
+            <textarea class="form-control" name="readingNotes" placeholder="Notas de la medición"></textarea>
+        </div>
+
+
+        <button class="btn btn-success">Guardar Cambios</button>
     </form>
 </div>
 
@@ -2902,6 +2916,13 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
     document.addEventListener("DOMContentLoaded", async () => {
         const params = new URLSearchParams(location.search);
         const visitId = params.get("id");
+
+        // Mostrar campos de medición al marcar el checkbox
+        document.getElementById("chk-meter").addEventListener("change", e => {
+            document.getElementById("meter-fields").style.display = e.target.checked ? "block" : "none";
+        });
+
+        // Cargar datos de la visita
         const v = await fetch(`/visits/${visitId}`).then(r => r.json());
 
         const form = document.getElementById("visit-edit-form");
@@ -2909,21 +2930,15 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
         form.visitNotes.value = v.visitNotes || "";
         form.solved.checked = v.solved || false;
 
-        if (v.meterReadingBefore || v.meterReadingAfter) {
-            document.getElementById("chk-meter").checked = true;
-            document.getElementById("meter-fields").style.display = "block";
-            form.meterBefore.value = v.meterReadingBefore || "";
-            form.meterAfter.value = v.meterReadingAfter || "";
-        }
-
+        // Guardar cambios
         form.addEventListener("submit", async e => {
             e.preventDefault();
             const dto = {
                 technicianId: form.technicianId.value,
                 visitNotes: form.visitNotes.value,
                 solved: form.solved.checked,
-                meterReadingBefore: form.meterBefore.value || null,
-                meterReadingAfter: form.meterAfter.value || null
+                takeMeterReading: document.getElementById("chk-meter").checked,
+                readingValue: form.readingValue.value || null
             };
 
             await fetch(`/visits/${visitId}`, {
