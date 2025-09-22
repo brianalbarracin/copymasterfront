@@ -158,15 +158,25 @@
   })();
 
   async function loadVisits(requestId) {
-    try {
-      const visits = await serviceVisitService.byRequest(requestId);
-      const tbody = document.querySelector("#sr-visits tbody");
-      
-      if (visits && visits.length > 0) {
-        tbody.innerHTML = visits.map(v => `
+  try {
+    const visits = await serviceVisitService.byRequest(requestId);
+    const tbody = document.querySelector("#sr-visits tbody");
+
+    if (visits && visits.length > 0) {
+      // Obtener todos los nombres de técnicos en paralelo
+      const technicianPromises = visits.map(v => 
+        v.technicianId ? technicianService.get(v.technicianId) : null
+      );
+      const technicians = await Promise.all(technicianPromises);
+
+      tbody.innerHTML = visits.map((v, i) => {
+        const tech = technicians[i];
+        const techName = tech ? tech.name || tech.username || "Técnico desconocido" : "-";
+
+        return `
           <tr>
             <td>${v.visitDatetime ? new Date(v.visitDatetime).toLocaleString() : "-"}</td>
-            <td>${v.technicianId || "-"}</td>
+            <td>${techName}</td>
             <td>${v.visitNotes || "-"}</td>
             <td>${v.solved ? "✅ Sí" : "❌ No"}</td>
             <td>
@@ -176,17 +186,17 @@
               </button>
             </td>
           </tr>
-        `).join("");
-      } else {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No hay visitas registradas</td></tr>`;
-      }
-    } catch (err) {
-      console.error("Error cargando visitas:", err);
-      document.querySelector("#sr-visits tbody").innerHTML = 
-        `<tr><td colspan="5" class="text-center text-warning">Error cargando visitas</td></tr>`;
+        `;
+      }).join("");
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No hay visitas registradas</td></tr>`;
     }
+  } catch (err) {
+    console.error("Error cargando visitas:", err);
+    document.querySelector("#sr-visits tbody").innerHTML = 
+      `<tr><td colspan="5" class="text-center text-warning">Error cargando visitas</td></tr>`;
   }
-
+}
   function editVisit(visitId) {
     sessionStorage.setItem("selectedVisitId", visitId);
     appLoad("service_visits/edit.html");

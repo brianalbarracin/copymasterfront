@@ -293,7 +293,7 @@ const locationService = {
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => res.data),
 
-        byRequest: (requestId) => fetch(API_BASE + "/request/" + requestId)
+        byRequest: (requestId) => fetch(API_BASE + "/visits/request/" + requestId)
             .then(r => r.json()).then(res => res.data || []),
 
         byTechnician: (technicianId) => fetch(API_BASE + "/service-visits/technician/" + technicianId)
