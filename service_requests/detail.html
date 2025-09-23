@@ -174,8 +174,7 @@
 
       tbody.innerHTML = visits.map((v, i) => {
         const tech = technicians[i];
-        const techName = tech ? tech.name || tech.username || "Técnico desconocido" : "-";
-
+        const techName = tech ? tech.fullName || "Técnico desconocido" : "-";
         return `
           <tr>
             <td>${v.visitDatetime ? new Date(v.visitDatetime).toLocaleString() : "-"}</td>
@@ -201,7 +200,9 @@
   }
 }
   function editVisit(visitId) {
+    console.log("Editando visita ID:", visitId);
     sessionStorage.setItem("selectedVisitId", visitId);
+    // Agrega el parámetro id a la URL
     appLoad("service_visits/edit.html");
-  }
+}
 </script>
