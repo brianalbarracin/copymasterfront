@@ -27,33 +27,33 @@
     </div>
   </div>
 
-  <!-- Formulario -->
-  <form id="visit-form" class="row g-3 needs-validation" novalidate>
+  <!-- Formulario de edición -->
+  <form id="visit-form" class="row g-3" novalidate>
     <input type="hidden" name="serviceRequestId" id="service-request-id">
 
     <div class="col-md-6">
       <label class="form-label">Técnico asignado</label>
-      <input type="text" class="form-control" id="technician-name" readonly>
+      <select class="form-select" name="technicianId" id="technician-select" required>
+        <option value="">Seleccione un técnico</option>
+      </select>
     </div>
 
     <div class="col-md-6">
-      <label class="form-label">Fecha y Hora de la Visita *</label>
+      <label class="form-label">Fecha y Hora de la Visita</label>
       <input type="datetime-local" class="form-control" name="visitDatetime" id="visit-datetime" required>
-      <div class="invalid-feedback">Por favor ingrese la fecha y hora de la visita</div>
     </div>
 
     <div class="col-12">
-      <label class="form-label">Notas de la Visita *</label>
-      <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4" required></textarea>
-      <div class="invalid-feedback">Por favor ingrese las notas de la visita</div>
+      <label class="form-label">Notas de la Visita</label>
+      <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"></textarea>
     </div>
 
-    <!-- Lectura -->
+    <!-- Lectura del contador -->
     <div class="col-12">
       <div class="card">
         <div class="card-header">
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="chk-meter">
+            <input class="form-check-input" type="checkbox" id="chk-meter" name="takeMeterReading">
             <label class="form-check-label" for="chk-meter">
               <strong>¿Se tomó lectura del contador?</strong>
             </label>
@@ -62,37 +62,39 @@
         <div class="card-body" id="meter-fields" style="display:none">
           <div class="row">
             <div class="col-md-6">
-              <label class="form-label">Lectura *</label>
-              <input type="number" class="form-control" id="meter-reading" min="0">
+              <label class="form-label">Lectura del contador</label>
+              <input type="number" class="form-control" name="reading" id="meter-reading" min="0">
             </div>
             <div class="col-md-6">
               <label class="form-label">Notas de la lectura</label>
-              <input type="text" class="form-control" id="reading-notes" placeholder="Observaciones">
+              <input type="text" class="form-control" name="readingNotes" id="reading-notes" placeholder="Observaciones sobre la lectura">
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Resuelto -->
+    <!-- Estado de resolución -->
     <div class="col-12">
       <div class="card">
         <div class="card-header">
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="solved">
+            <input class="form-check-input" type="checkbox" name="solved" id="solved">
             <label class="form-check-label" for="solved">
               <strong>¿Solicitud resuelta?</strong>
             </label>
           </div>
         </div>
         <div class="card-body" id="resolution-fields" style="display:none">
-          <label class="form-label">Descripción de la solución</label>
-          <textarea class="form-control" id="resolution" rows="3" placeholder="Describa cómo se resolvió el problema"></textarea>
+          <div class="mb-2">
+            <label class="form-label">Descripción de la solución</label>
+            <textarea class="form-control" name="resolution" rows="3" placeholder="Describa cómo se resolvió el problema"></textarea>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Repuestos -->
+    <!-- Repuestos utilizados -->
     <div class="col-12">
       <div class="card">
         <div class="card-header">
@@ -104,7 +106,9 @@
           </div>
         </div>
         <div class="card-body" id="parts-container" style="display:none">
-          <div id="parts-list"></div>
+          <div id="parts-list">
+            <!-- Los repuestos se añadirán aquí dinámicamente -->
+          </div>
           <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn-add-part">
             <i class="fas fa-plus me-1"></i> Añadir otro repuesto
           </button>
@@ -112,14 +116,16 @@
       </div>
     </div>
 
-    <!-- Repuestos existentes -->
+    <!-- Repuestos ya existentes -->
     <div class="col-12">
       <div class="card">
         <div class="card-header bg-light">
-          <h6 class="mb-0">Repuestos ya registrados</h6>
+          <h6 class="mb-0">Repuestos ya registrados en esta visita</h6>
         </div>
-        <div class="card-body" id="existing-parts-list">
-          <p class="text-muted">Cargando...</p>
+        <div class="card-body">
+          <div id="existing-parts-list">
+            <p class="text-muted">Cargando repuestos existentes...</p>
+          </div>
         </div>
       </div>
     </div>
@@ -136,162 +142,283 @@
 </div>
 
 <script>
-(async function initEditVisit(){
+(async function initEditVisit() {
   const API = API_BASE.replace(/\/$/, '');
   const visitId = sessionStorage.getItem("selectedVisitId");
   const requestId = sessionStorage.getItem("selectedRequestId");
 
-  if(!visitId || !requestId){
-    showAlert("No se encontró la visita seleccionada.", "danger");
-    return appLoad("service_requests/list.html");
-  }
-
   const chkMeter = document.getElementById("chk-meter");
   const meterFields = document.getElementById("meter-fields");
-  const chkSolved = document.getElementById("solved");
-  const resolutionFields = document.getElementById("resolution-fields");
   const chkParts = document.getElementById("chk-parts");
   const partsContainer = document.getElementById("parts-container");
   const partsList = document.getElementById("parts-list");
   const btnAddPart = document.getElementById("btn-add-part");
   const existingPartsList = document.getElementById("existing-parts-list");
+  const chkSolved = document.getElementById("solved");
+  const resolutionFields = document.getElementById("resolution-fields");
 
-  // toggle
-  chkMeter.addEventListener("change", e => meterFields.style.display = e.target.checked ? "block" : "none");
-  chkSolved.addEventListener("change", e => resolutionFields.style.display = e.target.checked ? "block" : "none");
+  if (!visitId || !requestId) {
+    showAlert("No se encontró la visita seleccionada.", "danger");
+    return appLoad("service_requests/list.html");
+  }
+
+  // Toggle lectura
+  chkMeter.addEventListener("change", e => {
+    meterFields.style.display = e.target.checked ? "block" : "none";
+  });
+
+  // Toggle resolución
+  chkSolved.addEventListener("change", e => {
+    resolutionFields.style.display = e.target.checked ? "block" : "none";
+  });
+
+  // Toggle repuestos
   chkParts.addEventListener("change", e => {
     partsContainer.style.display = e.target.checked ? "block" : "none";
-    if(e.target.checked && partsList.children.length === 0) addPartSelector();
+    if(e.target.checked && partsList.children.length === 0) {
+      addPartSelector();
+    }
   });
+
+  // Añadir selector de repuestos
   btnAddPart.addEventListener("click", addPartSelector);
 
-  // agregar selector de repuestos
+  // Función para añadir un selector de repuestos
   async function addPartSelector(){
-    const res = await fetch(`${API}/parts`);
-    const parts = (await res.json()).data || [];
-    const div = document.createElement("div");
-    div.className = "d-flex align-items-center gap-2 mb-2";
-    div.innerHTML = `
-      <select class="form-select part-select" required>
-        <option value="">-- Seleccione repuesto --</option>
-        ${parts.map(p => `<option value="${p.id}">${p.name} (${p.sku || 'N/A'})</option>`).join("")}
-      </select>
-      <button type="button" class="btn btn-sm btn-outline-danger remove-part"><i class="fas fa-trash"></i></button>
-    `;
-    div.querySelector(".remove-part").onclick = () => div.remove();
-    partsList.appendChild(div);
-  }
+    try {
+      const res = await fetch(`${API}/parts`);
+      const parts = (await res.json()).data || [];
 
-  async function loadRequestInfo(){
-    const req = await serviceRequestService.get(requestId);
-    document.getElementById("service-request-id").value = req.id;
-    document.getElementById("request-number").textContent = req.requestNumber || req.id;
-    document.getElementById("request-type").textContent = req.serviceType || "N/A";
-    document.getElementById("request-rootcause").textContent = req.rootCause || "N/A";
-    document.getElementById("request-status").textContent = req.status || "N/A";
-    if(req.customerId){
-      const cust = await customerService.get(req.customerId);
-      document.getElementById("request-customer").textContent = cust?.name || "N/A";
-    }
-    if(req.machineId){
-      const mach = await machineService.get(req.machineId);
-      document.getElementById("request-machine").textContent = `${mach?.brand || ""} ${mach?.model || ""} (${mach?.companySerial || "N/A"})`;
-    }
-  }
-
-  async function loadVisitData(){
-    const res = await fetch(`${API}/visits/${visitId}`);
-    const visit = (await res.json()).data || await res.json();
-    document.getElementById("visit-notes").value = visit.visitNotes || "";
-    document.getElementById("visit-datetime").value = visit.visitDatetime ? new Date(visit.visitDatetime).toISOString().slice(0,16) : new Date().toISOString().slice(0,16);
-    if(visit.technicianId){
-      const tech = await technicianService.get(visit.technicianId);
-      document.getElementById("technician-name").value = tech?.fullName || "N/A";
-    }
-    if(visit.solved){ chkSolved.checked = true; resolutionFields.style.display = "block"; }
-    if(visit.takeMeterReading){
-      chkMeter.checked = true; meterFields.style.display = "block";
-      document.getElementById("meter-reading").value = visit.reading || "";
-      document.getElementById("reading-notes").value = visit.readingNotes || "";
+      const partItem = document.createElement("div");
+      partItem.classList.add("part-item", "mb-2", "p-2", "border", "rounded");
+      
+      partItem.innerHTML = `
+        <div class="d-flex align-items-center gap-2">
+          <select class="form-select part-select" name="partId" required>
+            <option value="">-- Seleccione repuesto --</option>
+            ${parts.map(p => `<option value="${p.id}">${p.name} (${p.sku || 'N/A'}) - Stock: ${p.stock || 0}</option>`).join('')}
+          </select>
+          <input type="number" class="form-control" name="quantity" placeholder="Cantidad" min="1" value="1" style="width: 100px;">
+          <button type="button" class="btn btn-sm btn-outline-danger remove-part">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `;
+      
+      partsList.appendChild(partItem);
+      
+      // Añadir evento para eliminar repuesto
+      partItem.querySelector('.remove-part').addEventListener('click', function() {
+        partItem.remove();
+      });
+    } catch (error) {
+      console.error("Error cargando repuestos:", error);
+      showAlert("Error al cargar la lista de repuestos", "danger");
     }
   }
 
-  async function loadExistingParts(){
-    const res = await fetch(`${API}/visit-parts?visitId=${visitId}`);
-    if(!res.ok){ existingPartsList.innerHTML = "<p class='text-muted'>Error cargando repuestos</p>"; return; }
-    const data = (await res.json()).data || [];
-    if(!data.length){ existingPartsList.innerHTML = "<p class='text-muted'>No hay repuestos registrados</p>"; return; }
-    existingPartsList.innerHTML = "";
-    for(const vp of data){
-      const part = await fetch(`${API}/parts/${vp.partId}`).then(r=>r.json()).then(r=>r.data||r);
-      const div = document.createElement("div");
-      div.className = "p-2 border-bottom";
-      div.innerHTML = `<strong>${part?.name || "Parte ID "+vp.partId}</strong><br><small class="text-muted">Fecha: ${vp.date}</small>`;
-      existingPartsList.appendChild(div);
+  // Cargar lista de técnicos
+  async function loadTechnicians() {
+    try {
+      const technicians = await technicianService.list();
+      const select = document.getElementById("technician-select");
+      
+      technicians.forEach(tech => {
+        const option = document.createElement("option");
+        option.value = tech.id;
+        option.textContent = tech.fullName;
+        select.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error cargando técnicos:", error);
     }
   }
 
-  await Promise.all([loadRequestInfo(), loadVisitData(), loadExistingParts()]);
+  // Cargar información del service-request
+  async function loadRequestInfo() {
+    try {
+      const req = await serviceRequestService.get(requestId);
+      document.getElementById("service-request-id").value = req.id;
+      document.getElementById("request-number").textContent = req.requestNumber || req.id;
+      document.getElementById("request-type").textContent = req.serviceType || "N/A";
+      document.getElementById("request-rootcause").textContent = req.rootCause || "N/A";
+      document.getElementById("request-status").textContent = req.status || "N/A";
 
-  // submit
-  document.getElementById("visit-form").addEventListener("submit", async e=>{
+      if (req.customerId) {
+        const cust = await customerService.get(req.customerId);
+        document.getElementById("request-customer").textContent = cust?.name || "N/A";
+      }
+      
+      if (req.machineId) {
+        const mach = await machineService.get(req.machineId);
+        document.getElementById("request-machine").textContent = 
+          mach ? `${mach.brand || ''} ${mach.model || ''} (${mach.companySerial || 'N/A'})` : "N/A";
+      }
+    } catch(err) { 
+      console.error("Error cargando request:", err);
+      showAlert("Error al cargar información de la solicitud", "danger");
+    }
+  }
+
+  // Cargar datos de la visita
+  async function loadVisitData() {
+    try {
+      const res = await fetch(`${API}/visits/${visitId}`);
+      if(res.ok){
+        const visit = (await res.json()).data || await res.json();
+        
+        // Llenar formulario con datos existentes
+        document.getElementById("visit-notes").value = visit.visitNotes || "";
+        document.getElementById("visit-datetime").value = visit.visitDatetime ? 
+          new Date(visit.visitDatetime).toISOString().slice(0, 16) : 
+          new Date().toISOString().slice(0, 16);
+        
+        // Seleccionar técnico
+        if (visit.technicianId) {
+          document.getElementById("technician-select").value = visit.technicianId;
+        }
+        
+        // Configurar estado de resolución
+        if (visit.solved) {
+          chkSolved.checked = true;
+          resolutionFields.style.display = "block";
+        }
+        
+        // Configurar lectura del contador
+        if (visit.takeMeterReading || visit.reading) {
+          chkMeter.checked = true;
+          meterFields.style.display = "block";
+          document.getElementById("meter-reading").value = visit.reading || "";
+          document.getElementById("reading-notes").value = visit.readingNotes || "";
+        }
+        
+        // Configurar repuestos si existen
+        if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
+          chkParts.checked = true;
+          partsContainer.style.display = "block";
+          // Aquí podrías cargar los repuestos existentes si tu backend los devuelve
+        }
+      }
+    } catch(err) { 
+      console.error("Error cargando visita:", err);
+      showAlert("Error al cargar datos de la visita", "danger");
+    }
+  }
+
+  // Cargar repuestos ya existentes
+  async function loadExistingParts() {
+    try {
+      // Como no tienes endpoint específico para visit-parts, usamos la info de partsUsed de la visita
+      const res = await fetch(`${API}/visits/${visitId}`);
+      if(res.ok){
+        const visit = (await res.json()).data || await res.json();
+        existingPartsList.innerHTML = "";
+        
+        if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
+          // Cargar información de cada repuesto
+          const parts = await fetch(`${API}/parts`).then(r => r.json()).then(res => res.data || []);
+          
+          Object.entries(visit.partsUsed).forEach(([partId, quantity]) => {
+            const part = parts.find(p => p.id == partId);
+            const partDiv = document.createElement("div");
+            partDiv.className = "d-flex justify-content-between align-items-center p-2 border-bottom";
+            partDiv.innerHTML = `
+              <div>
+                <strong>${part ? part.name : `Repuesto ID: ${partId}`}</strong>
+                <br><small class="text-muted">Cantidad: ${quantity}</small>
+              </div>
+              <small class="text-muted">${part ? `SKU: ${part.sku || 'N/A'}` : ''}</small>
+            `;
+            existingPartsList.appendChild(partDiv);
+          });
+        } else {
+          existingPartsList.innerHTML = '<p class="text-muted">No hay repuestos registrados para esta visita</p>';
+        }
+      }
+    } catch(err) { 
+      console.error("Error cargando repuestos existentes:", err);
+      existingPartsList.innerHTML = '<p class="text-muted">Error al cargar repuestos existentes</p>';
+    }
+  }
+
+  // Inicializar la página
+  await Promise.all([
+    loadTechnicians(),
+    loadRequestInfo(),
+    loadVisitData(),
+    loadExistingParts()
+  ]);
+
+  // Manejar envío del formulario
+  document.getElementById("visit-form").addEventListener("submit", async e => {
     e.preventDefault();
-    const form = e.target;
-    if(!form.checkValidity()){ e.stopPropagation(); form.classList.add("was-validated"); return; }
-
     const btn = document.getElementById("btn-save");
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
 
     try {
+      const formData = new FormData(document.getElementById("visit-form"));
       const dto = {
         serviceRequestId: parseInt(requestId),
-        visitNotes: document.getElementById("visit-notes").value,
-        visitDatetime: document.getElementById("visit-datetime").value,
+        technicianId: parseInt(formData.get("technicianId")),
+        visitDatetime: formData.get("visitDatetime"),
+        visitNotes: formData.get("visitNotes") || null,
         solved: chkSolved.checked,
         takeMeterReading: chkMeter.checked,
-        reading: chkMeter.checked ? parseInt(document.getElementById("meter-reading").value) : null,
-        readingNotes: chkMeter.checked ? document.getElementById("reading-notes").value : null
+        reading: chkMeter.checked ? 
+          (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
+        readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null
       };
 
-      await fetch(`${API}/visits/${visitId}`, {
-        method:"PUT",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(dto)
-      });
-
-      if(chkParts.checked){
-        const selects = partsList.querySelectorAll(".part-select");
-        for(const sel of selects){
-          if(sel.value){
-            await fetch(`${API}/visit-parts`, {
-              method:"POST",
-              headers:{ "Content-Type":"application/json" },
-              body: JSON.stringify({
-                visitId: parseInt(visitId),
-                partId: parseInt(sel.value),
-                date: new Date().toISOString()
-              })
-            });
+      // Recopilar información de repuestos
+      if (chkParts.checked) {
+        const partsUsed = {};
+        const partSelects = partsList.querySelectorAll(".part-select");
+        
+        partSelects.forEach((select, index) => {
+          if (select.value) {
+            const quantityInput = select.closest('.d-flex').querySelector('input[name="quantity"]');
+            const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+            partsUsed[select.value] = quantity;
           }
+        });
+        
+        if (Object.keys(partsUsed).length > 0) {
+          dto.partsUsed = partsUsed;
         }
       }
 
-      showAlert("Visita actualizada correctamente","success");
-      setTimeout(()=>appLoad("service_requests/detail.html"),1500);
-    } catch(err){
+      // 1) Actualizar visita
+      const updateRes = await fetch(`${API}/visits/${visitId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dto)
+      });
+      
+      if (!updateRes.ok) {
+        const errorText = await updateRes.text();
+        throw new Error(`Error actualizando visita: ${errorText}`);
+      }
+
+      // 2) Actualizar estado del service request si está resuelto
+      if (chkSolved.checked) {
+        await fetch(`${API}/service-requests/${requestId}/status?status=resuelto`, {
+          method: "PUT"
+        });
+      }
+
+      showAlert("Visita actualizada correctamente", "success");
+      setTimeout(() => {
+        appLoad("service_requests/detail.html");
+      }, 1500);
+      
+    } catch(err) {
       console.error(err);
-      showAlert("Error al guardar la visita","danger");
+      showAlert(err.message || "Error al actualizar la visita", "danger");
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-save me-1"></i> Actualizar Visita';
     }
   });
+
 })();
 </script>
-
-<style>
-  .form-control:invalid,
-  .form-select:invalid { border-color: #dc3545; }
-  .form-control:valid,
-  .form-select:valid { border-color: #198754; }
-  #request-info strong { color: #0f9d58; min-width: 120px; display: inline-block; }
-</style>
