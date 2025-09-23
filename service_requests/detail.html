@@ -201,6 +201,7 @@
 }
   function editVisit(visitId) {
     console.log("Editando visita ID:", visitId);
-    appLoad(`service_visits/edit.html?id=${visitId}`);
+    sessionStorage.setItem("selectedVisitId", visitId);
+    window.location.href = "service_visits/edit.html"; // forzar recarga completa
 }
 </script>
