@@ -2996,225 +2996,429 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_visits\edit.html =====
 <div class="card p-3">
-  <h4>Editar Visita Técnica</h4>
-  
-  <!-- Información del request -->
-  <div class="mb-3">
-    <label class="form-label">Cliente</label>
-    <input type="text" id="cliente" class="form-control" readonly>
-  </div>
-  <div class="mb-3">
-    <label class="form-label">Máquina</label>
-    <input type="text" id="maquina" class="form-control" readonly>
-  </div>
-  <div class="mb-3">
-    <label class="form-label">Técnico asignado</label>
-    <input type="text" id="tecnicoAsignado" class="form-control" readonly>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Editar Visita Técnica</h4>
+    <button class="btn btn-outline-secondary btn-sm" onclick="appLoad('service_requests/detail.html')">
+      <i class="fas fa-arrow-left me-1"></i> Volver a Solicitud
+    </button>
   </div>
 
-  <form id="visit-form">
-    <div class="mb-3">
-      <label class="form-label">Notas de la visita</label>
-      <textarea class="form-control" name="visitNotes"></textarea>
+  <!-- Información de la Solicitud Asociada -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Solicitud de Servicio Asociada</h6>
+    </div>
+    <div class="card-body">
+      <div class="row" id="request-info">
+        <div class="col-md-6">
+          <strong>Solicitud #:</strong> <span id="request-number">Cargando...</span><br>
+          <strong>Cliente:</strong> <span id="request-customer">Cargando...</span><br>
+          <strong>Máquina:</strong> <span id="request-machine">Cargando...</span>
+        </div>
+        <div class="col-md-6">
+          <strong>Tipo de Servicio:</strong> <span id="request-type">Cargando...</span><br>
+          <strong>Causa Raíz:</strong> <span id="request-rootcause">Cargando...</span><br>
+          <strong>Estado Actual:</strong> <span id="request-status">Cargando...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de edición -->
+  <form id="visit-form" class="row g-3" novalidate>
+    <input type="hidden" name="serviceRequestId" id="service-request-id">
+
+    <div class="col-md-6">
+      <label class="form-label">Técnico asignado</label>
+      <select class="form-select" name="technicianId" id="technician-select" required>
+        <option value="">Seleccione un técnico</option>
+      </select>
     </div>
 
-    <!-- Lectura -->
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="chk-meter">
-      <label class="form-check-label" for="chk-meter">¿Se tomó lectura?</label>
-    </div>
-    <div id="meter-fields" style="display:none">
-      <input type="number" class="form-control mb-2" name="meterBefore" placeholder="Lectura antes">
-      <input type="number" class="form-control" name="meterAfter" placeholder="Lectura después">
+    <div class="col-md-6">
+      <label class="form-label">Fecha y Hora de la Visita</label>
+      <input type="datetime-local" class="form-control" name="visitDatetime" id="visit-datetime" required>
     </div>
 
-    <!-- Resuelto -->
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" name="solved">
-      <label class="form-check-label">¿Resuelto?</label>
+    <div class="col-12">
+      <label class="form-label">Notas de la Visita</label>
+      <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"></textarea>
     </div>
 
-    <!-- Repuestos -->
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="chk-parts">
-      <label class="form-check-label">¿Requiere repuestos?</label>
+    <!-- Lectura del contador -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="chk-meter" name="takeMeterReading">
+            <label class="form-check-label" for="chk-meter">
+              <strong>¿Se tomó lectura del contador?</strong>
+            </label>
+          </div>
+        </div>
+        <div class="card-body" id="meter-fields" style="display:none">
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Lectura del contador</label>
+              <input type="number" class="form-control" name="reading" id="meter-reading" min="0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Notas de la lectura</label>
+              <input type="text" class="form-control" name="readingNotes" id="reading-notes" placeholder="Observaciones sobre la lectura">
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div id="parts-container" style="display:none"></div>
 
-    <div class="d-flex gap-2">
-      <button type="submit" class="btn btn-primary" id="btn-save">Actualizar Visita</button>
-      <button type="button" class="btn btn-secondary" id="btn-cancel">Cancelar</button>
+    <!-- Estado de resolución -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="solved" id="solved">
+            <label class="form-check-label" for="solved">
+              <strong>¿Solicitud resuelta?</strong>
+            </label>
+          </div>
+        </div>
+        <div class="card-body" id="resolution-fields" style="display:none">
+          <div class="mb-2">
+            <label class="form-label">Descripción de la solución</label>
+            <textarea class="form-control" name="resolution" rows="3" placeholder="Describa cómo se resolvió el problema"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repuestos utilizados -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="chk-parts">
+            <label class="form-check-label" for="chk-parts">
+              <strong>¿Se utilizaron repuestos?</strong>
+            </label>
+          </div>
+        </div>
+        <div class="card-body" id="parts-container" style="display:none">
+          <div id="parts-list">
+            <!-- Los repuestos se añadirán aquí dinámicamente -->
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn-add-part">
+            <i class="fas fa-plus me-1"></i> Añadir otro repuesto
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repuestos ya existentes -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">Repuestos ya registrados en esta visita</h6>
+        </div>
+        <div class="card-body">
+          <div id="existing-parts-list">
+            <p class="text-muted">Cargando repuestos existentes...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <button class="btn btn-success" type="submit" id="btn-save">
+        <i class="fas fa-save me-1"></i> Actualizar Visita
+      </button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/detail.html')">
+        <i class="fas fa-times me-1"></i> Cancelar
+      </button>
     </div>
   </form>
 </div>
 
 <script>
-(async function(){
+(async function initEditVisit() {
   const API = API_BASE.replace(/\/$/, '');
-  const params = new URLSearchParams(location.search);
-  const visitId = params.get("id") || sessionStorage.getItem("selectedVisitId");
+  const visitId = sessionStorage.getItem("selectedVisitId");
   const requestId = sessionStorage.getItem("selectedRequestId");
 
-  const form = document.getElementById("visit-form");
   const chkMeter = document.getElementById("chk-meter");
   const meterFields = document.getElementById("meter-fields");
   const chkParts = document.getElementById("chk-parts");
   const partsContainer = document.getElementById("parts-container");
-  const btnCancel = document.getElementById("btn-cancel");
-  const btnSave = document.getElementById("btn-save");
+  const partsList = document.getElementById("parts-list");
+  const btnAddPart = document.getElementById("btn-add-part");
+  const existingPartsList = document.getElementById("existing-parts-list");
+  const chkSolved = document.getElementById("solved");
+  const resolutionFields = document.getElementById("resolution-fields");
 
   if (!visitId || !requestId) {
     showAlert("No se encontró la visita seleccionada.", "danger");
-    return appLoad("service_requests/detail.html");
+    return appLoad("service_requests/list.html");
   }
 
-  // Cancelar
-  btnCancel.addEventListener("click", () => appLoad("service_requests/detail.html"));
-
   // Toggle lectura
-  chkMeter.addEventListener("change", e=>{
+  chkMeter.addEventListener("change", e => {
     meterFields.style.display = e.target.checked ? "block" : "none";
   });
 
+  // Toggle resolución
+  chkSolved.addEventListener("change", e => {
+    resolutionFields.style.display = e.target.checked ? "block" : "none";
+  });
+
   // Toggle repuestos
-  chkParts.addEventListener("change", e=>{
-    if(e.target.checked){
-      partsContainer.style.display = "block";
-      partsContainer.innerHTML = "";
+  chkParts.addEventListener("change", e => {
+    partsContainer.style.display = e.target.checked ? "block" : "none";
+    if(e.target.checked && partsList.children.length === 0) {
       addPartSelector();
-    } else {
-      partsContainer.innerHTML = "";
-      partsContainer.style.display = "none";
     }
   });
 
-  // Añadir un selector de parts
+  // Añadir selector de repuestos
+  btnAddPart.addEventListener("click", addPartSelector);
+
+  // Función para añadir un selector de repuestos
   async function addPartSelector(){
-    const res = await fetch(`${API}/parts`);
-    const parts = (await res.json()).data || [];
+    try {
+      const res = await fetch(`${API}/parts`);
+      const parts = (await res.json()).data || [];
 
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("d-flex","mb-2","gap-2");
-
-    const select = document.createElement("select");
-    select.classList.add("form-select");
-    select.innerHTML = '<option value="">-- Seleccione repuesto --</option>' +
-      parts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-
-    const btnAdd = document.createElement("button");
-    btnAdd.type = "button";
-    btnAdd.className = "btn btn-sm btn-secondary";
-    btnAdd.innerText = "+";
-    btnAdd.onclick = () => addPartSelector();
-
-    wrapper.appendChild(select);
-    wrapper.appendChild(btnAdd);
-    partsContainer.appendChild(wrapper);
+      const partItem = document.createElement("div");
+      partItem.classList.add("part-item", "mb-2", "p-2", "border", "rounded");
+      
+      partItem.innerHTML = `
+        <div class="d-flex align-items-center gap-2">
+          <select class="form-select part-select" name="partId" required>
+            <option value="">-- Seleccione repuesto --</option>
+            ${parts.map(p => `<option value="${p.id}">${p.name} (${p.sku || 'N/A'}) - Stock: ${p.stock || 0}</option>`).join('')}
+          </select>
+          <input type="number" class="form-control" name="quantity" placeholder="Cantidad" min="1" value="1" style="width: 100px;">
+          <button type="button" class="btn btn-sm btn-outline-danger remove-part">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `;
+      
+      partsList.appendChild(partItem);
+      
+      // Añadir evento para eliminar repuesto
+      partItem.querySelector('.remove-part').addEventListener('click', function() {
+        partItem.remove();
+      });
+    } catch (error) {
+      console.error("Error cargando repuestos:", error);
+      showAlert("Error al cargar la lista de repuestos", "danger");
+    }
   }
 
-  // Cargar info del service-request
-  try {
-    const res = await fetch(`${API}/service-requests/${requestId}`);
-    if(res.ok){
-      const data = (await res.json()).data || await res.json();
-      document.getElementById("cliente").value = data.client?.fullName || data.client?.name || "N/A";
-      document.getElementById("maquina").value = data.machine?.serial || data.machine?.name || "N/A";
-      document.getElementById("tecnicoAsignado").value = data.technician?.fullName || data.technician?.name || "N/A";
+  // Cargar lista de técnicos
+  async function loadTechnicians() {
+    try {
+      const technicians = await technicianService.list();
+      const select = document.getElementById("technician-select");
+      
+      technicians.forEach(tech => {
+        const option = document.createElement("option");
+        option.value = tech.id;
+        option.textContent = tech.fullName;
+        select.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error cargando técnicos:", error);
     }
-  } catch(err){ console.error("Error cargando request:", err); }
+  }
 
-  // Cargar visita
-  let machineIdForReading = null;
-  try {
-    const res = await fetch(`${API}/visits/${visitId}`);
-    if(res.ok){
-      const visit = (await res.json()).data || await res.json();
-      form.visitNotes.value = visit.visitNotes || "";
-      form.solved.checked = !!visit.solved;
-      if (visit.meterReadingBefore != null || visit.meterReadingAfter != null){
-        chkMeter.checked = true;
-        meterFields.style.display = "block";
-        form.meterBefore.value = visit.meterReadingBefore || "";
-        form.meterAfter.value = visit.meterReadingAfter || "";
+  // Cargar información del service-request
+  async function loadRequestInfo() {
+    try {
+      const req = await serviceRequestService.get(requestId);
+      document.getElementById("service-request-id").value = req.id;
+      document.getElementById("request-number").textContent = req.requestNumber || req.id;
+      document.getElementById("request-type").textContent = req.serviceType || "N/A";
+      document.getElementById("request-rootcause").textContent = req.rootCause || "N/A";
+      document.getElementById("request-status").textContent = req.status || "N/A";
+
+      if (req.customerId) {
+        const cust = await customerService.get(req.customerId);
+        document.getElementById("request-customer").textContent = cust?.name || "N/A";
       }
+      
+      if (req.machineId) {
+        const mach = await machineService.get(req.machineId);
+        document.getElementById("request-machine").textContent = 
+          mach ? `${mach.brand || ''} ${mach.model || ''} (${mach.companySerial || 'N/A'})` : "N/A";
+      }
+    } catch(err) { 
+      console.error("Error cargando request:", err);
+      showAlert("Error al cargar información de la solicitud", "danger");
     }
-  } catch(err){ console.error("Error cargando visita:", err); }
+  }
 
-  // Guardar visita
-  form.addEventListener("submit", async e=>{
+  // Cargar datos de la visita
+  async function loadVisitData() {
+    try {
+      const res = await fetch(`${API}/visits/${visitId}`);
+      if(res.ok){
+        const visit = (await res.json()).data || await res.json();
+        
+        // Llenar formulario con datos existentes
+        document.getElementById("visit-notes").value = visit.visitNotes || "";
+        document.getElementById("visit-datetime").value = visit.visitDatetime ? 
+          new Date(visit.visitDatetime).toISOString().slice(0, 16) : 
+          new Date().toISOString().slice(0, 16);
+        
+        // Seleccionar técnico
+        if (visit.technicianId) {
+          document.getElementById("technician-select").value = visit.technicianId;
+        }
+        
+        // Configurar estado de resolución
+        if (visit.solved) {
+          chkSolved.checked = true;
+          resolutionFields.style.display = "block";
+        }
+        
+        // Configurar lectura del contador
+        if (visit.takeMeterReading || visit.reading) {
+          chkMeter.checked = true;
+          meterFields.style.display = "block";
+          document.getElementById("meter-reading").value = visit.reading || "";
+          document.getElementById("reading-notes").value = visit.readingNotes || "";
+        }
+        
+        // Configurar repuestos si existen
+        if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
+          chkParts.checked = true;
+          partsContainer.style.display = "block";
+          // Aquí podrías cargar los repuestos existentes si tu backend los devuelve
+        }
+      }
+    } catch(err) { 
+      console.error("Error cargando visita:", err);
+      showAlert("Error al cargar datos de la visita", "danger");
+    }
+  }
+
+  // Cargar repuestos ya existentes
+  async function loadExistingParts() {
+    try {
+      // Como no tienes endpoint específico para visit-parts, usamos la info de partsUsed de la visita
+      const res = await fetch(`${API}/visits/${visitId}`);
+      if(res.ok){
+        const visit = (await res.json()).data || await res.json();
+        existingPartsList.innerHTML = "";
+        
+        if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
+          // Cargar información de cada repuesto
+          const parts = await fetch(`${API}/parts`).then(r => r.json()).then(res => res.data || []);
+          
+          Object.entries(visit.partsUsed).forEach(([partId, quantity]) => {
+            const part = parts.find(p => p.id == partId);
+            const partDiv = document.createElement("div");
+            partDiv.className = "d-flex justify-content-between align-items-center p-2 border-bottom";
+            partDiv.innerHTML = `
+              <div>
+                <strong>${part ? part.name : `Repuesto ID: ${partId}`}</strong>
+                <br><small class="text-muted">Cantidad: ${quantity}</small>
+              </div>
+              <small class="text-muted">${part ? `SKU: ${part.sku || 'N/A'}` : ''}</small>
+            `;
+            existingPartsList.appendChild(partDiv);
+          });
+        } else {
+          existingPartsList.innerHTML = '<p class="text-muted">No hay repuestos registrados para esta visita</p>';
+        }
+      }
+    } catch(err) { 
+      console.error("Error cargando repuestos existentes:", err);
+      existingPartsList.innerHTML = '<p class="text-muted">Error al cargar repuestos existentes</p>';
+    }
+  }
+
+  // Inicializar la página
+  await Promise.all([
+    loadTechnicians(),
+    loadRequestInfo(),
+    loadVisitData(),
+    loadExistingParts()
+  ]);
+
+  // Manejar envío del formulario
+  document.getElementById("visit-form").addEventListener("submit", async e => {
     e.preventDefault();
-    btnSave.disabled = true;
-    btnSave.innerText = "Actualizando...";
+    const btn = document.getElementById("btn-save");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
 
     try {
-      const fd = new FormData(form);
+      const formData = new FormData(document.getElementById("visit-form"));
       const dto = {
-        visitNotes: fd.get("visitNotes") || null,
-        solved: form.solved.checked,
+        serviceRequestId: parseInt(requestId),
+        technicianId: parseInt(formData.get("technicianId")),
+        visitDatetime: formData.get("visitDatetime"),
+        visitNotes: formData.get("visitNotes") || null,
+        solved: chkSolved.checked,
         takeMeterReading: chkMeter.checked,
-        meterReadingBefore: chkMeter.checked ? (fd.get("meterBefore") ? Number(fd.get("meterBefore")) : null) : null,
-        meterReadingAfter: chkMeter.checked ? (fd.get("meterAfter") ? Number(fd.get("meterAfter")) : null) : null,
+        reading: chkMeter.checked ? 
+          (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
+        readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null
       };
+
+      // Recopilar información de repuestos
+      if (chkParts.checked) {
+        const partsUsed = {};
+        const partSelects = partsList.querySelectorAll(".part-select");
+        
+        partSelects.forEach((select, index) => {
+          if (select.value) {
+            const quantityInput = select.closest('.d-flex').querySelector('input[name="quantity"]');
+            const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+            partsUsed[select.value] = quantity;
+          }
+        });
+        
+        if (Object.keys(partsUsed).length > 0) {
+          dto.partsUsed = partsUsed;
+        }
+      }
 
       // 1) Actualizar visita
       const updateRes = await fetch(`${API}/visits/${visitId}`, {
-        method:"PUT",
-        headers:{ "Content-Type":"application/json" },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
       });
-      if(!updateRes.ok) throw new Error("Error actualizando visita");
-
-      // 2) Crear lectura si aplica
-      if(chkMeter.checked && fd.get("meterAfter")){
-        const reqRes = await fetch(`${API}/service-requests/${requestId}`);
-        if(reqRes.ok){
-          const reqData = (await reqRes.json()).data || await reqRes.json();
-          machineIdForReading = reqData?.machineId || reqData?.machine?.id;
-        }
-        if(machineIdForReading){
-          await fetch(`${API}/meter-readings`, {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({
-              machineId: machineIdForReading,
-              reading: Number(fd.get("meterAfter")),
-              readingDate: new Date().toISOString(),
-              notes: `Lectura creada desde visita ${visitId}`
-            })
-          });
-        }
+      
+      if (!updateRes.ok) {
+        const errorText = await updateRes.text();
+        throw new Error(`Error actualizando visita: ${errorText}`);
       }
 
-      // 3) Crear visit-parts si aplica
-      if(chkParts.checked){
-        const selects = partsContainer.querySelectorAll("select");
-        for(const sel of selects){
-          if(sel.value){
-            await fetch(`${API}/visit-parts`, {
-              method:"POST",
-              headers:{ "Content-Type":"application/json" },
-              body: JSON.stringify({
-                visitId: Number(visitId),
-                partId: Number(sel.value),
-                date: new Date().toISOString()
-              })
-            });
-          }
-        }
+      // 2) Actualizar estado del service request si está resuelto
+      if (chkSolved.checked) {
+        await fetch(`${API}/service-requests/${requestId}/status?status=resuelto`, {
+          method: "PUT"
+        });
       }
 
       showAlert("Visita actualizada correctamente", "success");
-      appLoad("service_requests/detail.html");
-    } catch(err){
+      setTimeout(() => {
+        appLoad("service_requests/detail.html");
+      }, 1500);
+      
+    } catch(err) {
       console.error(err);
-      showAlert(err.message || "Error al actualizar", "danger");
-      btnSave.disabled = false;
-      btnSave.innerText = "Actualizar Visita";
+      showAlert(err.message || "Error al actualizar la visita", "danger");
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save me-1"></i> Actualizar Visita';
     }
   });
+
 })();
 </script>
-
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_visits\new.html =====
 <div class="card p-3">
