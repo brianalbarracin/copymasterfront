@@ -201,8 +201,6 @@
 }
   function editVisit(visitId) {
     console.log("Editando visita ID:", visitId);
-    sessionStorage.setItem("selectedVisitId", visitId);
-    // Agrega el parámetro id a la URL
-    appLoad("service_visits/edit.html");
+    appLoad(`service_visits/edit.html?id=${visitId}`);
 }
 </script>
