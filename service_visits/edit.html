@@ -274,13 +274,19 @@
 
 
           if (visit.meterReading) {
-            chkMeter.disabled = true;
-            chkMeter.checked = true; // forzar visible
-            meterFields.style.display = "block"; // mostrar card
+            // Mostrar el bloque de la card
+            meterFields.style.display = "block";
+
+            // Mostrar valores pero en solo lectura
             document.getElementById("meter-reading").value = visit.meterReading.reading || "";
-            document.getElementById("meter-reading").disabled = true;
+            document.getElementById("meter-reading").readOnly = true;
+
             document.getElementById("reading-notes").value = visit.meterReading.notes || "";
-            document.getElementById("reading-notes").disabled = true;
+            document.getElementById("reading-notes").readOnly = true;
+
+            // Congelar el checkbox (ni marcado ni usable)
+            chkMeter.checked = false;
+            chkMeter.disabled = true;
           }
 
           // Seleccionar técnico
