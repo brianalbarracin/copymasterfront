@@ -296,7 +296,7 @@
 
 
           if (visit.meterReading) {
-            // Mostrar solo la sección de lectura existente
+            // ✅ Mostrar solo la sección de lectura existente
             document.getElementById("meter-reading-card").style.display = "none";
             document.getElementById("existing-meter-section").style.display = "block";
 
@@ -304,11 +304,18 @@
               visit.meterReading.reading ?? "N/A";
             document.getElementById("existing-reading-notes").textContent =
               visit.meterReading.notes ?? "Sin notas";
+
+            // 🔒 Asegurar que el checkbox quede apagado y deshabilitado
+            chkMeter.checked = false;
+            chkMeter.disabled = true;
+            meterFields.style.display = "none";
+
           } else {
-            // Mostrar solo la card editable
+            // ✅ Mostrar solo la card editable
             document.getElementById("meter-reading-card").style.display = "block";
             document.getElementById("existing-meter-section").style.display = "none";
 
+            chkMeter.disabled = false;
             chkMeter.addEventListener("change", e => {
               meterFields.style.display = e.target.checked ? "block" : "none";
             });
@@ -318,6 +325,9 @@
               meterFields.style.display = "block";
               document.getElementById("meter-reading").value = visit.reading || "";
               document.getElementById("reading-notes").value = visit.readingNotes || "";
+            } else {
+              chkMeter.checked = false;
+              meterFields.style.display = "none";
             }
           }
 
