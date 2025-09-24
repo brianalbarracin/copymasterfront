@@ -163,6 +163,9 @@
 
 <script>
   (async function initEditVisit() {
+
+    document.getElementById("meter-reading-card").style.display = "none";
+document.getElementById("existing-meter-section").style.display = "none";
     const API = API_BASE.replace(/\/$/, '');
     const visitId = sessionStorage.getItem("selectedVisitId");
     const requestId = sessionStorage.getItem("selectedRequestId");
