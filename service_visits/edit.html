@@ -250,11 +250,17 @@
     // Cargar datos de la visita
     async function loadVisitData() {
       try {
-        const res = await fetch(`${API}/visits/request/${requestId}`);
-        const visits = (await res.json()).data || await res.json();
-        const visit = visits.find(v => v.id === parseInt(visitId));
+        const res = await fetch(`${API}/visits/request/${requestId}`)
         if (res.ok) {
-          const visit = (await res.json()).data || await res.json();
+
+          const json = await res.json();
+          const visits = json.data || json;
+          const visit = visits.find(v => v.id === parseInt(visitId));
+
+          if (!visit) {
+            console.warn("⚠️ No se encontró la visita con ID", visitId);
+            return;
+          }
 
 
 
