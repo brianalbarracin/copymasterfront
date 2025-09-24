@@ -254,6 +254,10 @@
         if (res.ok) {
           const visit = (await res.json()).data || await res.json();
 
+
+
+          console.log("👉 Visita cargada:", visit); // 👈 ver todo el objeto
+          console.log("👉 TechnicianId recibido:", visit.technicianId);
           // Llenar formulario con datos existentes
           document.getElementById("visit-notes").value = visit.visitNotes || "";
           document.getElementById("visit-datetime").value = visit.visitDatetime ?
