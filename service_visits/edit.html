@@ -296,26 +296,21 @@
 
 
           if (visit.meterReading) {
-            //Mostrar el bloque de la card
+            // Ocultar completamente la card de lectura
+            document.getElementById("meter-reading-card").style.display = "none";
+
+            // Mostrar la sección de lectura existente
+            document.getElementById("existing-meter-section").style.display = "block";
+
+            // Llenar los valores existentes
+            document.getElementById("existing-reading-value").textContent = visit.meterReading.reading || "";
+            document.getElementById("existing-reading-notes").textContent = visit.meterReading.notes || "";
+          } else if (visit.takeMeterReading || visit.reading) {
+            // Caso normal (sin meterReading pero con lectura simple)
+            chkMeter.checked = true;
             meterFields.style.display = "block";
-
-            // Rellenar los valores
-            //document.getElementById("meter-reading").value = visit.meterReading.reading || "";
-            //document.getElementById("reading-notes").value = visit.meterReading.notes || "";
-
-            // Congelar inputs (que se vean, pero no se puedan editar)
-            //document.getElementById("meter-reading").readOnly = true;
-            //document.getElementById("reading-notes").readOnly = true;
-
-            // El checkbox se deshabilita (queda apagado y sin posibilidad de marcar)
-            //chkMeter.checked = false;
-            chkMeter.disabled = true;
-
-            // (Opcional) agregar un aviso visual
-            //const badge = document.createElement("span");
-            //badge.className = "badge bg-info ms-2";
-            //badge.textContent = "Lectura registrada (bloqueada)";
-            //chkMeter.closest(".card-header").appendChild(badge);
+            document.getElementById("meter-reading").value = visit.reading || "";
+            document.getElementById("reading-notes").value = visit.readingNotes || "";
           }
 
 
@@ -344,12 +339,12 @@
           }
 
           // Configurar lectura del contador
-          if (visit.takeMeterReading || visit.reading) {
-         chkMeter.checked = true;
-          meterFields.style.display = "block";
-          document.getElementById("meter-reading").value = visit.reading || "";
-          document.getElementById("reading-notes").value = visit.readingNotes || "";
-          }
+          /*if (visit.takeMeterReading || visit.reading) {
+            chkMeter.checked = true;
+            meterFields.style.display = "block";
+            document.getElementById("meter-reading").value = visit.reading || "";
+            document.getElementById("reading-notes").value = visit.readingNotes || "";
+          }*/
 
           // Configurar repuestos si existen
           if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
