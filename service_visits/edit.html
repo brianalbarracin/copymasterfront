@@ -273,21 +273,21 @@
             new Date().toISOString().slice(0, 16);
           if (visit.meterReading) {
             // Deshabilitar toda la card
-            document.getElementById("meter-reading-card").classList.add("disabled-card");
+            document.getElementById("meter-reading-card").disabled = true;
 
-            // Marcar checkbox pero deshabilitarlo
+            // Mostrar los campos con los valores
             chkMeter.checked = false;
-            chkMeter.disabled = true;
             meterFields.style.display = "block";
-
-            // Llenar valores en modo solo lectura
             document.getElementById("meter-reading").value = visit.meterReading.reading || "";
             document.getElementById("reading-notes").value = visit.meterReading.notes || "";
-            document.getElementById("meter-reading").readOnly = true;
-            document.getElementById("reading-notes").readOnly = true;
 
+          } else if (visit.takeMeterReading || visit.reading) {
+            // Caso normal
+            chkMeter.checked = true;
+            meterFields.style.display = "block";
+            document.getElementById("meter-reading").value = visit.reading || "";
+            document.getElementById("reading-notes").value = visit.readingNotes || "";
           }
-
 
           // Seleccionar técnico
           if (visit.technicianId) {
@@ -313,12 +313,12 @@
           }
 
           // Configurar lectura del contador
-          if (visit.takeMeterReading || visit.reading) {
-            chkMeter.checked = true;
-            meterFields.style.display = "block";
-            document.getElementById("meter-reading").value = visit.reading || "";
-            document.getElementById("reading-notes").value = visit.readingNotes || "";
-          }
+         // if (visit.takeMeterReading || visit.reading) {
+           // chkMeter.checked = true;
+            //meterFields.style.display = "block";
+            //document.getElementById("meter-reading").value = visit.reading || "";
+            //document.getElementById("reading-notes").value = visit.readingNotes || "";
+          //}
 
           // Configurar repuestos si existen
           if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
@@ -452,8 +452,8 @@
   })();
 </script>
 <style>
-.disabled-card {
+  .disabled-card {
     opacity: 0.6;
     pointer-events: none;
-}
+  }
 </style>
