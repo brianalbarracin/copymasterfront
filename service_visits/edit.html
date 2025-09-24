@@ -281,13 +281,19 @@
             document.getElementById("meter-reading").value = visit.meterReading.reading || "";
             document.getElementById("reading-notes").value = visit.meterReading.notes || "";
 
-            // Congelar todo
+            // Congelar inputs (que se vean, pero no se puedan editar)
             document.getElementById("meter-reading").readOnly = true;
             document.getElementById("reading-notes").readOnly = true;
 
-            // El checkbox ni marcado ni usable
+            // El checkbox se deshabilita (queda apagado y sin posibilidad de marcar)
             chkMeter.checked = false;
             chkMeter.disabled = true;
+
+            // (Opcional) agregar un aviso visual
+            const badge = document.createElement("span");
+            badge.className = "badge bg-info ms-2";
+            badge.textContent = "Lectura registrada (bloqueada)";
+            chkMeter.closest(".card-header").appendChild(badge);
           }
 
           // Seleccionar técnico
