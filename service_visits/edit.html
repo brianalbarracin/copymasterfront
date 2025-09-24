@@ -277,22 +277,32 @@
             // Mostrar el bloque de la card
             meterFields.style.display = "block";
 
-            // Rellenar los valores
-            document.getElementById("meter-reading").value = visit.meterReading.reading || "";
-            document.getElementById("reading-notes").value = visit.meterReading.notes || "";
+            // Reemplazar el contenido por labels estáticos
+            meterFields.innerHTML = `
+    <div class="row">
+      <div class="col-md-6">
+        <label class="form-label">Lectura del contador registrada</label>
+        <p class="form-control-plaintext">
+          ${visit.meterReading.reading ?? "N/A"}
+        </p>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Notas de la lectura</label>
+        <p class="form-control-plaintext">
+          ${visit.meterReading.notes ?? "Sin notas"}
+        </p>
+      </div>
+    </div>
+  `;
 
-            // Congelar inputs (que se vean, pero no se puedan editar)
-            document.getElementById("meter-reading").readOnly = true;
-            document.getElementById("reading-notes").readOnly = true;
-
-            // El checkbox se deshabilita (queda apagado y sin posibilidad de marcar)
+            // El checkbox apagado y bloqueado
             chkMeter.checked = false;
             chkMeter.disabled = true;
 
-            // (Opcional) agregar un aviso visual
+            // Opcional: agregar un distintivo
             const badge = document.createElement("span");
             badge.className = "badge bg-info ms-2";
-            badge.textContent = "Lectura registrada (bloqueada)";
+            badge.textContent = "Lectura ya registrada";
             chkMeter.closest(".card-header").appendChild(badge);
           }
 
