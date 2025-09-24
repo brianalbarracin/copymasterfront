@@ -251,6 +251,8 @@
     async function loadVisitData() {
       try {
         const res = await fetch(`${API}/visits/${visitId}`);
+        const raw = await res.json();
+        console.log("👉 Respuesta cruda del backend:", raw);
         if (res.ok) {
           const visit = (await res.json()).data || await res.json();
 
