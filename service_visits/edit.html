@@ -220,22 +220,7 @@
     }
 
     // Cargar lista de técnicos
-    async function loadTechnicians() {
-      try {
-        const technicians = await technicianService.list();
-        const select = document.getElementById("technician-select");
-
-        technicians.forEach(tech => {
-          const option = document.createElement("option");
-          option.value = tech.id;
-          option.textContent = tech.fullName;
-          select.appendChild(option);
-        });
-      } catch (error) {
-        console.error("Error cargando técnicos:", error);
-      }
-    }
-
+    
     // Cargar información del service-request
     async function loadRequestInfo() {
       try {
@@ -288,6 +273,8 @@
 
           // Seleccionar técnico
           if (visit.technicianId) {
+            document.getElementById("technician-id").value = visit.technicianId;
+
             try {
               const tech = await technicianService.get(visit.technicianId);
               document.getElementById("request-technician").textContent = tech ? tech.fullName : "Sin asignar";
@@ -298,6 +285,7 @@
           } else {
             document.getElementById("request-technician").textContent = "Sin asignar";
           }
+
           // Configurar estado de resolución
           if (visit.solved) {
             chkSolved.checked = true;
@@ -359,7 +347,6 @@
 
     // Inicializar la página
     await Promise.all([
-      loadTechnicians(),
       loadRequestInfo(),
       loadVisitData(),
       loadExistingParts()
@@ -377,7 +364,7 @@
         const rawDate = formData.get("visitDatetime");
         const dto = {
           serviceRequestId: parseInt(requestId),
-          technicianId: parseInt(formData.get("technicianId")),
+          technicianId: parseInt(document.getElementById("technician-id").value),
           visitDatetime: rawDate ? new Date(rawDate).toISOString() : null,
           visitNotes: formData.get("visitNotes") || null,
           solved: chkSolved.checked,
