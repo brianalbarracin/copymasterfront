@@ -283,7 +283,7 @@
               const tech = await technicianService.get(visit.technicianId);
               document.getElementById("request-technician").textContent =
                 tech ? tech.fullName : "Sin asignar";
-              document.getElementById("technician-name").value =
+              document.getElementById("technician-input").value =
                 tech ? tech.fullName : "";
             } catch (err) {
               console.error("Error cargando técnico:", err);
