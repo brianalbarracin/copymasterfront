@@ -289,17 +289,26 @@
           document.getElementById("visit-datetime").value = visit.visitDatetime ?
             new Date(visit.visitDatetime).toISOString().slice(0, 16) :
             new Date().toISOString().slice(0, 16);
-            
+
           if (visit.meterReading) {
-            // Deshabilitar toda la card
-            // Ocultar card editable y mostrar sección de solo lectura
+            // Ocultar la card editable
             document.getElementById("meter-reading-card").style.display = "none";
-            document.getElementById("existing-meter-section").style.display = "block";
 
-            // Llenar valores existentes
-            document.getElementById("existing-reading-value").textContent = visit.meterReading.reading || "";
-            document.getElementById("existing-reading-notes").textContent = visit.meterReading.notes || "";
-
+            // Mostrar el bloque de lectura existente
+            const existingSection = document.getElementById("existing-meter-section");
+            existingSection.style.display = "block";
+            document.getElementById("existing-reading-value").textContent =
+              visit.meterReading.reading ?? "N/A";
+            document.getElementById("existing-reading-notes").textContent =
+              visit.meterReading.notes ?? "Sin notas";
+          } else {
+            // Solo si NO hay lectura, habilitar el card editable con checkbox
+            if (visit.takeMeterReading || visit.reading) {
+              chkMeter.checked = true;
+              meterFields.style.display = "block";
+              document.getElementById("meter-reading").value = visit.reading || "";
+              document.getElementById("reading-notes").value = visit.readingNotes || "";
+            }
           }
 
           // Seleccionar técnico
@@ -326,12 +335,12 @@
           }
 
           // Configurar lectura del contador
-          if (visit.takeMeterReading || visit.reading) {
-            chkMeter.checked = true;
-            meterFields.style.display = "block";
-            document.getElementById("meter-reading").value = visit.reading || "";
-            document.getElementById("reading-notes").value = visit.readingNotes || "";
-          }
+         // if (visit.takeMeterReading || visit.reading) {
+           // chkMeter.checked = true;
+            //meterFields.style.display = "block";
+            //document.getElementById("meter-reading").value = visit.reading || "";
+            //document.getElementById("reading-notes").value = visit.readingNotes || "";
+          //}
 
           // Configurar repuestos si existen
           if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
