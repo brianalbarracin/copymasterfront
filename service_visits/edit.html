@@ -277,14 +277,15 @@
             // Mostrar el bloque de la card
             meterFields.style.display = "block";
 
-            // Mostrar valores pero en solo lectura
+            // Rellenar los valores
             document.getElementById("meter-reading").value = visit.meterReading.reading || "";
-            document.getElementById("meter-reading").readOnly = true;
-
             document.getElementById("reading-notes").value = visit.meterReading.notes || "";
+
+            // Congelar todo
+            document.getElementById("meter-reading").readOnly = true;
             document.getElementById("reading-notes").readOnly = true;
 
-            // Congelar el checkbox (ni marcado ni usable)
+            // El checkbox ni marcado ni usable
             chkMeter.checked = false;
             chkMeter.disabled = true;
           }
