@@ -298,12 +298,6 @@
           } else {
             document.getElementById("request-technician").textContent = "Sin asignar";
           }
-
-          
-          if (visit.technicianName) {
-            document.getElementById("request-technician").textContent = visit.technicianName;
-          }
-
           // Configurar estado de resolución
           if (visit.solved) {
             chkSolved.checked = true;
