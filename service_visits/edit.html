@@ -220,7 +220,7 @@
     }
 
     // Cargar lista de técnicos
-    
+
     // Cargar información del service-request
     async function loadRequestInfo() {
       try {
@@ -277,10 +277,14 @@
 
             try {
               const tech = await technicianService.get(visit.technicianId);
-              document.getElementById("request-technician").textContent = tech ? tech.fullName : "Sin asignar";
+              document.getElementById("request-technician").textContent =
+                tech ? tech.fullName : "Sin asignar";
+              document.getElementById("technician-name").value =
+                tech ? tech.fullName : "";
             } catch (err) {
               console.error("Error cargando técnico:", err);
-              document.getElementById("request-technician").textContent = "Error cargando técnico";
+              document.getElementById("request-technician").textContent =
+                "Error cargando técnico";
             }
           } else {
             document.getElementById("request-technician").textContent = "Sin asignar";
