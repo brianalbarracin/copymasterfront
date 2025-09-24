@@ -296,7 +296,7 @@
 
 
           if (visit.meterReading) {
-            // ✅ Mostrar solo la sección de lectura existente
+            // ✅ Ya existe una lectura, solo mostrarla en modo readonly
             document.getElementById("meter-reading-card").style.display = "none";
             document.getElementById("existing-meter-section").style.display = "block";
 
@@ -305,30 +305,23 @@
             document.getElementById("existing-reading-notes").textContent =
               visit.meterReading.notes ?? "Sin notas";
 
-            // 🔒 Asegurar que el checkbox quede apagado y deshabilitado
             chkMeter.checked = false;
             chkMeter.disabled = true;
             meterFields.style.display = "none";
 
           } else {
-            // ✅ Mostrar solo la card editable
+            // ✅ No existe, permitir crear una nueva
             document.getElementById("meter-reading-card").style.display = "block";
             document.getElementById("existing-meter-section").style.display = "none";
 
             chkMeter.disabled = false;
-            chkMeter.addEventListener("change", e => {
+            chkMeter.onchange = (e) => {
               meterFields.style.display = e.target.checked ? "block" : "none";
-            });
+            };
 
-            if (visit.takeMeterReading || visit.reading) {
-              chkMeter.checked = true;
-              meterFields.style.display = "block";
-              document.getElementById("meter-reading").value = visit.reading || "";
-              document.getElementById("reading-notes").value = visit.readingNotes || "";
-            } else {
-              chkMeter.checked = false;
-              meterFields.style.display = "none";
-            }
+            // Nada de visit.reading, porque nunca habrá en este caso
+            chkMeter.checked = false;
+            meterFields.style.display = "none";
           }
 
 
