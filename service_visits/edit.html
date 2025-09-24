@@ -164,8 +164,7 @@
 <script>
   (async function initEditVisit() {
 
-    document.getElementById("meter-reading-card").style.display = "none";
-document.getElementById("existing-meter-section").style.display = "none";
+
     const API = API_BASE.replace(/\/$/, '');
     const visitId = sessionStorage.getItem("selectedVisitId");
     const requestId = sessionStorage.getItem("selectedRequestId");
@@ -187,7 +186,7 @@ document.getElementById("existing-meter-section").style.display = "none";
 
     // Toggle lectura
     //chkMeter.addEventListener("change", e => {
-      //meterFields.style.display = e.target.checked ? "block" : "none";
+    //meterFields.style.display = e.target.checked ? "block" : "none";
     //});
 
     // Toggle resolución
@@ -293,8 +292,11 @@ document.getElementById("existing-meter-section").style.display = "none";
             new Date(visit.visitDatetime).toISOString().slice(0, 16) :
             new Date().toISOString().slice(0, 16);
 
+
+
+
           if (visit.meterReading) {
-            // Ocultar card editable y mostrar sección de solo lectura
+            // Mostrar solo la sección de lectura existente
             document.getElementById("meter-reading-card").style.display = "none";
             document.getElementById("existing-meter-section").style.display = "block";
 
@@ -302,12 +304,11 @@ document.getElementById("existing-meter-section").style.display = "none";
               visit.meterReading.reading ?? "N/A";
             document.getElementById("existing-reading-notes").textContent =
               visit.meterReading.notes ?? "Sin notas";
-
-            // 🚫 Importante: quitar cualquier listener para chkMeter
-            chkMeter.disabled = true;
-            chkMeter.checked = false;
           } else {
-            // Solo si no existe una lectura previa
+            // Mostrar solo la card editable
+            document.getElementById("meter-reading-card").style.display = "block";
+            document.getElementById("existing-meter-section").style.display = "none";
+
             chkMeter.addEventListener("change", e => {
               meterFields.style.display = e.target.checked ? "block" : "none";
             });
