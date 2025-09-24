@@ -50,7 +50,7 @@
 
     <!-- Lectura del contador -->
     <div class="col-12">
-      <div class="card">
+      <div class="card" id="meter-reading-card">
         <div class="card-header">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="chk-meter" name="takeMeterReading">
@@ -271,33 +271,24 @@
           document.getElementById("visit-datetime").value = visit.visitDatetime ?
             new Date(visit.visitDatetime).toISOString().slice(0, 16) :
             new Date().toISOString().slice(0, 16);
-
-
           if (visit.meterReading) {
-            // Ocultar el header con el checkbox
-            chkMeter.closest(".card-header").style.display = "none";
+            // Deshabilitar toda la card
+            document.getElementById("meter-reading-card").classList.add("disabled-card");
 
-            // Mostrar el bloque de la card
+            // Marcar checkbox pero deshabilitarlo
+            chkMeter.checked = false;
+            chkMeter.disabled = true;
             meterFields.style.display = "block";
 
-            // Reemplazar el contenido con labels planos
-            meterFields.innerHTML = `
-    <div class="row">
-      <div class="col-md-6">
-        <label class="form-label">Lectura del contador registrada</label>
-        <p class="form-control-plaintext mb-0">
-          ${visit.meterReading.reading ?? "N/A"}
-        </p>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Notas de la lectura</label>
-        <p class="form-control-plaintext mb-0">
-          ${visit.meterReading.notes ?? "Sin notas"}
-        </p>
-      </div>
-    </div>
-  `;
+            // Llenar valores en modo solo lectura
+            document.getElementById("meter-reading").value = visit.meterReading.reading || "";
+            document.getElementById("reading-notes").value = visit.meterReading.notes || "";
+            document.getElementById("meter-reading").readOnly = true;
+            document.getElementById("reading-notes").readOnly = true;
+
           }
+
+
           // Seleccionar técnico
           if (visit.technicianId) {
             document.getElementById("technician-id").value = visit.technicianId;
