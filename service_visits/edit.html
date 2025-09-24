@@ -14,6 +14,7 @@
     <div class="card-body">
       <div class="row" id="request-info">
         <div class="col-md-6">
+          <strong>Técnico:</strong> <span id="request-technician">Cargando...</span><br>
           <strong>Solicitud #:</strong> <span id="request-number">Cargando...</span><br>
           <strong>Cliente:</strong> <span id="request-customer">Cargando...</span><br>
           <strong>Máquina:</strong> <span id="request-machine">Cargando...</span>
@@ -33,9 +34,8 @@
 
     <div class="col-md-6">
       <label class="form-label">Técnico asignado</label>
-      <select class="form-select" name="technicianId" id="technician-select" required>
-        <option value="">Seleccione un técnico</option>
-      </select>
+      <input type="text" class="form-control" id="technician-name" readonly>
+      <input type="hidden" name="technicianId" id="technician-id">
     </div>
 
     <div class="col-md-6">
@@ -278,6 +278,8 @@
 
           if (visit.meterReading) {
             chkMeter.disabled = true;
+            chkMeter.checked = true; // forzar visible
+            meterFields.style.display = "block"; // mostrar card
             document.getElementById("meter-reading").value = visit.meterReading.reading || "";
             document.getElementById("meter-reading").disabled = true;
             document.getElementById("reading-notes").value = visit.meterReading.notes || "";
@@ -286,7 +288,11 @@
 
           // Seleccionar técnico
           if (visit.technicianId) {
-            document.getElementById("technician-select").value = visit.technicianId;
+            document.getElementById("technician-id").value = visit.technicianId;
+            document.getElementById("technician-name").value = visit.technicianName || "Sin asignar";
+          }
+          if (visit.technicianName) {
+            document.getElementById("request-technician").textContent = visit.technicianName;
           }
 
           // Configurar estado de resolución
