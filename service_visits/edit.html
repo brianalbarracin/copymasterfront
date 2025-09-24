@@ -47,6 +47,24 @@
       <label class="form-label">Notas de la Visita</label>
       <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"></textarea>
     </div>
+    <!-- Lectura existente (solo si hay meterReading) -->
+    <div id="existing-meter-section" style="display:none" class="mb-3">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Lectura del Contador Existente</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Lectura:</strong> <span id="existing-reading-value"></span>
+            </div>
+            <div class="col-md-6">
+              <strong>Notas:</strong> <span id="existing-reading-notes"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Lectura del contador -->
     <div class="col-12">
@@ -69,26 +87,6 @@
               <label class="form-label">Notas de la lectura</label>
               <input type="text" class="form-control" name="readingNotes" id="reading-notes"
                 placeholder="Observaciones sobre la lectura">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- Lectura existente (solo si hay meterReading) -->
-    <div id="existing-meter-section" style="display:none" class="mb-3">
-      <div class="card bg-light">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Lectura del Contador Existente</h6>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <strong>Lectura:</strong> <span id="existing-reading-value"></span>
-            </div>
-            <div class="col-md-6">
-              <strong>Notas:</strong> <span id="existing-reading-notes"></span>
             </div>
           </div>
         </div>
@@ -291,9 +289,9 @@
           document.getElementById("visit-datetime").value = visit.visitDatetime ?
             new Date(visit.visitDatetime).toISOString().slice(0, 16) :
             new Date().toISOString().slice(0, 16);
-
-
+            
           if (visit.meterReading) {
+            // Deshabilitar toda la card
             // Ocultar card editable y mostrar sección de solo lectura
             document.getElementById("meter-reading-card").style.display = "none";
             document.getElementById("existing-meter-section").style.display = "block";
@@ -302,20 +300,7 @@
             document.getElementById("existing-reading-value").textContent = visit.meterReading.reading || "";
             document.getElementById("existing-reading-notes").textContent = visit.meterReading.notes || "";
 
-          } else if (visit.takeMeterReading || visit.reading) {
-            // Caso normal - usar la card editable
-            chkMeter.checked = true;
-            meterFields.style.display = "block";
-            document.getElementById("meter-reading").value = visit.reading || "";
-            document.getElementById("reading-notes").value = visit.readingNotes || "";
           }
-
-
-
-
-
-
-
 
           // Seleccionar técnico
           if (visit.technicianId) {
@@ -341,12 +326,12 @@
           }
 
           // Configurar lectura del contador
-          // if (visit.takeMeterReading || visit.reading) {
-          // chkMeter.checked = true;
-          //meterFields.style.display = "block";
-          //document.getElementById("meter-reading").value = visit.reading || "";
-          //document.getElementById("reading-notes").value = visit.readingNotes || "";
-          //}
+          if (visit.takeMeterReading || visit.reading) {
+            chkMeter.checked = true;
+            meterFields.style.display = "block";
+            document.getElementById("meter-reading").value = visit.reading || "";
+            document.getElementById("reading-notes").value = visit.readingNotes || "";
+          }
 
           // Configurar repuestos si existen
           if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
