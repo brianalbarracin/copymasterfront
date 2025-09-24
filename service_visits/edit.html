@@ -274,38 +274,30 @@
 
 
           if (visit.meterReading) {
+            // Ocultar el header con el checkbox
+            chkMeter.closest(".card-header").style.display = "none";
+
             // Mostrar el bloque de la card
             meterFields.style.display = "block";
 
-            // Reemplazar el contenido por labels estáticos
+            // Reemplazar el contenido con labels planos
             meterFields.innerHTML = `
     <div class="row">
       <div class="col-md-6">
         <label class="form-label">Lectura del contador registrada</label>
-        <p class="form-control-plaintext">
+        <p class="form-control-plaintext mb-0">
           ${visit.meterReading.reading ?? "N/A"}
         </p>
       </div>
       <div class="col-md-6">
         <label class="form-label">Notas de la lectura</label>
-        <p class="form-control-plaintext">
+        <p class="form-control-plaintext mb-0">
           ${visit.meterReading.notes ?? "Sin notas"}
         </p>
       </div>
     </div>
   `;
-
-            // El checkbox apagado y bloqueado
-            chkMeter.checked = false;
-            chkMeter.disabled = true;
-
-            // Opcional: agregar un distintivo
-            const badge = document.createElement("span");
-            badge.className = "badge bg-info ms-2";
-            badge.textContent = "Lectura ya registrada";
-            chkMeter.closest(".card-header").appendChild(badge);
           }
-
           // Seleccionar técnico
           if (visit.technicianId) {
             document.getElementById("technician-id").value = visit.technicianId;
