@@ -365,10 +365,11 @@
 
       try {
         const formData = new FormData(document.getElementById("visit-form"));
+        const rawDate = formData.get("visitDatetime");
         const dto = {
           serviceRequestId: parseInt(requestId),
           technicianId: parseInt(formData.get("technicianId")),
-          visitDatetime: formData.get("visitDatetime"),
+          visitDatetime: rawDate ? new Date(rawDate).toISOString() : null,
           visitNotes: formData.get("visitNotes") || null,
           solved: chkSolved.checked,
           takeMeterReading: chkMeter.checked,
