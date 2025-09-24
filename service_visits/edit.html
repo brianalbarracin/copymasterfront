@@ -292,8 +292,8 @@
             new Date(visit.visitDatetime).toISOString().slice(0, 16) :
             new Date().toISOString().slice(0, 16);
 
-
-
+          console.log("👉 meterReading object:", visit.meterReading);
+          console.log("👉 Todas las propiedades de visit:", Object.keys(visit));
 
           if (visit.meterReading) {
             // Ocultar completamente la card de lectura
