@@ -282,7 +282,10 @@
             document.getElementById("technician-id").value = visit.technicianId;
 
             try {
-              const tech = await technicianService.get(visit.technicianId);
+              const response = await technicianService.get(visit.technicianId);
+              const tech = response?.data;   // ✅ el técnico viene dentro de data
+              console.log("👉 Técnico recibido:", response);
+
               document.getElementById("request-technician").textContent =
                 tech ? tech.fullName : "Sin asignar";
               document.getElementById("technician-input").value =
