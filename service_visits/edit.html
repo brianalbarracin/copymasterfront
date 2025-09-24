@@ -250,9 +250,9 @@
     // Cargar datos de la visita
     async function loadVisitData() {
       try {
-        const res = await fetch(`${API}/visits/${visitId}`);
-        const raw = await res.json();
-        console.log("👉 Respuesta cruda del backend:", raw);
+        const res = await fetch(`${API}/visits/request/${requestId}`);
+        const visits = (await res.json()).data || await res.json();
+        const visit = visits.find(v => v.id === parseInt(visitId));
         if (res.ok) {
           const visit = (await res.json()).data || await res.json();
 
@@ -282,10 +282,7 @@
             document.getElementById("technician-id").value = visit.technicianId;
 
             try {
-              const response = await technicianService.get(visit.technicianId);
-              const tech = response?.data;   // ✅ el técnico viene dentro de data
-              console.log("👉 Técnico recibido:", response);
-
+              const tech = await technicianService.get(visit.technicianId);
               document.getElementById("request-technician").textContent =
                 tech ? tech.fullName : "Sin asignar";
               document.getElementById("technician-input").value =
@@ -295,8 +292,6 @@
               document.getElementById("request-technician").textContent =
                 "Error cargando técnico";
             }
-          } else {
-            document.getElementById("request-technician").textContent = "Sin asignar";
           }
 
           // Configurar estado de resolución
