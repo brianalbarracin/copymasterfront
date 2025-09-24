@@ -288,9 +288,18 @@
 
           // Seleccionar técnico
           if (visit.technicianId) {
-            document.getElementById("technician-id").value = visit.technicianId;
-            document.getElementById("technician-name").value = visit.technicianName || "Sin asignar";
+            try {
+              const tech = await technicianService.get(visit.technicianId);
+              document.getElementById("request-technician").textContent = tech ? tech.fullName : "Sin asignar";
+            } catch (err) {
+              console.error("Error cargando técnico:", err);
+              document.getElementById("request-technician").textContent = "Error cargando técnico";
+            }
+          } else {
+            document.getElementById("request-technician").textContent = "Sin asignar";
           }
+
+          
           if (visit.technicianName) {
             document.getElementById("request-technician").textContent = visit.technicianName;
           }
