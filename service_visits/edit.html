@@ -300,8 +300,8 @@
             meterFields.style.display = "block";
 
             // Rellenar los valores
-            document.getElementById("meter-reading").value = visit.meterReading.reading || "";
-            document.getElementById("reading-notes").value = visit.meterReading.notes || "";
+            document.getElementById("meter-reading").value = visit.reading || "";
+            document.getElementById("reading-notes").value = visit.readingNotes || "";
 
             // Congelar inputs (que se vean, pero no se puedan editar)
             document.getElementById("meter-reading").readOnly = true;
@@ -312,10 +312,10 @@
             chkMeter.disabled = true;
 
             // (Opcional) agregar un aviso visual
-            const badge = document.createElement("span");
+           /* const badge = document.createElement("span");
             badge.className = "badge bg-info ms-2";
             badge.textContent = "Lectura registrada (bloqueada)";
-            chkMeter.closest(".card-header").appendChild(badge);
+            chkMeter.closest(".card-header").appendChild(badge);*/
 
           } 
 
