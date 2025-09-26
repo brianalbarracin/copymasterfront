@@ -2,35 +2,76 @@
   <div class="d-flex justify-content-between mb-3 align-items-center">
     <h4 class="mb-0">Solicitudes de Servicio</h4>
     <div>
-      <button class="btn btn-success btn-sm" onclick="appLoad('machines/create_request.html')">Crear Solicitud</button>
+      <button class="btn btn-success btn-sm" id="btn-new-request">Crear Solicitud</button>
       <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-req">Actualizar</button>
     </div>
   </div>
   <div class="table-responsive">
     <table class="table table-hover">
-      <thead class="table-light"><tr><th>ID</th><th>Número</th><th>Máquina</th><th>Cliente</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead>
-      <tbody id="requests-tbody"></tbody>
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Número</th>
+          <th>Máquina</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="requests-tbody">
+        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+      </tbody>
     </table>
   </div>
 </div>
-
-
 <script>
-async function renderRequests(){
-  const list = await serviceRequestService.list().then(r=>r.data||r).catch(()=>[]);
-  const tbody = document.getElementById("requests-tbody");
-  tbody.innerHTML='';
-  (list||[]).forEach(r=>{
-    tbody.insertAdjacentHTML('beforeend', `<tr>
-      <td>${r.id}</td>
-      <td>${r.requestNumber||''}</td>
-      <td>${r.companySerial||''}</td>
-      <td>${r.customerId||''}</td>
-      <td>${r.serviceType||''}</td>
-      <td>${r.status||''}</td>
-      <td><button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id='+r.machineId)">Ver</button></td>
-    </tr>`);
-  });
-}
-document.addEventListener("DOMContentLoaded", ()=>{ renderRequests(); document.getElementById('btn-refresh-req').addEventListener('click', renderRequests); });
+(async function renderRequests(){
+  try {
+    const machineId = window.__MID; // guardado en machine-detail.js
+    const list = await serviceRequestService.byMachine(machineId).catch(()=>[]);
+    const tbody = document.getElementById("requests-tbody");
+    tbody.innerHTML='';
+
+    if(!list || list.length===0){
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay solicitudes</td></tr>';
+    } else {
+      list.forEach(r=>{
+        tbody.insertAdjacentHTML('beforeend', `<tr>
+          <td>${r.id}</td>
+          <td>${r.requestNumber||''}</td>
+          <td>${r.companySerial||''}</td>
+          <td>${r.customer?.name || r.customerId || ''}</td>
+          <td>${r.serviceType||''}</td>
+          <td><span class="badge ${r.status==='CERRADA'?'bg-success':'bg-warning'}">${r.status||''}</span></td>
+          <td><button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id='+r.machineId)">Ver</button></td>
+        </tr>`);
+      });
+    }
+  } catch(err){
+    console.error(err);
+    showAlert("Error cargando solicitudes", "danger");
+  } finally {
+    // 🔁 volver a llamarse después de 30 segundos
+    setTimeout(renderRequests, 30000);
+  }
+
+  // eventos solo se enganchan la primera vez
+  if(!window.__REQ_EVENTS_BOUND){
+    document.getElementById('btn-refresh-req').addEventListener('click', renderRequests);
+    document.getElementById('btn-new-request').addEventListener('click', ()=>{
+      const machineId = window.__MID;
+      // guardar datos en sessionStorage
+      sessionStorage.setItem("selectedMachineId", machineId);
+      sessionStorage.setItem("selectedCustomerId", window.__CUSTOMER_ID || "");
+      sessionStorage.setItem("selectedMachineSerial", window.__MACHINE_SERIAL || "");
+      sessionStorage.setItem("selectedMachineNumber", window.__MACHINE_NUMBER || "");
+      sessionStorage.setItem("selectedCustomerName", window.__CUSTOMER_NAME || "");
+      sessionStorage.setItem("selectedCustomerNit", window.__CUSTOMER_NIT || "");
+      // ir al formulario de nueva solicitud
+      appLoad('service_requests/new.html');
+    });
+    window.__REQ_EVENTS_BOUND = true;
+  }
+})();
 </script>

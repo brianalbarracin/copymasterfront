@@ -3011,6 +3011,7 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
     <div class="card-body">
       <div class="row" id="request-info">
         <div class="col-md-6">
+          <strong>Técnico:</strong> <span id="request-technician">Cargando...</span><br>
           <strong>Solicitud #:</strong> <span id="request-number">Cargando...</span><br>
           <strong>Cliente:</strong> <span id="request-customer">Cargando...</span><br>
           <strong>Máquina:</strong> <span id="request-machine">Cargando...</span>
@@ -3023,16 +3024,15 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
       </div>
     </div>
   </div>
-
+  <input type="hidden" id="machine-id" name="machineId">
   <!-- Formulario de edición -->
   <form id="visit-form" class="row g-3" novalidate>
     <input type="hidden" name="serviceRequestId" id="service-request-id">
 
     <div class="col-md-6">
       <label class="form-label">Técnico asignado</label>
-      <select class="form-select" name="technicianId" id="technician-select" required>
-        <option value="">Seleccione un técnico</option>
-      </select>
+      <input type="text" class="form-control" id="technician-input" readonly>
+      <input type="hidden" name="technicianId" id="technician-id">
     </div>
 
     <div class="col-md-6">
@@ -3044,10 +3044,28 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
       <label class="form-label">Notas de la Visita</label>
       <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"></textarea>
     </div>
+    <!-- Lectura existente (solo si hay meterReading) -->
+    <div id="existing-meter-section" style="display:none" class="mb-3">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Lectura del Contador Existente</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Lectura:</strong> <span id="existing-reading-value"></span>
+            </div>
+            <div class="col-md-6">
+              <strong>Notas:</strong> <span id="existing-reading-notes"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Lectura del contador -->
     <div class="col-12">
-      <div class="card">
+      <div class="card" id="meter-reading-card">
         <div class="card-header">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="chk-meter" name="takeMeterReading">
@@ -3064,7 +3082,8 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
             </div>
             <div class="col-md-6">
               <label class="form-label">Notas de la lectura</label>
-              <input type="text" class="form-control" name="readingNotes" id="reading-notes" placeholder="Observaciones sobre la lectura">
+              <input type="text" class="form-control" name="readingNotes" id="reading-notes"
+                placeholder="Observaciones sobre la lectura">
             </div>
           </div>
         </div>
@@ -3085,7 +3104,8 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
         <div class="card-body" id="resolution-fields" style="display:none">
           <div class="mb-2">
             <label class="form-label">Descripción de la solución</label>
-            <textarea class="form-control" name="resolution" rows="3" placeholder="Describa cómo se resolvió el problema"></textarea>
+            <textarea class="form-control" name="resolution" rows="3"
+              placeholder="Describa cómo se resolvió el problema"></textarea>
           </div>
         </div>
       </div>
@@ -3139,57 +3159,59 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
 </div>
 
 <script>
-(async function initEditVisit() {
-  const API = API_BASE.replace(/\/$/, '');
-  const visitId = sessionStorage.getItem("selectedVisitId");
-  const requestId = sessionStorage.getItem("selectedRequestId");
+  (async function initEditVisit() {
 
-  const chkMeter = document.getElementById("chk-meter");
-  const meterFields = document.getElementById("meter-fields");
-  const chkParts = document.getElementById("chk-parts");
-  const partsContainer = document.getElementById("parts-container");
-  const partsList = document.getElementById("parts-list");
-  const btnAddPart = document.getElementById("btn-add-part");
-  const existingPartsList = document.getElementById("existing-parts-list");
-  const chkSolved = document.getElementById("solved");
-  const resolutionFields = document.getElementById("resolution-fields");
 
-  if (!visitId || !requestId) {
-    showAlert("No se encontró la visita seleccionada.", "danger");
-    return appLoad("service_requests/list.html");
-  }
+    const API = API_BASE.replace(/\/$/, '');
+    const visitId = sessionStorage.getItem("selectedVisitId");
+    const requestId = sessionStorage.getItem("selectedRequestId");
 
-  // Toggle lectura
-  chkMeter.addEventListener("change", e => {
-    meterFields.style.display = e.target.checked ? "block" : "none";
-  });
+    const chkMeter = document.getElementById("chk-meter");
+    const meterFields = document.getElementById("meter-fields");
+    const chkParts = document.getElementById("chk-parts");
+    const partsContainer = document.getElementById("parts-container");
+    const partsList = document.getElementById("parts-list");
+    const btnAddPart = document.getElementById("btn-add-part");
+    const existingPartsList = document.getElementById("existing-parts-list");
+    const chkSolved = document.getElementById("solved");
+    const resolutionFields = document.getElementById("resolution-fields");
 
-  // Toggle resolución
-  chkSolved.addEventListener("change", e => {
-    resolutionFields.style.display = e.target.checked ? "block" : "none";
-  });
-
-  // Toggle repuestos
-  chkParts.addEventListener("change", e => {
-    partsContainer.style.display = e.target.checked ? "block" : "none";
-    if(e.target.checked && partsList.children.length === 0) {
-      addPartSelector();
+    if (!visitId || !requestId) {
+      showAlert("No se encontró la visita seleccionada.", "danger");
+      return appLoad("service_requests/list.html");
     }
-  });
 
-  // Añadir selector de repuestos
-  btnAddPart.addEventListener("click", addPartSelector);
+    // Toggle lectura
+    chkMeter.addEventListener("change", e => {
+    meterFields.style.display = e.target.checked ? "block" : "none";
+    });
 
-  // Función para añadir un selector de repuestos
-  async function addPartSelector(){
-    try {
-      const res = await fetch(`${API}/parts`);
-      const parts = (await res.json()).data || [];
+    // Toggle resolución
+    chkSolved.addEventListener("change", e => {
+      resolutionFields.style.display = e.target.checked ? "block" : "none";
+    });
 
-      const partItem = document.createElement("div");
-      partItem.classList.add("part-item", "mb-2", "p-2", "border", "rounded");
-      
-      partItem.innerHTML = `
+    // Toggle repuestos
+    chkParts.addEventListener("change", e => {
+      partsContainer.style.display = e.target.checked ? "block" : "none";
+      if (e.target.checked && partsList.children.length === 0) {
+        addPartSelector();
+      }
+    });
+
+    // Añadir selector de repuestos
+    btnAddPart.addEventListener("click", addPartSelector);
+
+    // Función para añadir un selector de repuestos
+    async function addPartSelector() {
+      try {
+        const res = await fetch(`${API}/parts`);
+        const parts = (await res.json()).data || [];
+
+        const partItem = document.createElement("div");
+        partItem.classList.add("part-item", "mb-2", "p-2", "border", "rounded");
+
+        partItem.innerHTML = `
         <div class="d-flex align-items-center gap-2">
           <select class="form-select part-select" name="partId" required>
             <option value="">-- Seleccione repuesto --</option>
@@ -3201,224 +3223,269 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
           </button>
         </div>
       `;
-      
-      partsList.appendChild(partItem);
-      
-      // Añadir evento para eliminar repuesto
-      partItem.querySelector('.remove-part').addEventListener('click', function() {
-        partItem.remove();
-      });
-    } catch (error) {
-      console.error("Error cargando repuestos:", error);
-      showAlert("Error al cargar la lista de repuestos", "danger");
-    }
-  }
 
-  // Cargar lista de técnicos
-  async function loadTechnicians() {
-    try {
-      const technicians = await technicianService.list();
-      const select = document.getElementById("technician-select");
-      
-      technicians.forEach(tech => {
-        const option = document.createElement("option");
-        option.value = tech.id;
-        option.textContent = tech.fullName;
-        select.appendChild(option);
-      });
-    } catch (error) {
-      console.error("Error cargando técnicos:", error);
-    }
-  }
+        partsList.appendChild(partItem);
 
-  // Cargar información del service-request
-  async function loadRequestInfo() {
-    try {
-      const req = await serviceRequestService.get(requestId);
-      document.getElementById("service-request-id").value = req.id;
-      document.getElementById("request-number").textContent = req.requestNumber || req.id;
-      document.getElementById("request-type").textContent = req.serviceType || "N/A";
-      document.getElementById("request-rootcause").textContent = req.rootCause || "N/A";
-      document.getElementById("request-status").textContent = req.status || "N/A";
-
-      if (req.customerId) {
-        const cust = await customerService.get(req.customerId);
-        document.getElementById("request-customer").textContent = cust?.name || "N/A";
+        // Añadir evento para eliminar repuesto
+        partItem.querySelector('.remove-part').addEventListener('click', function () {
+          partItem.remove();
+        });
+      } catch (error) {
+        console.error("Error cargando repuestos:", error);
+        showAlert("Error al cargar la lista de repuestos", "danger");
       }
-      
-      if (req.machineId) {
-        const mach = await machineService.get(req.machineId);
-        document.getElementById("request-machine").textContent = 
-          mach ? `${mach.brand || ''} ${mach.model || ''} (${mach.companySerial || 'N/A'})` : "N/A";
-      }
-    } catch(err) { 
-      console.error("Error cargando request:", err);
-      showAlert("Error al cargar información de la solicitud", "danger");
     }
-  }
 
-  // Cargar datos de la visita
-  async function loadVisitData() {
-    try {
-      const res = await fetch(`${API}/visits/${visitId}`);
-      if(res.ok){
-        const visit = (await res.json()).data || await res.json();
-        
-        // Llenar formulario con datos existentes
-        document.getElementById("visit-notes").value = visit.visitNotes || "";
-        document.getElementById("visit-datetime").value = visit.visitDatetime ? 
-          new Date(visit.visitDatetime).toISOString().slice(0, 16) : 
-          new Date().toISOString().slice(0, 16);
-        
-        // Seleccionar técnico
-        if (visit.technicianId) {
-          document.getElementById("technician-select").value = visit.technicianId;
+    // Cargar lista de técnicos
+
+    // Cargar información del service-request
+    async function loadRequestInfo() {
+      try {
+        const req = await serviceRequestService.get(requestId);
+        document.getElementById("service-request-id").value = req.id;
+        document.getElementById("request-number").textContent = req.requestNumber || req.id;
+        document.getElementById("request-type").textContent = req.serviceType || "N/A";
+        document.getElementById("request-rootcause").textContent = req.rootCause || "N/A";
+        document.getElementById("request-status").textContent = req.status || "N/A";
+
+        if (req.customerId) {
+          const cust = await customerService.get(req.customerId);
+          document.getElementById("request-customer").textContent = cust?.name || "N/A";
         }
-        
-        // Configurar estado de resolución
-        if (visit.solved) {
-          chkSolved.checked = true;
-          resolutionFields.style.display = "block";
+
+        if (req.machineId) {
+          const mach = await machineService.get(req.machineId);
+          document.getElementById("request-machine").textContent =
+            mach ? `${mach.brand || ''} ${mach.model || ''} (${mach.companySerial || 'N/A'})` : "N/A";
         }
-        
-        // Configurar lectura del contador
-        if (visit.takeMeterReading || visit.reading) {
-          chkMeter.checked = true;
-          meterFields.style.display = "block";
-          document.getElementById("meter-reading").value = visit.reading || "";
-          document.getElementById("reading-notes").value = visit.readingNotes || "";
-        }
-        
-        // Configurar repuestos si existen
-        if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
-          chkParts.checked = true;
-          partsContainer.style.display = "block";
-          // Aquí podrías cargar los repuestos existentes si tu backend los devuelve
-        }
+      } catch (err) {
+        console.error("Error cargando request:", err);
+        showAlert("Error al cargar información de la solicitud", "danger");
       }
-    } catch(err) { 
-      console.error("Error cargando visita:", err);
-      showAlert("Error al cargar datos de la visita", "danger");
     }
-  }
 
-  // Cargar repuestos ya existentes
-  async function loadExistingParts() {
-    try {
-      // Como no tienes endpoint específico para visit-parts, usamos la info de partsUsed de la visita
-      const res = await fetch(`${API}/visits/${visitId}`);
-      if(res.ok){
-        const visit = (await res.json()).data || await res.json();
-        existingPartsList.innerHTML = "";
-        
-        if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
-          // Cargar información de cada repuesto
-          const parts = await fetch(`${API}/parts`).then(r => r.json()).then(res => res.data || []);
-          
-          Object.entries(visit.partsUsed).forEach(([partId, quantity]) => {
-            const part = parts.find(p => p.id == partId);
-            const partDiv = document.createElement("div");
-            partDiv.className = "d-flex justify-content-between align-items-center p-2 border-bottom";
-            partDiv.innerHTML = `
-              <div>
-                <strong>${part ? part.name : `Repuesto ID: ${partId}`}</strong>
-                <br><small class="text-muted">Cantidad: ${quantity}</small>
-              </div>
-              <small class="text-muted">${part ? `SKU: ${part.sku || 'N/A'}` : ''}</small>
-            `;
-            existingPartsList.appendChild(partDiv);
-          });
-        } else {
-          existingPartsList.innerHTML = '<p class="text-muted">No hay repuestos registrados para esta visita</p>';
-        }
-      }
-    } catch(err) { 
-      console.error("Error cargando repuestos existentes:", err);
-      existingPartsList.innerHTML = '<p class="text-muted">Error al cargar repuestos existentes</p>';
-    }
-  }
+    // Cargar datos de la visita
+    async function loadVisitData() {
+      try {
+        const res = await fetch(`${API}/visits/request/${requestId}`)
+        if (res.ok) {
 
-  // Inicializar la página
-  await Promise.all([
-    loadTechnicians(),
-    loadRequestInfo(),
-    loadVisitData(),
-    loadExistingParts()
-  ]);
+          const json = await res.json();
+          const visits = json.data || json;
+          const visit = visits.find(v => v.id === parseInt(visitId));
 
-  // Manejar envío del formulario
-  document.getElementById("visit-form").addEventListener("submit", async e => {
-    e.preventDefault();
-    const btn = document.getElementById("btn-save");
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
-
-    try {
-      const formData = new FormData(document.getElementById("visit-form"));
-      const dto = {
-        serviceRequestId: parseInt(requestId),
-        technicianId: parseInt(formData.get("technicianId")),
-        visitDatetime: formData.get("visitDatetime"),
-        visitNotes: formData.get("visitNotes") || null,
-        solved: chkSolved.checked,
-        takeMeterReading: chkMeter.checked,
-        reading: chkMeter.checked ? 
-          (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
-        readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null
-      };
-
-      // Recopilar información de repuestos
-      if (chkParts.checked) {
-        const partsUsed = {};
-        const partSelects = partsList.querySelectorAll(".part-select");
-        
-        partSelects.forEach((select, index) => {
-          if (select.value) {
-            const quantityInput = select.closest('.d-flex').querySelector('input[name="quantity"]');
-            const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-            partsUsed[select.value] = quantity;
+          if (!visit) {
+            console.warn("⚠️ No se encontró la visita con ID", visitId);
+            return;
           }
-        });
-        
-        if (Object.keys(partsUsed).length > 0) {
-          dto.partsUsed = partsUsed;
+
+
+
+          console.log("👉 Visita cargada:", visit); // 👈 ver todo el objeto
+          console.log("👉 TechnicianId recibido:", visit.technicianId);
+          // Llenar formulario con datos existentes
+          document.getElementById("visit-notes").value = visit.visitNotes || "";
+          document.getElementById("visit-datetime").value = visit.visitDatetime ?
+            new Date(visit.visitDatetime).toISOString().slice(0, 16) :
+            new Date().toISOString().slice(0, 16);
+
+          console.log("👉 meterReading object:", visit.meterReading);
+          console.log("👉 Todas las propiedades de visit:", Object.keys(visit));
+
+          if (visit.reading) {
+            // Mostrar el bloque de la card
+            meterFields.style.display = "block";
+
+            // Rellenar los valores
+            document.getElementById("meter-reading").value = visit.reading || "";
+            document.getElementById("reading-notes").value = visit.readingNotes || "";
+
+            // Congelar inputs (que se vean, pero no se puedan editar)
+            document.getElementById("meter-reading").readOnly = true;
+            document.getElementById("reading-notes").readOnly = true;
+
+            // El checkbox se deshabilita (queda apagado y sin posibilidad de marcar)
+            chkMeter.checked = false;
+            chkMeter.disabled = true;
+
+            // (Opcional) agregar un aviso visual
+           /* const badge = document.createElement("span");
+            badge.className = "badge bg-info ms-2";
+            badge.textContent = "Lectura registrada (bloqueada)";
+            chkMeter.closest(".card-header").appendChild(badge);*/
+
+          } 
+
+
+
+          // Seleccionar técnico
+          if (visit.technicianId) {
+            document.getElementById("technician-id").value = visit.technicianId;
+
+            try {
+              const tech = await technicianService.get(visit.technicianId);
+              document.getElementById("request-technician").textContent =
+                tech ? tech.fullName : "Sin asignar";
+              document.getElementById("technician-input").value =
+                tech ? tech.fullName : "";
+            } catch (err) {
+              console.error("Error cargando técnico:", err);
+              document.getElementById("request-technician").textContent =
+                "Error cargando técnico";
+            }
+          }
+
+          // Configurar estado de resolución
+          if (visit.solved) {
+            chkSolved.checked = true;
+            resolutionFields.style.display = "block";
+          }
+
+          // Configurar lectura del contador
+          /*if (visit.takeMeterReading || visit.reading) {
+            chkMeter.checked = true;
+            meterFields.style.display = "block";
+            document.getElementById("meter-reading").value = visit.reading || "";
+            document.getElementById("reading-notes").value = visit.readingNotes || "";
+          }*/
+
+          // Configurar repuestos si existen
+          if (visit.partsUsed && Object.keys(visit.partsUsed).length > 0) {
+            chkParts.checked = true;
+            partsContainer.style.display = "block";
+            // Aquí podrías cargar los repuestos existentes si tu backend los devuelve
+          }
         }
+      } catch (err) {
+        console.error("Error cargando visita:", err);
+        showAlert("Error al cargar datos de la visita", "danger");
       }
-
-      // 1) Actualizar visita
-      const updateRes = await fetch(`${API}/visits/${visitId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dto)
-      });
-      
-      if (!updateRes.ok) {
-        const errorText = await updateRes.text();
-        throw new Error(`Error actualizando visita: ${errorText}`);
-      }
-
-      // 2) Actualizar estado del service request si está resuelto
-      if (chkSolved.checked) {
-        await fetch(`${API}/service-requests/${requestId}/status?status=resuelto`, {
-          method: "PUT"
-        });
-      }
-
-      showAlert("Visita actualizada correctamente", "success");
-      setTimeout(() => {
-        appLoad("service_requests/detail.html");
-      }, 1500);
-      
-    } catch(err) {
-      console.error(err);
-      showAlert(err.message || "Error al actualizar la visita", "danger");
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-save me-1"></i> Actualizar Visita';
     }
-  });
 
-})();
+    // Cargar repuestos ya existentes
+    // Cargar repuestos ya existentes
+    async function loadExistingParts() {
+      try {
+        const res = await fetch(`${API}/visit-parts/visit/${visitId}`);
+        if (res.ok) {
+          const parts = await res.json();
+          existingPartsList.innerHTML = "";
+
+          if (parts.length > 0) {
+            parts.forEach(p => {
+              const partDiv = document.createElement("div");
+              partDiv.className = "d-flex justify-content-between align-items-center p-2 border-bottom";
+              partDiv.innerHTML = `
+            <div>
+              <strong>${p.name || "Repuesto ID: " + p.partId}</strong>
+              <br><small class="text-muted">Cantidad: ${p.qty}</small>
+            </div>
+            <small class="text-muted">Serial: ${p.serialNumber || "N/A"} | Costo: ${p.cost || "N/A"}</small>
+          `;
+              existingPartsList.appendChild(partDiv);
+            });
+          } else {
+            existingPartsList.innerHTML = '<p class="text-muted">No hay repuestos registrados para esta visita</p>';
+          }
+        }
+      } catch (err) {
+        console.error("Error cargando repuestos existentes:", err);
+        existingPartsList.innerHTML = '<p class="text-muted">Error al cargar repuestos existentes</p>';
+      }
+    }
+
+    // Inicializar la página
+    await Promise.all([
+      loadRequestInfo(),
+      loadVisitData(),
+      loadExistingParts()
+    ]);
+
+    // Manejar envío del formulario
+    document.getElementById("visit-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const btn = document.getElementById("btn-save");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
+
+      try {
+        const formData = new FormData(document.getElementById("visit-form"));
+        const rawDate = formData.get("visitDatetime");
+        const dto = {
+          serviceRequestId: parseInt(requestId),
+          technicianId: parseInt(document.getElementById("technician-id").value),
+          visitDatetime: rawDate ? new Date(rawDate).toISOString() : null,
+          visitNotes: formData.get("visitNotes") || null,
+          solved: chkSolved.checked,
+          takeMeterReading: chkMeter.checked,
+          reading: chkMeter.checked ?
+            (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
+          readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null
+        };
+
+        // Recopilar información de repuestos
+        if (chkParts.checked) {
+          const partSelects = partsList.querySelectorAll(".part-select");
+          for (const select of partSelects) {
+            if (select.value) {
+              const quantityInput = select.closest('.d-flex').querySelector('input[name="quantity"]');
+              const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+
+              const dtoPart = {
+                serviceVisitId: parseInt(visitId),
+                partId: parseInt(select.value),
+                qty: quantity
+              };
+
+              await fetch(`${API}/visit-parts`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dtoPart)
+              });
+            }
+          }
+        }
+
+        // 1) Actualizar visita
+        const updateRes = await fetch(`${API}/visits/${visitId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dto)
+        });
+
+        if (!updateRes.ok) {
+          const errorText = await updateRes.text();
+          throw new Error(`Error actualizando visita: ${errorText}`);
+        }
+
+        // 2) Actualizar estado del service request si está resuelto
+        if (chkSolved.checked) {
+          await fetch(`${API}/service-requests/${requestId}/status?status=resuelto`, {
+            method: "PUT"
+          });
+        }
+
+        showAlert("Visita actualizada correctamente", "success");
+        setTimeout(() => {
+          appLoad("service_requests/detail.html");
+        }, 1500);
+
+      } catch (err) {
+        console.error(err);
+        showAlert(err.message || "Error al actualizar la visita", "danger");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save me-1"></i> Actualizar Visita';
+      }
+    });
+
+  })();
 </script>
+<style>
+  .disabled-card {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+</style>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_visits\new.html =====
 <div class="card p-3">
