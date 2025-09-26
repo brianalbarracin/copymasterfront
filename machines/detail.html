@@ -8,7 +8,7 @@
       <button class="btn btn-outline-secondary me-2" onclick="appLoad('machines/edit.html?id='+window.__MID)">
         <i class="fas fa-edit me-1"></i> Editar
       </button>
-      <button class="btn btn-success" onclick="appLoad('machines/service_requests.html')">
+      <button class="btn btn-success" onclick="goToRequests()">
         <i class="fas fa-tools me-1"></i> Ver solicitudes
       </button>
     </div>
@@ -354,6 +354,29 @@
       console.error("❌ Error guardando movimiento:", err);
       alert("Error guardando movimiento: " + (err.message || err));
     }
+  }
+
+  function goToRequests() {
+    if (!window.machineData) {
+      showAlert("No se cargó la información de la máquina", "danger");
+      return;
+    }
+
+    // Guardar datos en sessionStorage
+    sessionStorage.setItem("selectedMachineId", window.machineData.id);
+    sessionStorage.setItem("selectedMachineSerial", window.machineData.companySerial || "");
+    sessionStorage.setItem("selectedMachineNumber", window.machineData.companyNumber || "");
+    sessionStorage.setItem("selectedCustomerId", window.machineData.currentCustomerId || "");
+
+    // Busca el nombre del cliente en cache si existe
+    const customer = (window.customersCache || []).find(c => c.id === window.machineData.currentCustomerId);
+    if (customer) {
+      sessionStorage.setItem("selectedCustomerName", customer.name);
+      sessionStorage.setItem("selectedCustomerNit", customer.nit || "");
+    }
+
+    // Ir a la página de solicitudes de la máquina
+    appLoad('machines/service_requests.html');
   }
 
 
