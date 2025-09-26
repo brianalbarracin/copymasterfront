@@ -28,7 +28,12 @@
 <script>
 (async function renderRequests(){
   try {
-    const machineId = window.__MID; // guardado en machine-detail.js
+    const machineId = sessionStorage.getItem("selectedMachineId");
+    if(!machineId){
+      showAlert("No se encontró máquina seleccionada", "danger");
+      return;
+    }
+
     const list = await serviceRequestService.byMachine(machineId).catch(()=>[]);
     const tbody = document.getElementById("requests-tbody");
     tbody.innerHTML='';
@@ -51,27 +56,6 @@
   } catch(err){
     console.error(err);
     showAlert("Error cargando solicitudes", "danger");
-  } finally {
-    // 🔁 volver a llamarse después de 30 segundos
-    setTimeout(renderRequests, 30000);
-  }
-
-  // eventos solo se enganchan la primera vez
-  if(!window.__REQ_EVENTS_BOUND){
-    document.getElementById('btn-refresh-req').addEventListener('click', renderRequests);
-    document.getElementById('btn-new-request').addEventListener('click', ()=>{
-      const machineId = window.__MID;
-      // guardar datos en sessionStorage
-      sessionStorage.setItem("selectedMachineId", machineId);
-      sessionStorage.setItem("selectedCustomerId", window.__CUSTOMER_ID || "");
-      sessionStorage.setItem("selectedMachineSerial", window.__MACHINE_SERIAL || "");
-      sessionStorage.setItem("selectedMachineNumber", window.__MACHINE_NUMBER || "");
-      sessionStorage.setItem("selectedCustomerName", window.__CUSTOMER_NAME || "");
-      sessionStorage.setItem("selectedCustomerNit", window.__CUSTOMER_NIT || "");
-      // ir al formulario de nueva solicitud
-      appLoad('service_requests/new.html');
-    });
-    window.__REQ_EVENTS_BOUND = true;
   }
 })();
 </script>
