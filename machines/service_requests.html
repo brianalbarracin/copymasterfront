@@ -58,4 +58,24 @@
     showAlert("Error cargando solicitudes", "danger");
   }
 })();
+
+document.getElementById('btn-new-request').addEventListener('click', () => {
+  const machineId = sessionStorage.getItem("selectedMachineId");
+
+  if (!machineId) {
+    showAlert("No se encontró máquina seleccionada", "danger");
+    return;
+  }
+
+  // Guardar datos en sessionStorage para precargar en new_machine_request.html
+  sessionStorage.setItem("selectedMachineId", machineId);
+  sessionStorage.setItem("selectedCustomerId", window.__CUSTOMER_ID || "");
+  sessionStorage.setItem("selectedMachineSerial", window.__MACHINE_SERIAL || "");
+  sessionStorage.setItem("selectedMachineNumber", window.__MACHINE_NUMBER || "");
+  sessionStorage.setItem("selectedCustomerName", window.__CUSTOMER_NAME || "");
+  sessionStorage.setItem("selectedCustomerNit", window.__CUSTOMER_NIT || "");
+
+  // Navegar a la nueva página
+  appLoad("service_requests/new_machine_request.html");
+});
 </script>
