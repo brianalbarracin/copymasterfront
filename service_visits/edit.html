@@ -83,11 +83,23 @@
               <label class="form-label">Lectura del contador</label>
               <input type="number" class="form-control" name="reading" id="meter-reading" min="0">
             </div>
+
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Lectura Color</label>
+              <input type="number" class="form-control" name="colorReading" id="color-reading" min="0">
+            </div>
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Lectura Color</label>
+              <input type="number" class="form-control" name="colorReading" id="color-reading" min="0">
+            </div>
+
             <div class="col-md-6">
               <label class="form-label">Notas de la lectura</label>
               <input type="text" class="form-control" name="readingNotes" id="reading-notes"
                 placeholder="Observaciones sobre la lectura">
             </div>
+
+
           </div>
         </div>
       </div>
@@ -186,7 +198,7 @@
 
     // Toggle lectura
     chkMeter.addEventListener("change", e => {
-    meterFields.style.display = e.target.checked ? "block" : "none";
+      meterFields.style.display = e.target.checked ? "block" : "none";
     });
 
     // Toggle resolución
@@ -312,12 +324,24 @@
             chkMeter.disabled = true;
 
             // (Opcional) agregar un aviso visual
-           /* const badge = document.createElement("span");
-            badge.className = "badge bg-info ms-2";
-            badge.textContent = "Lectura registrada (bloqueada)";
-            chkMeter.closest(".card-header").appendChild(badge);*/
+            /* const badge = document.createElement("span");
+             badge.className = "badge bg-info ms-2";
+             badge.textContent = "Lectura registrada (bloqueada)";
+             chkMeter.closest(".card-header").appendChild(badge);*/
 
-          } 
+          }
+
+          if (visit.colorReading) {
+            const colorInput = document.getElementById("color-reading");
+            colorInput.value = visit.colorReading;
+            colorInput.readOnly = true;
+          }
+
+          if (visit.scannerReading) {
+            const scannerInput = document.getElementById("scanner-reading");
+            scannerInput.value = visit.scannerReading;
+            scannerInput.readOnly = true;
+          }
 
 
 
@@ -423,7 +447,12 @@
           takeMeterReading: chkMeter.checked,
           reading: chkMeter.checked ?
             (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
-          readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null
+          readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null,
+          colorReading: chkMeter.checked ?
+            (formData.get("colorReading") ? parseInt(formData.get("colorReading")) : null) : null,
+
+          scannerReading: chkMeter.checked ?
+            (formData.get("scannerReading") ? parseInt(formData.get("scannerReading")) : null) : null
         };
 
         // Recopilar información de repuestos

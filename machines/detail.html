@@ -106,7 +106,9 @@
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Lectura</th>
+                  <th>Lectura B/N</th>
+                  <th>Lectura Color</th>
+                  <th>Lectura Scanner</th>
                   <th>Notas</th>
                 </tr>
               </thead>
@@ -246,7 +248,9 @@
         return `
                 <tr>
                     <td>${date}</td>
-                    <td>${meter.reading || '0'}</td>
+                    <td>${meter.reading ?? '0'}</td>
+                    <td>${meter.colorReading ?? '0'}</td>
+                    <td>${meter.scannerReading ?? '0'}</td>
                     <td>${meter.notes || 'Sin notas'}</td>
                 </tr>
             `;
