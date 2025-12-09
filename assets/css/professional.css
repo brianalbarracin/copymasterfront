@@ -3,3 +3,7 @@
 .navbar-brand { font-weight:700; font-size:1.15rem; }
 .link-success { color:#0f9d58 !important; }
 .table-actions button { margin-right:6px; }
+.bg-orange {
+        background-color: #ff8c00 !important;
+        color: white !important;
+    }

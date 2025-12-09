@@ -64,7 +64,11 @@
                         <td>${machine ? machine.companySerial : "Máquina N/A"}</td>
                         <td>${date}</td>
                         <td>${r.serviceType || "N/A"}</td>
-                        <td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td>
+                        <td>
+                          <span class="badge ${getStatusBadgeClass(r.status)}">
+                          ${r.status}
+                        </span>
+                        </td>
                         <td class="text-end">
                             <button class="btn btn-outline-primary btn-sm me-1" onclick="viewRequest(${r.id})">
                                 <i class="fas fa-eye"></i>
@@ -105,4 +109,20 @@
             showAlert("Error al eliminar: " + err.message, "danger");
         }
     }
+    function getStatusBadgeClass(status) {
+        switch (status) {
+            case "EN_PROCESO":
+                return "bg-warning text-dark"; // amarillo
+
+            case "ABIERTA":
+                return "bg-orange text-white"; // naranja
+
+            case "CERRADA":
+                return "bg-success"; // verde
+
+            default:
+                return "bg-secondary";
+        }
+    }
+
 </script>
