@@ -80,7 +80,7 @@
         <div class="card-body" id="meter-fields" style="display:none">
           <div class="row">
             <div class="col-md-6">
-              <label class="form-label">Lectura del contador</label>
+              <label class="form-label">Lectura Blanco/Negro</label>
               <input type="number" class="form-control" name="reading" id="meter-reading" min="0">
             </div>
 
@@ -89,8 +89,8 @@
               <input type="number" class="form-control" name="colorReading" id="color-reading" min="0">
             </div>
             <div class="col-md-6 mt-3">
-              <label class="form-label">Lectura Color</label>
-              <input type="number" class="form-control" name="colorReading" id="color-reading" min="0">
+              <label class="form-label">Lectura Scanner</label>
+              <input type="number" class="form-control" name="scannerReading" id="scanner-reading" min="0">
             </div>
 
             <div class="col-md-6">
@@ -307,16 +307,33 @@
           console.log("👉 meterReading object:", visit.meterReading);
           console.log("👉 Todas las propiedades de visit:", Object.keys(visit));
 
-          if (visit.reading) {
+          if (visit.reading || visit.colorReading || visit.scannerReading) {
             // Mostrar el bloque de la card
             meterFields.style.display = "block";
 
             // Rellenar los valores
-            document.getElementById("meter-reading").value = visit.reading || "";
-            document.getElementById("reading-notes").value = visit.readingNotes || "";
-
-            // Congelar inputs (que se vean, pero no se puedan editar)
+            // ---- LECTURA B/N ----
+            if (visit.reading) {
+              document.getElementById("meter-reading").value = visit.reading;
+            }
             document.getElementById("meter-reading").readOnly = true;
+
+            // ---- LECTURA COLOR ----
+            if (visit.colorReading) {
+              document.getElementById("color-reading").value = visit.colorReading;
+            }
+            document.getElementById("color-reading").readOnly = true;
+
+            // ---- LECTURA SCANNER ----
+            if (visit.scannerReading) {
+              document.getElementById("scanner-reading").value = visit.scannerReading;
+            }
+            document.getElementById("scanner-reading").readOnly = true;
+
+            // ---- NOTAS ----
+            if (visit.readingNotes) {
+              document.getElementById("reading-notes").value = visit.readingNotes;
+            }
             document.getElementById("reading-notes").readOnly = true;
 
             // El checkbox se deshabilita (queda apagado y sin posibilidad de marcar)
