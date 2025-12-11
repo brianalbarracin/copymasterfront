@@ -580,6 +580,10 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
 .container { max-width: 1100px; }
 h1,h3,h4 { color: #0f9d58; }
+.bg-orange {
+        background-color: #ff8c00 !important;
+        color: white !important;
+    }
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\css\professional.css =====
 /* Professional tweaks */
@@ -587,6 +591,10 @@ h1,h3,h4 { color: #0f9d58; }
 .navbar-brand { font-weight:700; font-size:1.15rem; }
 .link-success { color:#0f9d58 !important; }
 .table-actions button { margin-right:6px; }
+.bg-orange {
+        background-color: #ff8c00 !important;
+        color: white !important;
+    }
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\assets\js\app.js =====
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -1627,7 +1635,7 @@ document.getElementById("form-create-request").addEventListener("submit", async 
       <button class="btn btn-outline-secondary me-2" onclick="appLoad('machines/edit.html?id='+window.__MID)">
         <i class="fas fa-edit me-1"></i> Editar
       </button>
-      <button class="btn btn-success" onclick="appLoad('machines/service_requests.html')">
+      <button class="btn btn-success" onclick="goToRequests()">
         <i class="fas fa-tools me-1"></i> Ver solicitudes
       </button>
     </div>
@@ -1725,7 +1733,9 @@ document.getElementById("form-create-request").addEventListener("submit", async 
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Lectura</th>
+                  <th>Lectura B/N</th>
+                  <th>Lectura Color</th>
+                  <th>Lectura Scanner</th>
                   <th>Notas</th>
                 </tr>
               </thead>
@@ -1865,7 +1875,9 @@ document.getElementById("form-create-request").addEventListener("submit", async 
         return `
                 <tr>
                     <td>${date}</td>
-                    <td>${meter.reading || '0'}</td>
+                    <td>${meter.reading ?? '0'}</td>
+                    <td>${meter.colorReading ?? '0'}</td>
+                    <td>${meter.scannerReading ?? '0'}</td>
                     <td>${meter.notes || 'Sin notas'}</td>
                 </tr>
             `;
@@ -1973,6 +1985,29 @@ document.getElementById("form-create-request").addEventListener("submit", async 
       console.error("❌ Error guardando movimiento:", err);
       alert("Error guardando movimiento: " + (err.message || err));
     }
+  }
+
+  function goToRequests() {
+    if (!window.machineData) {
+      showAlert("No se cargó la información de la máquina", "danger");
+      return;
+    }
+
+    // Guardar datos en sessionStorage
+    sessionStorage.setItem("selectedMachineId", window.machineData.id);
+    sessionStorage.setItem("selectedMachineSerial", window.machineData.companySerial || "");
+    sessionStorage.setItem("selectedMachineNumber", window.machineData.companyNumber || "");
+    sessionStorage.setItem("selectedCustomerId", window.machineData.currentCustomerId || "");
+
+    // Busca el nombre del cliente en cache si existe
+    const customer = (window.customersCache || []).find(c => c.id === window.machineData.currentCustomerId);
+    if (customer) {
+      sessionStorage.setItem("selectedCustomerName", customer.name);
+      sessionStorage.setItem("selectedCustomerNit", customer.nit || "");
+    }
+
+    // Ir a la página de solicitudes de la máquina
+    appLoad('machines/service_requests.html');
   }
 
 
@@ -2198,11 +2233,22 @@ function loadMachineDetail(id) {
     </div>
 
     <!-- 🔹 Campos para la lectura inicial -->
-    <div class="col-md-6">
-      <label class="form-label">Lectura inicial *</label>
+    <div class="col-md-4">
+      <label class="form-label">Lectura inicial (B/N) *</label>
       <input type="number" class="form-control" name="initialReading" required value="0">
     </div>
-    <div class="col-md-6">
+
+    <div class="col-md-4">
+      <label class="form-label">Lectura inicial color</label>
+      <input type="number" class="form-control" name="initialColorReading" value="0">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Lectura inicial scanner</label>
+      <input type="number" class="form-control" name="initialScannerReading" value="0">
+    </div>
+
+    <div class="col-md-12">
       <label class="form-label">Notas de lectura</label>
       <input class="form-control" name="readingNotes" placeholder="Ej: Lectura inicial al instalar">
     </div>
@@ -2218,12 +2264,12 @@ function loadMachineDetail(id) {
       </select>
     </div>
 
-<div class="col-md-6">
-  <label class="form-label">Ubicación actual</label>
-  <select class="form-select" name="currentLocationId" id="machine-location" required>
-    <option value="">Seleccione una ubicación</option>
-  </select>
-</div>
+    <div class="col-md-6">
+      <label class="form-label">Ubicación actual</label>
+      <select class="form-select" name="currentLocationId" id="machine-location" required>
+        <option value="">Seleccione una ubicación</option>
+      </select>
+    </div>
 
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear</button>
@@ -2233,57 +2279,265 @@ function loadMachineDetail(id) {
 </div>
 
 <script>
-(async () => {
-  try {
-    // 🔹 Cargar ubicaciones
-    const locations = await locationService.list();
-    window.locationsCache = locations; // cache opcional
-    const select = document.getElementById("machine-location");
-    select.innerHTML = '<option value="">Seleccione una ubicación</option>';
+  (async () => {
+    try {
+      // 🔹 Cargar ubicaciones
+      const locations = await locationService.list();
+      window.locationsCache = locations; // cache opcional
+      const select = document.getElementById("machine-location");
+      select.innerHTML = '<option value="">Seleccione una ubicación</option>';
+
+      locations.forEach(loc => {
+        const opt = document.createElement("option");
+        opt.value = loc.id;
+        opt.textContent = loc.name + (loc.address ? " - " + loc.address : "");
+        select.appendChild(opt);
+      });
+
+      // 🔹 Cargar clientes y cachearlos
+      window.customersCache = await customerService.list();
+
+    } catch (err) {
+      console.error("Error cargando datos", err);
+      showAlert("No se pudieron cargar ubicaciones/clientes", "danger");
+    }
+  })();
+
+  document.getElementById("form-create-machine").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    data.year = data.year ? parseInt(data.year) : null;
+    data.currentLocationId = data.currentLocationId ? parseInt(data.currentLocationId) : null;
+
+    // 🔹 Buscar el cliente según la ubicación elegida
+    let selectedCustomerId = null;
+    if (window.customersCache && data.currentLocationId) {
+      const customer = window.customersCache.find(c => c.location && c.location.id === data.currentLocationId);
+      if (customer) {
+        selectedCustomerId = customer.id;
+      }
+    }
+
+    // 🔹 Asignar el cliente al payload
+    data.currentCustomerId = selectedCustomerId;
+
+    try {
+      await machineService.create(data);
+      showAlert("Máquina creada correctamente", "success");
+      appLoad("machines/list.html");
+    } catch (err) {
+      showAlert("Error creando máquina: " + err.message, "danger");
+    }
+  });
+
+</script>
+
+===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\new_machine_request.html =====
+<div class="card p-3">
+  <h4>Nueva Solicitud</h4>
+  
+  <!-- Información precargada (solo lectura) -->
+  <div class="card mb-3">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Información Precargada</h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <strong>Cliente:</strong> 
+          <span id="preloaded-customer-name"></span> 
+          <small id="preloaded-customer-nit" class="text-muted"></small>
+        </div>
+        <div class="col-md-6">
+          <strong>Máquina:</strong> 
+          <span id="preloaded-machine-serial"></span> 
+          <small id="preloaded-machine-number" class="text-muted"></small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de solicitudes para esta máquina -->
+  <div class="card mb-3">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">Solicitudes Anteriores de esta Máquina</h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Seleccionar</th>
+              <th>Número</th>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Causa Raíz</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="previous-requests">
+            <tr>
+              <td colspan="6" class="text-center">Cargando solicitudes anteriores...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario para completar -->
+  <form id="form-new-request" class="row g-3">
+    <input type="hidden" name="machineId" id="machine-id">
+    <input type="hidden" name="customerId" id="customer-id">
     
-    locations.forEach(loc => {
-      const opt = document.createElement("option");
-      opt.value = loc.id;
-      opt.textContent = loc.name + (loc.address ? " - " + loc.address : "");
-      select.appendChild(opt);
-    });
+    <div class="col-md-6">
+      <label class="form-label">Canal *</label>
+      <select name="reportedChannel" class="form-select" required>
+        <option value="">Seleccione un canal</option>
+        <option value="telefono">Teléfono</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="email">Email</option>
+        <option value="portal">Portal</option>
+      </select>
+    </div>
+    
+    <div class="col-md-6">
+      <label class="form-label">Tipo de Servicio *</label>
+      <select name="serviceType" class="form-select" required>
+        <option value="">Seleccione un tipo</option>
+        <option value="correctivo">Correctivo</option>
+        <option value="preventivo">Preventivo</option>
+        <option value="diagnostico">Diagnóstico</option>
+        <option value="toma_contador">Toma de contador</option>
+        <option value="toner">Toner</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    
+    <div class="col-12">
+      <label class="form-label">Causa Raíz *</label>
+      <input class="form-control" name="rootCause" required>
+    </div>
+    
+    <div class="col-12">
+      <label class="form-label">Descripción *</label>
+      <textarea class="form-control" name="description" rows="3" required></textarea>
+    </div>
+    
+    <div class="col-12">
+      <label class="form-label">Solicitud repetida de (opcional)</label>
+      <select name="repeatedOfRequestId" class="form-select" id="repeated-request">
+        <option value="">No es una solicitud repetida</option>
+        <!-- Las opciones se llenarán con JavaScript -->
+      </select>
+    </div>
+    
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Crear Solicitud</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
+    </div>
+  </form>
+</div>
 
-    // 🔹 Cargar clientes y cachearlos
-    window.customersCache = await customerService.list();
-
-  } catch (err) {
-    console.error("Error cargando datos", err);
-    showAlert("No se pudieron cargar ubicaciones/clientes", "danger");
+<script>
+(async function() {
+  // Cargar datos precargados desde sessionStorage
+  const machineId = sessionStorage.getItem('selectedMachineId');
+  const customerId = sessionStorage.getItem('selectedCustomerId');
+  const machineSerial = sessionStorage.getItem('selectedMachineSerial');
+  const machineNumber = sessionStorage.getItem('selectedMachineNumber');
+  const customerName = sessionStorage.getItem('selectedCustomerName');
+  const customerNit = sessionStorage.getItem('selectedCustomerNit');
+  
+  // Mostrar información precargada
+  document.getElementById('preloaded-customer-name').textContent = customerName || 'N/A';
+  document.getElementById('preloaded-customer-nit').textContent = customerNit ? `(NIT: ${customerNit})` : '';
+  document.getElementById('preloaded-machine-serial').textContent = machineSerial || 'N/A';
+  document.getElementById('preloaded-machine-number').textContent = machineNumber ? `(Número: ${machineNumber})` : '';
+  
+  // Establecer valores en campos ocultos
+  if (machineId) document.getElementById('machine-id').value = machineId;
+  if (customerId) document.getElementById('customer-id').value = customerId;
+  
+  // Cargar solicitudes anteriores para esta máquina
+  if (machineId) {
+    await loadPreviousRequests(machineId);
   }
+  
+  // Limpiar el sessionStorage después de usar los valores
+  sessionStorage.removeItem('selectedMachineId');
+  sessionStorage.removeItem('selectedCustomerId');
+  sessionStorage.removeItem('selectedMachineSerial');
+  sessionStorage.removeItem('selectedMachineNumber');
+  sessionStorage.removeItem('selectedCustomerName');
+  sessionStorage.removeItem('selectedCustomerNit');
 })();
 
-document.getElementById("form-create-machine").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target));
-  data.year = data.year ? parseInt(data.year) : null;
-  data.currentLocationId = data.currentLocationId ? parseInt(data.currentLocationId) : null;
-
-  // 🔹 Buscar el cliente según la ubicación elegida
-  let selectedCustomerId = null;
-  if (window.customersCache && data.currentLocationId) {
-    const customer = window.customersCache.find(c => c.location && c.location.id === data.currentLocationId);
-    if (customer) {
-      selectedCustomerId = customer.id;
-    }
-  }
-
-  // 🔹 Asignar el cliente al payload
-  data.currentCustomerId = selectedCustomerId;
-
+async function loadPreviousRequests(machineId) {
   try {
-    await machineService.create(data);
-    showAlert("Máquina creada correctamente", "success");
-    appLoad("machines/list.html");
+    const requests = await serviceRequestService.list();
+    const machineRequests = requests.filter(r => r.machineId == machineId);
+    
+    const tbody = document.getElementById('previous-requests');
+    const select = document.getElementById('repeated-request');
+    
+    if (machineRequests.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes anteriores para esta máquina</td></tr>';
+      return;
+    }
+    
+    // Limpiar y llenar la tabla y el select
+    tbody.innerHTML = '';
+    select.innerHTML = '<option value="">No es una solicitud repetida</option>';
+    
+    machineRequests.forEach(request => {
+      const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
+      
+      // Agregar a la tabla
+      tbody.innerHTML += `
+        <tr>
+          <td>
+            <input type="radio" name="selectedPreviousRequest" value="${request.id}" 
+                   onchange="document.getElementById('repeated-request').value = this.value">
+          </td>
+          <td>${request.requestNumber || request.id}</td>
+          <td>${date}</td>
+          <td>${request.serviceType || 'N/A'}</td>
+          <td>${request.rootCause || 'N/A'}</td>
+          <td><span class="badge ${request.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${request.status || 'N/A'}</span></td>
+        </tr>
+      `;
+      
+      // Agregar al select
+      const option = document.createElement('option');
+      option.value = request.id;
+      option.textContent = `${request.requestNumber || request.id} - ${request.rootCause || 'Sin causa'} (${date})`;
+      select.appendChild(option);
+    });
+    
   } catch (err) {
-    showAlert("Error creando máquina: " + err.message, "danger");
+    console.error("Error cargando solicitudes anteriores:", err);
+    document.getElementById('previous-requests').innerHTML = 
+      '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes anteriores</td></tr>';
+  }
+}
+
+document.getElementById("form-new-request").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  
+  // Agregar la fecha de asignación automáticamente
+  //data.assignedAt = new Date().toISOString();
+  
+  try {
+    await serviceRequestService.create(data);
+    showAlert("Solicitud creada correctamente", "success");
+    appLoad('service_requests/list.html');
+  } catch(err) {
+    showAlert("Error al crear: " + err.message, "danger");
   }
 });
-
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\service_requests.html =====
@@ -2291,38 +2545,84 @@ document.getElementById("form-create-machine").addEventListener("submit", async 
   <div class="d-flex justify-content-between mb-3 align-items-center">
     <h4 class="mb-0">Solicitudes de Servicio</h4>
     <div>
-      <button class="btn btn-success btn-sm" onclick="appLoad('machines/create_request.html')">Crear Solicitud</button>
+      <button class="btn btn-success btn-sm" id="btn-new-request">Crear Solicitud</button>
       <button class="btn btn-outline-secondary btn-sm" id="btn-refresh-req">Actualizar</button>
     </div>
   </div>
   <div class="table-responsive">
     <table class="table table-hover">
-      <thead class="table-light"><tr><th>ID</th><th>Número</th><th>Máquina</th><th>Cliente</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead>
-      <tbody id="requests-tbody"></tbody>
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Número</th>
+          <th>Máquina</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="requests-tbody">
+        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+      </tbody>
     </table>
   </div>
 </div>
-
-
 <script>
-async function renderRequests(){
-  const list = await serviceRequestService.list().then(r=>r.data||r).catch(()=>[]);
-  const tbody = document.getElementById("requests-tbody");
-  tbody.innerHTML='';
-  (list||[]).forEach(r=>{
-    tbody.insertAdjacentHTML('beforeend', `<tr>
-      <td>${r.id}</td>
-      <td>${r.requestNumber||''}</td>
-      <td>${r.companySerial||''}</td>
-      <td>${r.customerId||''}</td>
-      <td>${r.serviceType||''}</td>
-      <td>${r.status||''}</td>
-      <td><button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id='+r.machineId)">Ver</button></td>
-    </tr>`);
-  });
-}
-document.addEventListener("DOMContentLoaded", ()=>{ renderRequests(); document.getElementById('btn-refresh-req').addEventListener('click', renderRequests); });
+(async function renderRequests(){
+  try {
+    const machineId = sessionStorage.getItem("selectedMachineId");
+    if(!machineId){
+      showAlert("No se encontró máquina seleccionada", "danger");
+      return;
+    }
+
+    const list = await serviceRequestService.byMachine(machineId).catch(()=>[]);
+    const tbody = document.getElementById("requests-tbody");
+    tbody.innerHTML='';
+
+    if(!list || list.length===0){
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay solicitudes</td></tr>';
+    } else {
+      list.forEach(r=>{
+        tbody.insertAdjacentHTML('beforeend', `<tr>
+          <td>${r.id}</td>
+          <td>${r.requestNumber||''}</td>
+          <td>${r.companySerial||''}</td>
+          <td>${r.customer?.name || r.customerId || ''}</td>
+          <td>${r.serviceType||''}</td>
+          <td><span class="badge ${r.status==='CERRADA'?'bg-success':'bg-warning'}">${r.status||''}</span></td>
+          <td><button class="btn btn-sm btn-primary" onclick="appLoad('machines/detail.html?id='+r.machineId)">Ver</button></td>
+        </tr>`);
+      });
+    }
+  } catch(err){
+    console.error(err);
+    showAlert("Error cargando solicitudes", "danger");
+  }
+})();
+
+document.getElementById('btn-new-request').addEventListener('click', () => {
+  const machineId = sessionStorage.getItem("selectedMachineId");
+
+  if (!machineId) {
+    showAlert("No se encontró máquina seleccionada", "danger");
+    return;
+  }
+
+  // Guardar datos en sessionStorage para precargar en new_machine_request.html
+  sessionStorage.setItem("selectedMachineId", machineId);
+  sessionStorage.setItem("selectedCustomerId", window.__CUSTOMER_ID || "");
+  sessionStorage.setItem("selectedMachineSerial", window.__MACHINE_SERIAL || "");
+  sessionStorage.setItem("selectedMachineNumber", window.__MACHINE_NUMBER || "");
+  sessionStorage.setItem("selectedCustomerName", window.__CUSTOMER_NAME || "");
+  sessionStorage.setItem("selectedCustomerNit", window.__CUSTOMER_NIT || "");
+
+  // Navegar a la nueva página
+  appLoad("service_requests/new_machine_request.html");
+});
 </script>
+
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\machines\visit_form.html =====
 <div class="card p-3">
@@ -2743,7 +3043,11 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
                         <td>${machine ? machine.companySerial : "Máquina N/A"}</td>
                         <td>${date}</td>
                         <td>${r.serviceType || "N/A"}</td>
-                        <td><span class="badge ${r.status === "ABIERTA" ? "bg-warning" : "bg-success"}">${r.status}</span></td>
+                        <td>
+                          <span class="badge ${getStatusBadgeClass(r.status)}">
+                          ${r.status}
+                        </span>
+                        </td>
                         <td class="text-end">
                             <button class="btn btn-outline-primary btn-sm me-1" onclick="viewRequest(${r.id})">
                                 <i class="fas fa-eye"></i>
@@ -2784,7 +3088,30 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
             showAlert("Error al eliminar: " + err.message, "danger");
         }
     }
+    function getStatusBadgeClass(status) {
+        switch (status) {
+            case "EN_PROCESO":
+                return "bg-warning text-dark"; // amarillo
+
+            case "abierto":
+                return "bg-orange text-white"; // naranja
+
+            case "resuelto":
+                return "bg-success"; // verde
+
+            default:
+                return "bg-secondary";
+        }
+    }
+
 </script>
+
+<style>
+    .bg-orange {
+        background-color: #ff8c00 !important;
+        color: white !important;
+    }
+</style>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\new.html =====
 <div class="card p-3">
@@ -2859,12 +3186,10 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
       <label class="form-label">Tipo de Servicio *</label>
       <select name="serviceType" class="form-select" required>
         <option value="">Seleccione un tipo</option>
-        <option value="correctivo">Correctivo</option>
-        <option value="preventivo">Preventivo</option>
-        <option value="diagnostico">Diagnóstico</option>
-        <option value="toma_contador">Toma de contador</option>
-        <option value="toner">Toner</option>
-        <option value="otro">Otro</option>
+        <option value="servicio_tecnico">Servicio Técnico</option>
+        <option value="lectura_contador">Lectura de contador</option>
+        <option value="remoto">Remoto</option>
+        <option value="otro">otro</option>
       </select>
     </div>
     
@@ -3077,14 +3402,26 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
         <div class="card-body" id="meter-fields" style="display:none">
           <div class="row">
             <div class="col-md-6">
-              <label class="form-label">Lectura del contador</label>
+              <label class="form-label">Lectura Blanco/Negro</label>
               <input type="number" class="form-control" name="reading" id="meter-reading" min="0">
             </div>
+
             <div class="col-md-6">
+              <label class="form-label">Lectura Color</label>
+              <input type="number" class="form-control" name="colorReading" id="color-reading" min="0">
+            </div>
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Lectura Scanner</label>
+              <input type="number" class="form-control" name="scannerReading" id="scanner-reading" min="0">
+            </div>
+
+            <div class="col-md-6 mt-3">
               <label class="form-label">Notas de la lectura</label>
               <input type="text" class="form-control" name="readingNotes" id="reading-notes"
                 placeholder="Observaciones sobre la lectura">
             </div>
+
+
           </div>
         </div>
       </div>
@@ -3183,7 +3520,7 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
 
     // Toggle lectura
     chkMeter.addEventListener("change", e => {
-    meterFields.style.display = e.target.checked ? "block" : "none";
+      meterFields.style.display = e.target.checked ? "block" : "none";
     });
 
     // Toggle resolución
@@ -3292,16 +3629,33 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
           console.log("👉 meterReading object:", visit.meterReading);
           console.log("👉 Todas las propiedades de visit:", Object.keys(visit));
 
-          if (visit.reading) {
+          if (visit.reading || visit.colorReading || visit.scannerReading) {
             // Mostrar el bloque de la card
             meterFields.style.display = "block";
 
             // Rellenar los valores
-            document.getElementById("meter-reading").value = visit.reading || "";
-            document.getElementById("reading-notes").value = visit.readingNotes || "";
-
-            // Congelar inputs (que se vean, pero no se puedan editar)
+            // ---- LECTURA B/N ----
+            if (visit.reading) {
+              document.getElementById("meter-reading").value = visit.reading;
+            }
             document.getElementById("meter-reading").readOnly = true;
+
+            // ---- LECTURA COLOR ----
+            if (visit.colorReading) {
+              document.getElementById("color-reading").value = visit.colorReading;
+            }
+            document.getElementById("color-reading").readOnly = true;
+
+            // ---- LECTURA SCANNER ----
+            if (visit.scannerReading) {
+              document.getElementById("scanner-reading").value = visit.scannerReading;
+            }
+            document.getElementById("scanner-reading").readOnly = true;
+
+            // ---- NOTAS ----
+            if (visit.readingNotes) {
+              document.getElementById("reading-notes").value = visit.readingNotes;
+            }
             document.getElementById("reading-notes").readOnly = true;
 
             // El checkbox se deshabilita (queda apagado y sin posibilidad de marcar)
@@ -3309,12 +3663,24 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
             chkMeter.disabled = true;
 
             // (Opcional) agregar un aviso visual
-           /* const badge = document.createElement("span");
-            badge.className = "badge bg-info ms-2";
-            badge.textContent = "Lectura registrada (bloqueada)";
-            chkMeter.closest(".card-header").appendChild(badge);*/
+            /* const badge = document.createElement("span");
+             badge.className = "badge bg-info ms-2";
+             badge.textContent = "Lectura registrada (bloqueada)";
+             chkMeter.closest(".card-header").appendChild(badge);*/
 
-          } 
+          }
+
+          if (visit.colorReading) {
+            const colorInput = document.getElementById("color-reading");
+            colorInput.value = visit.colorReading;
+            colorInput.readOnly = true;
+          }
+
+          if (visit.scannerReading) {
+            const scannerInput = document.getElementById("scanner-reading");
+            scannerInput.value = visit.scannerReading;
+            scannerInput.readOnly = true;
+          }
 
 
 
@@ -3420,7 +3786,12 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
           takeMeterReading: chkMeter.checked,
           reading: chkMeter.checked ?
             (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
-          readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null
+          readingNotes: chkMeter.checked ? formData.get("readingNotes") || null : null,
+          colorReading: chkMeter.checked ?
+            (formData.get("colorReading") ? parseInt(formData.get("colorReading")) : null) : null,
+
+          scannerReading: chkMeter.checked ?
+            (formData.get("scannerReading") ? parseInt(formData.get("scannerReading")) : null) : null
         };
 
         // Recopilar información de repuestos

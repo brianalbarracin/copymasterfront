@@ -105,6 +105,80 @@
       </div>
     </div>
 
+    <!-- Lectura de niveles de toner -->
+    <div class="col-12">
+      <div class="card" id="toner-reading-card">
+        <div class="card-header">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="chk-toner" name="takeTonerReading">
+            <label class="form-check-label" for="chk-toner">
+              <strong>¿Se tomó lectura de niveles de toner?</strong>
+            </label>
+          </div>
+        </div>
+        <div class="card-body" id="toner-fields" style="display:none">
+          <div class="row">
+            <div class="col-md-3">
+              <label class="form-label">Nivel K (Negro)</label>
+              <input type="number" class="form-control" name="tonerLevelK" id="toner-level-k" min="0" max="100"
+                placeholder="0-100%">
+              <div class="form-text">0% = vacío, 100% = lleno</div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nivel C (Cian)</label>
+              <input type="number" class="form-control" name="tonerLevelC" id="toner-level-c" min="0" max="100"
+                placeholder="0-100%">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nivel M (Magenta)</label>
+              <input type="number" class="form-control" name="tonerLevelM" id="toner-level-m" min="0" max="100"
+                placeholder="0-100%">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nivel Y (Amarillo)</label>
+              <input type="number" class="form-control" name="tonerLevelY" id="toner-level-y" min="0" max="100"
+                placeholder="0-100%">
+            </div>
+            <div class="col-12 mt-3">
+              <label class="form-label">Notas sobre niveles de toner</label>
+              <input type="text" class="form-control" name="tonerNotes" id="toner-notes"
+                placeholder="Observaciones sobre los niveles de toner">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lectura existente de toner (solo si hay tonerReading) -->
+    <div id="existing-toner-section" style="display:none" class="mb-3">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Lectura de Toner Existente</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <strong>K (Negro):</strong> <span id="existing-toner-k"></span>%
+            </div>
+            <div class="col-md-3">
+              <strong>C (Cian):</strong> <span id="existing-toner-c"></span>%
+            </div>
+            <div class="col-md-3">
+              <strong>M (Magenta):</strong> <span id="existing-toner-m"></span>%
+            </div>
+            <div class="col-md-3">
+              <strong>Y (Amarillo):</strong> <span id="existing-toner-y"></span>%
+            </div>
+            <div class="col-12 mt-2">
+              <strong>Notas:</strong> <span id="existing-toner-notes"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
     <!-- Estado de resolución -->
     <div class="col-12">
       <div class="card">
@@ -204,6 +278,15 @@
     // Toggle resolución
     chkSolved.addEventListener("change", e => {
       resolutionFields.style.display = e.target.checked ? "block" : "none";
+    });
+
+    // Toggle lectura de toner
+    const chkToner = document.getElementById("chk-toner");
+    const tonerFields = document.getElementById("toner-fields");
+    const existingTonerSection = document.getElementById("existing-toner-section");
+
+    chkToner.addEventListener("change", e => {
+      tonerFields.style.display = e.target.checked ? "block" : "none";
     });
 
     // Toggle repuestos
@@ -361,6 +444,36 @@
           }
 
 
+          if (visit.takeTonerReading || visit.tonerLevelK != null || visit.tonerLevelC != null ||
+            visit.tonerLevelM != null || visit.tonerLevelY != null) {
+
+            // Mostrar sección de lectura existente
+            existingTonerSection.style.display = "block";
+            document.getElementById("existing-toner-k").textContent = visit.tonerLevelK || "0";
+            document.getElementById("existing-toner-c").textContent = visit.tonerLevelC || "0";
+            document.getElementById("existing-toner-m").textContent = visit.tonerLevelM || "0";
+            document.getElementById("existing-toner-y").textContent = visit.tonerLevelY || "0";
+            document.getElementById("existing-toner-notes").textContent = visit.tonerNotes || "Sin notas";
+
+            // Bloquear campos de entrada
+            document.getElementById("toner-level-k").value = visit.tonerLevelK || "";
+            document.getElementById("toner-level-k").readOnly = true;
+            document.getElementById("toner-level-c").value = visit.tonerLevelC || "";
+            document.getElementById("toner-level-c").readOnly = true;
+            document.getElementById("toner-level-m").value = visit.tonerLevelM || "";
+            document.getElementById("toner-level-m").readOnly = true;
+            document.getElementById("toner-level-y").value = visit.tonerLevelY || "";
+            document.getElementById("toner-level-y").readOnly = true;
+            document.getElementById("toner-notes").value = visit.tonerNotes || "";
+            document.getElementById("toner-notes").readOnly = true;
+
+            // Deshabilitar checkbox
+            chkToner.checked = false;
+            chkToner.disabled = true;
+            tonerFields.style.display = "block";
+          }
+
+
 
           // Seleccionar técnico
           if (visit.technicianId) {
@@ -469,7 +582,18 @@
             (formData.get("colorReading") ? parseInt(formData.get("colorReading")) : null) : null,
 
           scannerReading: chkMeter.checked ?
-            (formData.get("scannerReading") ? parseInt(formData.get("scannerReading")) : null) : null
+            (formData.get("scannerReading") ? parseInt(formData.get("scannerReading")) : null) : null,
+
+          takeTonerReading: chkToner.checked,
+          tonerLevelK: chkToner.checked ?
+            (formData.get("tonerLevelK") ? parseInt(formData.get("tonerLevelK")) : null) : null,
+          tonerLevelC: chkToner.checked ?
+            (formData.get("tonerLevelC") ? parseInt(formData.get("tonerLevelC")) : null) : null,
+          tonerLevelM: chkToner.checked ?
+            (formData.get("tonerLevelM") ? parseInt(formData.get("tonerLevelM")) : null) : null,
+          tonerLevelY: chkToner.checked ?
+            (formData.get("tonerLevelY") ? parseInt(formData.get("tonerLevelY")) : null) : null,
+          tonerNotes: chkToner.checked ? formData.get("tonerNotes") || null : null
         };
 
         // Recopilar información de repuestos

@@ -287,6 +287,9 @@
             meterReadings: (id) => fetch(API_BASE + "/meter-readings/machine/" + id)
                 .then(r => r.json()).then(res => res.data || []),
 
+            tonerReadings: (id) => fetch(API_BASE + "/reading-toner/machine/" + id)
+                .then(r => r.json()).then(res => res.data || []),
+
             search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
                 .then(r => r.json()).then(res => res.data || [])
         };
