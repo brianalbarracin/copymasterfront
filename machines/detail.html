@@ -153,8 +153,6 @@
     </div>
 
 
-
-
   </div>
 </div>
 
@@ -244,6 +242,8 @@
         console.error("❌ Error cargando detalle:", err);
         showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
       }
+
+      await loadTonerReadings(id);
     }
 
     async function loadMovements(machineId) {
@@ -289,6 +289,63 @@
             `;
       }).join('');
     }
+
+    async function loadTonerReadings(machineId) {
+      try {
+        const tonerReadings = await machineService.tonerReadings(machineId);
+        const tbody = document.querySelector("#m-toner tbody");
+        if (!tonerReadings || tonerReadings.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay lecturas de toner registradas</td></tr>';
+          return;
+        }
+        tbody.innerHTML = tonerReadings.map(toner => {
+          const date = toner.readingDate ? new Date(toner.readingDate).toLocaleDateString() : 'N/A';
+          return `
+                <tr>
+                    <td>${date}</td>
+                    <td>
+                        ${toner.levelK !== null ? toner.levelK + '%' : 'N/A'}
+                        ${toner.levelK !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-dark" style="width: ${toner.levelK}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>
+                        ${toner.levelC !== null ? toner.levelC + '%' : 'N/A'}
+                        ${toner.levelC !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-info" style="width: ${toner.levelC}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>
+                        ${toner.levelM !== null ? toner.levelM + '%' : 'N/A'}
+                        ${toner.levelM !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-danger" style="width: ${toner.levelM}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>
+                        ${toner.levelY !== null ? toner.levelY + '%' : 'N/A'}
+                        ${toner.levelY !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-warning" style="width: ${toner.levelY}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>${toner.notes || 'Sin notas'}</td>
+                </tr>
+            `;
+        }).join('');
+      } catch (err) {
+        console.error("Error cargando lecturas de toner:", err);
+        document.querySelector("#m-toner tbody").innerHTML =
+          '<tr><td colspan="6" class="text-center text-danger">Error cargando lecturas de toner</td></tr>';
+      }
+    }
+
+
+
+
+
 
     await loadDetail();
 
