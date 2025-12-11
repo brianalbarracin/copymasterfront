@@ -288,7 +288,19 @@
                 .then(r => r.json()).then(res => res.data || []),
 
             tonerReadings: (id) => fetch(API_BASE + "/reading-toner/machine/" + id)
-                .then(r => r.json()).then(res => res.data || []),
+                .then(r => {
+                    console.log("Response status:", r.status);
+                    console.log("Response headers:", r.headers);
+                    return r.json();
+                })
+                .then(res => {
+                    console.log("Response JSON:", res);
+                    return res.data || [];
+                })
+                .catch(err => {
+                    console.error("Error fetching toner readings:", err);
+                    return [];
+                }),
 
             search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
                 .then(r => r.json()).then(res => res.data || [])
