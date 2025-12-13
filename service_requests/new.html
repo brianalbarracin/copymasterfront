@@ -1,6 +1,6 @@
 <div class="card p-3">
   <h4>Nueva Solicitud</h4>
-  
+
   <!-- Información precargada (solo lectura) -->
   <div class="card mb-3">
     <div class="card-header bg-light">
@@ -9,13 +9,13 @@
     <div class="card-body">
       <div class="row">
         <div class="col-md-6">
-          <strong>Cliente:</strong> 
-          <span id="preloaded-customer-name"></span> 
+          <strong>Cliente:</strong>
+          <span id="preloaded-customer-name"></span>
           <small id="preloaded-customer-nit" class="text-muted"></small>
         </div>
         <div class="col-md-6">
-          <strong>Máquina:</strong> 
-          <span id="preloaded-machine-serial"></span> 
+          <strong>Máquina:</strong>
+          <span id="preloaded-machine-serial"></span>
           <small id="preloaded-machine-number" class="text-muted"></small>
         </div>
       </div>
@@ -54,7 +54,7 @@
   <form id="form-new-request" class="row g-3">
     <input type="hidden" name="machineId" id="machine-id">
     <input type="hidden" name="customerId" id="customer-id">
-    
+
     <div class="col-md-6">
       <label class="form-label">Canal *</label>
       <select name="reportedChannel" class="form-select" required>
@@ -65,7 +65,7 @@
         <option value="portal">Portal</option>
       </select>
     </div>
-    
+
     <div class="col-md-6">
       <label class="form-label">Tipo de Servicio *</label>
       <select name="serviceType" class="form-select" required>
@@ -76,17 +76,21 @@
         <option value="otro">otro</option>
       </select>
     </div>
-    
+
     <div class="col-12">
       <label class="form-label">Causa Raíz *</label>
-      <input class="form-control" name="rootCause" required>
+      <select class="form-select" name="rootCauseId" id="root-cause-select" required>
+        <option value="">Seleccione una causa raíz</option>
+        <!-- Las opciones se cargarán con JavaScript -->
+      </select>
+      <div id="root-cause-categories" class="mt-2"></div>
     </div>
-    
+
     <div class="col-12">
       <label class="form-label">Descripción *</label>
       <textarea class="form-control" name="description" rows="3" required></textarea>
     </div>
-    
+
     <div class="col-12">
       <label class="form-label">Solicitud repetida de (opcional)</label>
       <select name="repeatedOfRequestId" class="form-select" id="repeated-request">
@@ -94,70 +98,73 @@
         <!-- Las opciones se llenarán con JavaScript -->
       </select>
     </div>
-    
+
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear Solicitud</button>
-      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
+      <button class="btn btn-outline-secondary" type="button"
+        onclick="appLoad('service_requests/list.html')">Cancelar</button>
     </div>
   </form>
 </div>
 
 <script>
-(async function() {
-  // Cargar datos precargados desde sessionStorage
-  const machineId = sessionStorage.getItem('selectedMachineId');
-  const customerId = sessionStorage.getItem('selectedCustomerId');
-  const machineSerial = sessionStorage.getItem('selectedMachineSerial');
-  const machineNumber = sessionStorage.getItem('selectedMachineNumber');
-  const customerName = sessionStorage.getItem('selectedCustomerName');
-  const customerNit = sessionStorage.getItem('selectedCustomerNit');
-  
-  // Mostrar información precargada
-  document.getElementById('preloaded-customer-name').textContent = customerName || 'N/A';
-  document.getElementById('preloaded-customer-nit').textContent = customerNit ? `(NIT: ${customerNit})` : '';
-  document.getElementById('preloaded-machine-serial').textContent = machineSerial || 'N/A';
-  document.getElementById('preloaded-machine-number').textContent = machineNumber ? `(Número: ${machineNumber})` : '';
-  
-  // Establecer valores en campos ocultos
-  if (machineId) document.getElementById('machine-id').value = machineId;
-  if (customerId) document.getElementById('customer-id').value = customerId;
-  
-  // Cargar solicitudes anteriores para esta máquina
-  if (machineId) {
-    await loadPreviousRequests(machineId);
-  }
-  
-  // Limpiar el sessionStorage después de usar los valores
-  sessionStorage.removeItem('selectedMachineId');
-  sessionStorage.removeItem('selectedCustomerId');
-  sessionStorage.removeItem('selectedMachineSerial');
-  sessionStorage.removeItem('selectedMachineNumber');
-  sessionStorage.removeItem('selectedCustomerName');
-  sessionStorage.removeItem('selectedCustomerNit');
-})();
+  (async function () {
+    // Cargar datos precargados desde sessionStorage
+    const machineId = sessionStorage.getItem('selectedMachineId');
+    const customerId = sessionStorage.getItem('selectedCustomerId');
+    const machineSerial = sessionStorage.getItem('selectedMachineSerial');
+    const machineNumber = sessionStorage.getItem('selectedMachineNumber');
+    const customerName = sessionStorage.getItem('selectedCustomerName');
+    const customerNit = sessionStorage.getItem('selectedCustomerNit');
 
-async function loadPreviousRequests(machineId) {
-  try {
-    const requests = await serviceRequestService.list();
-    const machineRequests = requests.filter(r => r.machineId == machineId);
-    
-    const tbody = document.getElementById('previous-requests');
-    const select = document.getElementById('repeated-request');
-    
-    if (machineRequests.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes anteriores para esta máquina</td></tr>';
-      return;
+    // Mostrar información precargada
+    document.getElementById('preloaded-customer-name').textContent = customerName || 'N/A';
+    document.getElementById('preloaded-customer-nit').textContent = customerNit ? `(NIT: ${customerNit})` : '';
+    document.getElementById('preloaded-machine-serial').textContent = machineSerial || 'N/A';
+    document.getElementById('preloaded-machine-number').textContent = machineNumber ? `(Número: ${machineNumber})` : '';
+
+    // Establecer valores en campos ocultos
+    if (machineId) document.getElementById('machine-id').value = machineId;
+    if (customerId) document.getElementById('customer-id').value = customerId;
+
+    // Cargar solicitudes anteriores para esta máquina
+    if (machineId) {
+      await loadPreviousRequests(machineId);
     }
-    
-    // Limpiar y llenar la tabla y el select
-    tbody.innerHTML = '';
-    select.innerHTML = '<option value="">No es una solicitud repetida</option>';
-    
-    machineRequests.forEach(request => {
-      const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
-      
-      // Agregar a la tabla
-      tbody.innerHTML += `
+
+    await loadRootCauses();
+
+    // Limpiar el sessionStorage después de usar los valores
+    sessionStorage.removeItem('selectedMachineId');
+    sessionStorage.removeItem('selectedCustomerId');
+    sessionStorage.removeItem('selectedMachineSerial');
+    sessionStorage.removeItem('selectedMachineNumber');
+    sessionStorage.removeItem('selectedCustomerName');
+    sessionStorage.removeItem('selectedCustomerNit');
+  })();
+
+  async function loadPreviousRequests(machineId) {
+    try {
+      const requests = await serviceRequestService.list();
+      const machineRequests = requests.filter(r => r.machineId == machineId);
+
+      const tbody = document.getElementById('previous-requests');
+      const select = document.getElementById('repeated-request');
+
+      if (machineRequests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes anteriores para esta máquina</td></tr>';
+        return;
+      }
+
+      // Limpiar y llenar la tabla y el select
+      tbody.innerHTML = '';
+      select.innerHTML = '<option value="">No es una solicitud repetida</option>';
+
+      machineRequests.forEach(request => {
+        const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
+
+        // Agregar a la tabla
+        tbody.innerHTML += `
         <tr>
           <td>
             <input type="radio" name="selectedPreviousRequest" value="${request.id}" 
@@ -170,35 +177,125 @@ async function loadPreviousRequests(machineId) {
           <td><span class="badge ${request.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${request.status || 'N/A'}</span></td>
         </tr>
       `;
-      
-      // Agregar al select
-      const option = document.createElement('option');
-      option.value = request.id;
-      option.textContent = `${request.requestNumber || request.id} - ${request.rootCause || 'Sin causa'} (${date})`;
-      select.appendChild(option);
-    });
-    
-  } catch (err) {
-    console.error("Error cargando solicitudes anteriores:", err);
-    document.getElementById('previous-requests').innerHTML = 
-      '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes anteriores</td></tr>';
-  }
-}
 
-document.getElementById("form-new-request").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const data = Object.fromEntries(formData);
-  
-  // Agregar la fecha de asignación automáticamente
-  //data.assignedAt = new Date().toISOString();
-  
-  try {
-    await serviceRequestService.create(data);
-    showAlert("Solicitud creada correctamente", "success");
-    appLoad('service_requests/list.html');
-  } catch(err) {
-    showAlert("Error al crear: " + err.message, "danger");
+        // Agregar al select
+        const option = document.createElement('option');
+        option.value = request.id;
+        option.textContent = `${request.requestNumber || request.id} - ${request.rootCause || 'Sin causa'} (${date})`;
+        select.appendChild(option);
+      });
+
+    } catch (err) {
+      console.error("Error cargando solicitudes anteriores:", err);
+      document.getElementById('previous-requests').innerHTML =
+        '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes anteriores</td></tr>';
+    }
   }
-});
+
+
+  // Agregar esta función después de loadPreviousRequests:
+  async function loadRootCauses() {
+    try {
+      const response = await fetch('/root-causes/grouped');
+      const result = await response.json();
+
+      if (result.status === 200) {
+        const groupedCauses = result.data;
+        const select = document.getElementById('root-cause-select');
+        const categoriesDiv = document.getElementById('root-cause-categories');
+
+        // Limpiar select
+        select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+        // Crear botones de categorías
+        let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+        for (const [category, causes] of Object.entries(groupedCauses)) {
+          categoriesHtml += `
+          <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                  onclick="filterRootCauses('${category}')">
+            ${category}
+          </button>
+        `;
+        }
+        categoriesHtml += '</div>';
+        categoriesDiv.innerHTML = categoriesHtml;
+
+        // Almacenar todas las causas para filtrado
+        window.allRootCauses = [];
+        for (const [category, causes] of Object.entries(groupedCauses)) {
+          causes.forEach(cause => {
+            window.allRootCauses.push({
+              id: cause.id,
+              name: cause.name,
+              category: category
+            });
+
+            // Agregar al select
+            const option = document.createElement('option');
+            option.value = cause.id;
+            option.textContent = `${category} - ${cause.name}`;
+            option.setAttribute('data-category', category);
+            select.appendChild(option);
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error cargando causas raíz:", err);
+    }
+  }
+
+  // Función para filtrar por categoría
+  function filterRootCauses(category) {
+    const select = document.getElementById('root-cause-select');
+    select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+    window.allRootCauses.forEach(cause => {
+      if (cause.category === category) {
+        const option = document.createElement('option');
+        option.value = cause.id;
+        option.textContent = cause.name;
+        option.setAttribute('data-category', category);
+        select.appendChild(option);
+      }
+    });
+
+    // Mostrar todas las opciones nuevamente
+    const showAllBtn = document.createElement('button');
+    showAllBtn.type = 'button';
+    showAllBtn.className = 'btn btn-link btn-sm mt-2';
+    showAllBtn.textContent = 'Mostrar todas';
+    showAllBtn.onclick = () => {
+      loadRootCauses(); // Recargar todas
+    };
+
+    const categoriesDiv = document.getElementById('root-cause-categories');
+    if (!categoriesDiv.querySelector('.show-all-btn')) {
+      showAllBtn.className += ' show-all-btn';
+      categoriesDiv.appendChild(showAllBtn);
+    }
+  }
+
+  document.getElementById("form-new-request").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+
+    // Agregar la fecha de asignación automáticamente
+    //data.assignedAt = new Date().toISOString();
+
+    try {
+      await serviceRequestService.create(data);
+      showAlert("Solicitud creada correctamente", "success");
+      appLoad('service_requests/list.html');
+    } catch (err) {
+      showAlert("Error al crear: " + err.message, "danger");
+    }
+  });
+
+
+
+
+
+
+
 </script>
