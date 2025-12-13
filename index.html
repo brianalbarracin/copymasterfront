@@ -332,6 +332,34 @@
                 .then(r => r.json()).then(res => res.data || [])
         };
 
+        const rootCauseService = {
+            // Obtener todas las causas agrupadas por categoría
+            getGrouped: () => fetch(API_BASE + "/root-causes/grouped")
+                .then(r => r.json())
+                .then(res => res.data || {}),
+
+            // Obtener todas las causas
+            getAll: () => fetch(API_BASE + "/root-causes")
+                .then(r => r.json())
+                .then(res => res.data || []),
+
+            // Obtener por categoría
+            getByCategory: (category) => fetch(API_BASE + "/root-causes/by-category?category=" + encodeURIComponent(category))
+                .then(r => r.json())
+                .then(res => res.data || []),
+
+            // Obtener todas las categorías
+            getCategories: () => fetch(API_BASE + "/root-causes/categories")
+                .then(r => r.json())
+                .then(res => res.data || []),
+
+            // Obtener una causa por ID
+            getById: (id) => fetch(API_BASE + "/root-causes/" + id)
+                .then(r => r.json())
+                .then(res => res.data)
+        };
+
+
         const serviceVisitService = {
             list: () => fetch(API_BASE + "/visits/")
                 .then(r => r.json()).then(res => res.data || []),

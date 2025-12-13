@@ -193,101 +193,176 @@
   }
 
 
-  // Agregar esta función después de loadPreviousRequests:
   async function loadRootCauses() {
+    console.log("🔍 Intentando cargar causas raíz...");
+
     try {
-      const response = await fetch('/root-causes/grouped');
-      const result = await response.json();
+      // Usa el servicio que definimos
+      const groupedCauses = await rootCauseService.getGrouped();
+      console.log("✅ Causas raíz recibidas:", groupedCauses);
 
-      if (result.status === 200) {
-        const groupedCauses = result.data;
-        const select = document.getElementById('root-cause-select');
-        const categoriesDiv = document.getElementById('root-cause-categories');
+      const select = document.getElementById('root-cause-select');
+      const categoriesDiv = document.getElementById('root-cause-categories');
 
-        // Limpiar select
-        select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+      // Limpiar select
+      select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
 
-        // Crear botones de categorías
-        let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
-        for (const [category, causes] of Object.entries(groupedCauses)) {
-          categoriesHtml += `
-          <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
-                  onclick="filterRootCauses('${category}')">
-            ${category}
-          </button>
-        `;
-        }
-        categoriesHtml += '</div>';
-        categoriesDiv.innerHTML = categoriesHtml;
-
-        // Almacenar todas las causas para filtrado
-        window.allRootCauses = [];
-        for (const [category, causes] of Object.entries(groupedCauses)) {
-          causes.forEach(cause => {
-            window.allRootCauses.push({
-              id: cause.id,
-              name: cause.name,
-              category: category
-            });
-
-            // Agregar al select
-            const option = document.createElement('option');
-            option.value = cause.id;
-            option.textContent = `${category} - ${cause.name}`;
-            option.setAttribute('data-category', category);
-            select.appendChild(option);
-          });
-        }
+      // Si no hay datos, mostrar mensaje
+      if (!groupedCauses || Object.keys(groupedCauses).length === 0) {
+        categoriesDiv.innerHTML = '<div class="alert alert-warning">No hay causas raíz configuradas</div>';
+        return;
       }
+
+      // Crear botones de categorías
+      let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        categoriesHtml += `
+        <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                onclick="filterRootCauses('${category}')">
+          ${category}
+        </button>
+      `;
+      }
+      categoriesHtml += '</div>';
+      categoriesDiv.innerHTML = categoriesHtml;
+
+      // Almacenar todas las causas para filtrado
+      window.allRootCauses = [];
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        causes.forEach(cause => {
+          window.allRootCauses.push({
+            id: cause.id,
+            name: cause.name,
+            category: category
+          });
+
+          // Agregar al select
+          const option = document.createElement('option');
+          option.value = cause.id;
+          option.textContent = `${category} - ${cause.name}`;
+          option.setAttribute('data-category', category);
+          select.appendChild(option);
+        });
+      }
+
     } catch (err) {
-      console.error("Error cargando causas raíz:", err);
+      console.error("❌ Error cargando causas raíz:", err);
+
+      // Mostrar mensaje de error en la interfaz
+      const categoriesDiv = document.getElementById('root-cause-categories');
+      if (categoriesDiv) {
+        categoriesDiv.innerHTML = `
+        <div class="alert alert-danger">
+          <strong>Error cargando causas raíz:</strong><br>
+          ${err.message}<br>
+          <small>Verificando endpoints...</small>
+        </div>
+      `;
+      }
+
+      // Intentar cargar datos hardcodeados como respaldo
+      loadHardcodedRootCauses();
     }
   }
 
-  // Función para filtrar por categoría
-  function filterRootCauses(category) {
-    const select = document.getElementById('root-cause-select');
-    select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+  // Función de respaldo con datos hardcodeados
+  function loadHardcodedRootCauses() {
+    console.log("⚠️ Cargando causas raíz hardcodeadas...");
 
-    window.allRootCauses.forEach(cause => {
-      if (cause.category === category) {
-        const option = document.createElement('option');
-        option.value = cause.id;
-        option.textContent = cause.name;
-        option.setAttribute('data-category', category);
-        select.appendChild(option);
-      }
-    });
-
-    // Mostrar todas las opciones nuevamente
-    const showAllBtn = document.createElement('button');
-    showAllBtn.type = 'button';
-    showAllBtn.className = 'btn btn-link btn-sm mt-2';
-    showAllBtn.textContent = 'Mostrar todas';
-    showAllBtn.onclick = () => {
-      loadRootCauses(); // Recargar todas
+    const groupedCauses = {
+      "CONTADORES / LECTURAS": [
+        { id: 1, name: "CONTADOR", category: "CONTADORES / LECTURAS" },
+        { id: 2, name: "TOMA DE CONTADORES", category: "CONTADORES / LECTURAS" },
+        { id: 3, name: "LECTURA DE CONTADOR", category: "CONTADORES / LECTURAS" },
+        { id: 4, name: "CONTADORES", category: "CONTADORES / LECTURAS" },
+        { id: 5, name: "CONTADOR INICIAL", category: "CONTADORES / LECTURAS" }
+      ],
+      "TONER / TINTA": [
+        { id: 6, name: "RECARGA TONER / DE TONER", category: "TONER / TINTA" },
+        { id: 7, name: "REVISIÓN / REVISION / REVICION DE TONER", category: "TONER / TINTA" },
+        { id: 8, name: "TONER", category: "TONER / TINTA" },
+        { id: 9, name: "CARGA DE TONER", category: "TONER / TINTA" },
+        { id: 10, name: "CAMBIO DE TONER", category: "TONER / TINTA" }
+      ]
     };
 
+    const select = document.getElementById('root-cause-select');
     const categoriesDiv = document.getElementById('root-cause-categories');
-    if (!categoriesDiv.querySelector('.show-all-btn')) {
-      showAllBtn.className += ' show-all-btn';
-      categoriesDiv.appendChild(showAllBtn);
+
+    // Limpiar select
+    select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+    // Crear botones de categorías
+    let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+    for (const [category, causes] of Object.entries(groupedCauses)) {
+      categoriesHtml += `
+      <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+              onclick="filterRootCauses('${category}')">
+        ${category}
+      </button>
+    `;
+
+      causes.forEach(cause => {
+        // Almacenar para filtrado
+        if (!window.allRootCauses) window.allRootCauses = [];
+        window.allRootCauses.push(cause);
+
+        // Agregar al select
+        const option = document.createElement('option');
+        option.value = cause.id;
+        option.textContent = `${category} - ${cause.name}`;
+        option.setAttribute('data-category', category);
+        select.appendChild(option);
+      });
     }
+    categoriesHtml += '</div>';
+
+    if (categoriesDiv) {
+      categoriesDiv.innerHTML = `
+      ${categoriesHtml}
+      <div class="alert alert-info mt-2">
+        <small>⚠️ Usando datos de prueba. Verifica que el endpoint /root-causes/grouped esté disponible.</small>
+      </div>
+    `;
+    }
+
+    console.log("✅ Causas raíz hardcodeadas cargadas");
   }
+
+
+
+
+
+
+
+
 
   document.getElementById("form-new-request").addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
+
+    // Convertir rootCauseId a número si existe
+    if (data.rootCauseId) {
+      data.rootCauseId = parseInt(data.rootCauseId);
+    }
+
+
     // Agregar la fecha de asignación automáticamente
     //data.assignedAt = new Date().toISOString();
 
+    console.log("📤 Enviando datos:", data);
+
     try {
-      await serviceRequestService.create(data);
+      const result = await serviceRequestService.create(data);
+      console.log("✅ Solicitud creada:", result);
       showAlert("Solicitud creada correctamente", "success");
-      appLoad('service_requests/list.html');
+      setTimeout(() => {
+        appLoad('service_requests/list.html');
+      }, 1500);
     } catch (err) {
+      console.error("❌ Error al crear:", err);
       showAlert("Error al crear: " + err.message, "danger");
     }
   });
