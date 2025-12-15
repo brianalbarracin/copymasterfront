@@ -329,6 +329,21 @@ document.addEventListener("DOMContentLoaded", async ()=>{
             meterReadings: (id) => fetch(API_BASE + "/meter-readings/machine/" + id)
                 .then(r => r.json()).then(res => res.data || []),
 
+            tonerReadings: (id) => fetch(API_BASE + "/reading-toner/machine/" + id)
+                .then(r => {
+                    console.log("Response status:", r.status);
+                    console.log("Response headers:", r.headers);
+                    return r.json();
+                })
+                .then(res => {
+                    console.log("Response JSON:", res);
+                    return res.data || [];
+                })
+                .catch(err => {
+                    console.error("Error fetching toner readings:", err);
+                    return [];
+                }),
+
             search: (query) => fetch(API_BASE + "/machines/search?q=" + encodeURIComponent(query))
                 .then(r => r.json()).then(res => res.data || [])
         };
@@ -358,6 +373,34 @@ document.addEventListener("DOMContentLoaded", async ()=>{
             byMachine: (machineId) => fetch(API_BASE + "/service-requests/machine/" + machineId)
                 .then(r => r.json()).then(res => res.data || [])
         };
+
+        const rootCauseService = {
+            // Obtener todas las causas agrupadas por categoría
+            getGrouped: () => fetch(API_BASE + "/root-causes/grouped")
+                .then(r => r.json())
+                .then(res => res.data || {}),
+
+            // Obtener todas las causas
+            getAll: () => fetch(API_BASE + "/root-causes")
+                .then(r => r.json())
+                .then(res => res.data || []),
+
+            // Obtener por categoría
+            getByCategory: (category) => fetch(API_BASE + "/root-causes/by-category?category=" + encodeURIComponent(category))
+                .then(r => r.json())
+                .then(res => res.data || []),
+
+            // Obtener todas las categorías
+            getCategories: () => fetch(API_BASE + "/root-causes/categories")
+                .then(r => r.json())
+                .then(res => res.data || []),
+
+            // Obtener una causa por ID
+            getById: (id) => fetch(API_BASE + "/root-causes/" + id)
+                .then(r => r.json())
+                .then(res => res.data)
+        };
+
 
         const serviceVisitService = {
             list: () => fetch(API_BASE + "/visits/")
@@ -1749,6 +1792,37 @@ document.getElementById("form-create-request").addEventListener("submit", async 
         </div>
       </div>
     </div>
+
+    <div class="col-md-12 mt-3">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">Historial de Niveles de Toner</h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm" id="m-toner">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>K (Negro)</th>
+                  <th>C (Cian)</th>
+                  <th>M (Magenta)</th>
+                  <th>Y (Amarillo)</th>
+                  <th>Notas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6" class="text-center text-muted">Cargando lecturas de toner...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
   </div>
 </div>
 
@@ -1838,6 +1912,8 @@ document.getElementById("form-create-request").addEventListener("submit", async 
         console.error("❌ Error cargando detalle:", err);
         showAlert("Error cargando detalles de la máquina: " + err.message, "danger");
       }
+
+      await loadTonerReadings(id);
     }
 
     async function loadMovements(machineId) {
@@ -1883,6 +1959,63 @@ document.getElementById("form-create-request").addEventListener("submit", async 
             `;
       }).join('');
     }
+
+    async function loadTonerReadings(machineId) {
+      try {
+        const tonerReadings = await machineService.tonerReadings(machineId);
+        const tbody = document.querySelector("#m-toner tbody");
+        if (!tonerReadings || tonerReadings.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay lecturas de toner registradas</td></tr>';
+          return;
+        }
+        tbody.innerHTML = tonerReadings.map(toner => {
+          const date = toner.readingDate ? new Date(toner.readingDate).toLocaleDateString() : 'N/A';
+          return `
+                <tr>
+                    <td>${date}</td>
+                    <td>
+                        ${toner.levelK !== null ? toner.levelK + '%' : 'N/A'}
+                        ${toner.levelK !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-dark" style="width: ${toner.levelK}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>
+                        ${toner.levelC !== null ? toner.levelC + '%' : 'N/A'}
+                        ${toner.levelC !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-info" style="width: ${toner.levelC}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>
+                        ${toner.levelM !== null ? toner.levelM + '%' : 'N/A'}
+                        ${toner.levelM !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-danger" style="width: ${toner.levelM}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>
+                        ${toner.levelY !== null ? toner.levelY + '%' : 'N/A'}
+                        ${toner.levelY !== null ?
+              `<div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar bg-warning" style="width: ${toner.levelY}%"></div>
+                            </div>` : ''}
+                    </td>
+                    <td>${toner.notes || 'Sin notas'}</td>
+                </tr>
+            `;
+        }).join('');
+      } catch (err) {
+        console.error("Error cargando lecturas de toner:", err);
+        document.querySelector("#m-toner tbody").innerHTML =
+          '<tr><td colspan="6" class="text-center text-danger">Error cargando lecturas de toner</td></tr>';
+      }
+    }
+
+
+
+
+
 
     await loadDetail();
 
@@ -2869,13 +3002,19 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
 
       // Información básica
       document.getElementById("sr-info").innerHTML = `
-        <tr><th>ID</th><td>${r.id}</td></tr>
-        <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
-        <tr><th>Estado</th><td><span class="badge ${r.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${r.status || 'N/A'}</span></td></tr>
-        <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
-        <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
-        <tr><th>Causa raíz</th><td>${r.rootCause || "N/A"}</td></tr>
-      `;
+         <tr><th>ID</th><td>${r.id}</td></tr>
+    <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
+    <tr><th>Estado</th><td><span class="badge ${r.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${r.status || 'N/A'}</span></td></tr>
+    <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
+    <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
+    <tr><th>Causa raíz</th><td>
+        ${r.rootCauseName ? 
+            `<strong>${r.rootCauseName}</strong>` : 
+            (r.rootCause || "N/A")
+        }
+        ${r.rootCauseCategory ? `<br><small class="text-muted">${r.rootCauseCategory}</small>` : ''}
+    </td></tr>
+`;
 
       // Cliente
       if (r.customerId) {
@@ -2975,6 +3114,26 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
     appLoad("service_visits/edit.html");
 }
 </script>
+
+<style>
+    /* Para la causa raíz en el detalle */
+    .root-cause-display {
+        font-weight: 500;
+        color: #0d6efd;
+    }
+    
+    .root-cause-category {
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+    
+    /* Para el formulario de edición */
+    #current-root-cause .alert {
+        background-color: #e7f3ff;
+        border-color: #b6d4fe;
+        color: #084298;
+    }
+</style>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\list.html =====
 <div class="card p-3">
@@ -3116,7 +3275,7 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_requests\new.html =====
 <div class="card p-3">
   <h4>Nueva Solicitud</h4>
-  
+
   <!-- Información precargada (solo lectura) -->
   <div class="card mb-3">
     <div class="card-header bg-light">
@@ -3125,13 +3284,13 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
     <div class="card-body">
       <div class="row">
         <div class="col-md-6">
-          <strong>Cliente:</strong> 
-          <span id="preloaded-customer-name"></span> 
+          <strong>Cliente:</strong>
+          <span id="preloaded-customer-name"></span>
           <small id="preloaded-customer-nit" class="text-muted"></small>
         </div>
         <div class="col-md-6">
-          <strong>Máquina:</strong> 
-          <span id="preloaded-machine-serial"></span> 
+          <strong>Máquina:</strong>
+          <span id="preloaded-machine-serial"></span>
           <small id="preloaded-machine-number" class="text-muted"></small>
         </div>
       </div>
@@ -3170,7 +3329,7 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
   <form id="form-new-request" class="row g-3">
     <input type="hidden" name="machineId" id="machine-id">
     <input type="hidden" name="customerId" id="customer-id">
-    
+
     <div class="col-md-6">
       <label class="form-label">Canal *</label>
       <select name="reportedChannel" class="form-select" required>
@@ -3181,7 +3340,7 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
         <option value="portal">Portal</option>
       </select>
     </div>
-    
+
     <div class="col-md-6">
       <label class="form-label">Tipo de Servicio *</label>
       <select name="serviceType" class="form-select" required>
@@ -3192,17 +3351,21 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
         <option value="otro">otro</option>
       </select>
     </div>
-    
+
     <div class="col-12">
       <label class="form-label">Causa Raíz *</label>
-      <input class="form-control" name="rootCause" required>
+      <select class="form-select" name="rootCauseId" id="root-cause-select" required>
+        <option value="">Seleccione una causa raíz</option>
+        <!-- Las opciones se cargarán con JavaScript -->
+      </select>
+      <div id="root-cause-categories" class="mt-2"></div>
     </div>
-    
+
     <div class="col-12">
       <label class="form-label">Descripción *</label>
       <textarea class="form-control" name="description" rows="3" required></textarea>
     </div>
-    
+
     <div class="col-12">
       <label class="form-label">Solicitud repetida de (opcional)</label>
       <select name="repeatedOfRequestId" class="form-select" id="repeated-request">
@@ -3210,70 +3373,73 @@ document.getElementById("form-visit").addEventListener("submit", async (e)=>{
         <!-- Las opciones se llenarán con JavaScript -->
       </select>
     </div>
-    
+
     <div class="col-12">
       <button class="btn btn-success" type="submit">Crear Solicitud</button>
-      <button class="btn btn-outline-secondary" type="button" onclick="appLoad('service_requests/list.html')">Cancelar</button>
+      <button class="btn btn-outline-secondary" type="button"
+        onclick="appLoad('service_requests/list.html')">Cancelar</button>
     </div>
   </form>
 </div>
 
 <script>
-(async function() {
-  // Cargar datos precargados desde sessionStorage
-  const machineId = sessionStorage.getItem('selectedMachineId');
-  const customerId = sessionStorage.getItem('selectedCustomerId');
-  const machineSerial = sessionStorage.getItem('selectedMachineSerial');
-  const machineNumber = sessionStorage.getItem('selectedMachineNumber');
-  const customerName = sessionStorage.getItem('selectedCustomerName');
-  const customerNit = sessionStorage.getItem('selectedCustomerNit');
-  
-  // Mostrar información precargada
-  document.getElementById('preloaded-customer-name').textContent = customerName || 'N/A';
-  document.getElementById('preloaded-customer-nit').textContent = customerNit ? `(NIT: ${customerNit})` : '';
-  document.getElementById('preloaded-machine-serial').textContent = machineSerial || 'N/A';
-  document.getElementById('preloaded-machine-number').textContent = machineNumber ? `(Número: ${machineNumber})` : '';
-  
-  // Establecer valores en campos ocultos
-  if (machineId) document.getElementById('machine-id').value = machineId;
-  if (customerId) document.getElementById('customer-id').value = customerId;
-  
-  // Cargar solicitudes anteriores para esta máquina
-  if (machineId) {
-    await loadPreviousRequests(machineId);
-  }
-  
-  // Limpiar el sessionStorage después de usar los valores
-  sessionStorage.removeItem('selectedMachineId');
-  sessionStorage.removeItem('selectedCustomerId');
-  sessionStorage.removeItem('selectedMachineSerial');
-  sessionStorage.removeItem('selectedMachineNumber');
-  sessionStorage.removeItem('selectedCustomerName');
-  sessionStorage.removeItem('selectedCustomerNit');
-})();
+  (async function () {
+    // Cargar datos precargados desde sessionStorage
+    const machineId = sessionStorage.getItem('selectedMachineId');
+    const customerId = sessionStorage.getItem('selectedCustomerId');
+    const machineSerial = sessionStorage.getItem('selectedMachineSerial');
+    const machineNumber = sessionStorage.getItem('selectedMachineNumber');
+    const customerName = sessionStorage.getItem('selectedCustomerName');
+    const customerNit = sessionStorage.getItem('selectedCustomerNit');
 
-async function loadPreviousRequests(machineId) {
-  try {
-    const requests = await serviceRequestService.list();
-    const machineRequests = requests.filter(r => r.machineId == machineId);
-    
-    const tbody = document.getElementById('previous-requests');
-    const select = document.getElementById('repeated-request');
-    
-    if (machineRequests.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes anteriores para esta máquina</td></tr>';
-      return;
+    // Mostrar información precargada
+    document.getElementById('preloaded-customer-name').textContent = customerName || 'N/A';
+    document.getElementById('preloaded-customer-nit').textContent = customerNit ? `(NIT: ${customerNit})` : '';
+    document.getElementById('preloaded-machine-serial').textContent = machineSerial || 'N/A';
+    document.getElementById('preloaded-machine-number').textContent = machineNumber ? `(Número: ${machineNumber})` : '';
+
+    // Establecer valores en campos ocultos
+    if (machineId) document.getElementById('machine-id').value = machineId;
+    if (customerId) document.getElementById('customer-id').value = customerId;
+
+    // Cargar solicitudes anteriores para esta máquina
+    if (machineId) {
+      await loadPreviousRequests(machineId);
     }
-    
-    // Limpiar y llenar la tabla y el select
-    tbody.innerHTML = '';
-    select.innerHTML = '<option value="">No es una solicitud repetida</option>';
-    
-    machineRequests.forEach(request => {
-      const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
-      
-      // Agregar a la tabla
-      tbody.innerHTML += `
+
+    await loadRootCauses();
+
+    // Limpiar el sessionStorage después de usar los valores
+    sessionStorage.removeItem('selectedMachineId');
+    sessionStorage.removeItem('selectedCustomerId');
+    sessionStorage.removeItem('selectedMachineSerial');
+    sessionStorage.removeItem('selectedMachineNumber');
+    sessionStorage.removeItem('selectedCustomerName');
+    sessionStorage.removeItem('selectedCustomerNit');
+  })();
+
+  async function loadPreviousRequests(machineId) {
+    try {
+      const requests = await serviceRequestService.list();
+      const machineRequests = requests.filter(r => r.machineId == machineId);
+
+      const tbody = document.getElementById('previous-requests');
+      const select = document.getElementById('repeated-request');
+
+      if (machineRequests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay solicitudes anteriores para esta máquina</td></tr>';
+        return;
+      }
+
+      // Limpiar y llenar la tabla y el select
+      tbody.innerHTML = '';
+      select.innerHTML = '<option value="">No es una solicitud repetida</option>';
+
+      machineRequests.forEach(request => {
+        const date = request.reportedAt ? new Date(request.reportedAt).toLocaleDateString() : 'N/A';
+
+        // Agregar a la tabla
+        tbody.innerHTML += `
         <tr>
           <td>
             <input type="radio" name="selectedPreviousRequest" value="${request.id}" 
@@ -3286,37 +3452,202 @@ async function loadPreviousRequests(machineId) {
           <td><span class="badge ${request.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${request.status || 'N/A'}</span></td>
         </tr>
       `;
-      
-      // Agregar al select
-      const option = document.createElement('option');
-      option.value = request.id;
-      option.textContent = `${request.requestNumber || request.id} - ${request.rootCause || 'Sin causa'} (${date})`;
-      select.appendChild(option);
-    });
-    
-  } catch (err) {
-    console.error("Error cargando solicitudes anteriores:", err);
-    document.getElementById('previous-requests').innerHTML = 
-      '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes anteriores</td></tr>';
-  }
-}
 
-document.getElementById("form-new-request").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const data = Object.fromEntries(formData);
-  
-  // Agregar la fecha de asignación automáticamente
-  //data.assignedAt = new Date().toISOString();
-  
-  try {
-    await serviceRequestService.create(data);
-    showAlert("Solicitud creada correctamente", "success");
-    appLoad('service_requests/list.html');
-  } catch(err) {
-    showAlert("Error al crear: " + err.message, "danger");
+        // Agregar al select
+        const option = document.createElement('option');
+        option.value = request.id;
+        option.textContent = `${request.requestNumber || request.id} - ${request.rootCause || 'Sin causa'} (${date})`;
+        select.appendChild(option);
+      });
+
+    } catch (err) {
+      console.error("Error cargando solicitudes anteriores:", err);
+      document.getElementById('previous-requests').innerHTML =
+        '<tr><td colspan="6" class="text-center text-danger">Error cargando solicitudes anteriores</td></tr>';
+    }
   }
-});
+
+
+  async function loadRootCauses() {
+    console.log("🔍 Intentando cargar causas raíz...");
+
+    try {
+      // Usa el servicio que definimos
+      const groupedCauses = await rootCauseService.getGrouped();
+      console.log("✅ Causas raíz recibidas:", groupedCauses);
+
+      const select = document.getElementById('root-cause-select');
+      const categoriesDiv = document.getElementById('root-cause-categories');
+
+      // Limpiar select
+      select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+      // Si no hay datos, mostrar mensaje
+      if (!groupedCauses || Object.keys(groupedCauses).length === 0) {
+        categoriesDiv.innerHTML = '<div class="alert alert-warning">No hay causas raíz configuradas</div>';
+        return;
+      }
+
+      // Crear botones de categorías
+      let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        categoriesHtml += `
+        <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                onclick="filterRootCauses('${category}')">
+          ${category}
+        </button>
+      `;
+      }
+      categoriesHtml += '</div>';
+      categoriesDiv.innerHTML = categoriesHtml;
+
+      // Almacenar todas las causas para filtrado
+      window.allRootCauses = [];
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        causes.forEach(cause => {
+          window.allRootCauses.push({
+            id: cause.id,
+            name: cause.name,
+            category: category
+          });
+
+          // Agregar al select
+          const option = document.createElement('option');
+          option.value = cause.id;
+          option.textContent = `${category} - ${cause.name}`;
+          option.setAttribute('data-category', category);
+          select.appendChild(option);
+        });
+      }
+
+    } catch (err) {
+      console.error("❌ Error cargando causas raíz:", err);
+
+      // Mostrar mensaje de error en la interfaz
+      const categoriesDiv = document.getElementById('root-cause-categories');
+      if (categoriesDiv) {
+        categoriesDiv.innerHTML = `
+        <div class="alert alert-danger">
+          <strong>Error cargando causas raíz:</strong><br>
+          ${err.message}<br>
+          <small>Verificando endpoints...</small>
+        </div>
+      `;
+      }
+
+      // Intentar cargar datos hardcodeados como respaldo
+      loadHardcodedRootCauses();
+    }
+  }
+
+  // Función de respaldo con datos hardcodeados
+  function loadHardcodedRootCauses() {
+    console.log("⚠️ Cargando causas raíz hardcodeadas...");
+
+    const groupedCauses = {
+      "CONTADORES / LECTURAS": [
+        { id: 1, name: "CONTADOR", category: "CONTADORES / LECTURAS" },
+        { id: 2, name: "TOMA DE CONTADORES", category: "CONTADORES / LECTURAS" },
+        { id: 3, name: "LECTURA DE CONTADOR", category: "CONTADORES / LECTURAS" },
+        { id: 4, name: "CONTADORES", category: "CONTADORES / LECTURAS" },
+        { id: 5, name: "CONTADOR INICIAL", category: "CONTADORES / LECTURAS" }
+      ],
+      "TONER / TINTA": [
+        { id: 6, name: "RECARGA TONER / DE TONER", category: "TONER / TINTA" },
+        { id: 7, name: "REVISIÓN / REVISION / REVICION DE TONER", category: "TONER / TINTA" },
+        { id: 8, name: "TONER", category: "TONER / TINTA" },
+        { id: 9, name: "CARGA DE TONER", category: "TONER / TINTA" },
+        { id: 10, name: "CAMBIO DE TONER", category: "TONER / TINTA" }
+      ]
+    };
+
+    const select = document.getElementById('root-cause-select');
+    const categoriesDiv = document.getElementById('root-cause-categories');
+
+    // Limpiar select
+    select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+    // Crear botones de categorías
+    let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+    for (const [category, causes] of Object.entries(groupedCauses)) {
+      categoriesHtml += `
+      <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+              onclick="filterRootCauses('${category}')">
+        ${category}
+      </button>
+    `;
+
+      causes.forEach(cause => {
+        // Almacenar para filtrado
+        if (!window.allRootCauses) window.allRootCauses = [];
+        window.allRootCauses.push(cause);
+
+        // Agregar al select
+        const option = document.createElement('option');
+        option.value = cause.id;
+        option.textContent = `${category} - ${cause.name}`;
+        option.setAttribute('data-category', category);
+        select.appendChild(option);
+      });
+    }
+    categoriesHtml += '</div>';
+
+    if (categoriesDiv) {
+      categoriesDiv.innerHTML = `
+      ${categoriesHtml}
+      <div class="alert alert-info mt-2">
+        <small>⚠️ Usando datos de prueba. Verifica que el endpoint /root-causes/grouped esté disponible.</small>
+      </div>
+    `;
+    }
+
+    console.log("✅ Causas raíz hardcodeadas cargadas");
+  }
+
+
+
+
+
+
+
+
+
+  document.getElementById("form-new-request").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+
+
+    // Convertir rootCauseId a número si existe
+    if (data.rootCauseId) {
+      data.rootCauseId = parseInt(data.rootCauseId);
+    }
+
+
+    // Agregar la fecha de asignación automáticamente
+    //data.assignedAt = new Date().toISOString();
+
+    console.log("📤 Enviando datos:", data);
+
+    try {
+      const result = await serviceRequestService.create(data);
+      console.log("✅ Solicitud creada:", result);
+      showAlert("Solicitud creada correctamente", "success");
+      setTimeout(() => {
+        appLoad('service_requests/list.html');
+      }, 1500);
+    } catch (err) {
+      console.error("❌ Error al crear:", err);
+      showAlert("Error al crear: " + err.message, "danger");
+    }
+  });
+
+
+
+
+
+
+
 </script>
 
 ===== C:\Users\LENOVO\Desktop\Webpage\irrigex\front2\service_visits\edit.html =====
@@ -3365,9 +3696,66 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
       <input type="datetime-local" class="form-control" name="visitDatetime" id="visit-datetime" required>
     </div>
 
+    <div class="col-md-6">
+      <label class="form-label">Hora de Inicio</label>
+      <input type="datetime-local" class="form-control" name="startTime" id="start-time">
+      <div class="form-text">Cuando el técnico comenzó la intervención</div>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Hora de Finalización</label>
+      <input type="datetime-local" class="form-control" name="endTime" id="end-time">
+      <div class="form-text">Cuando el técnico terminó la intervención</div>
+    </div>
+
+    <!-- Sección para mostrar tiempos ya registrados (si existen) -->
+    <div id="existing-times-section" style="display:none" class="col-12 mb-3">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Tiempos ya registrados</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Inicio:</strong> <span id="existing-start-time"></span>
+            </div>
+            <div class="col-md-6">
+              <strong>Fin:</strong> <span id="existing-end-time"></span>
+            </div>
+            <div class="col-12 mt-2">
+              <strong>Duración:</strong> <span id="existing-duration"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
     <div class="col-12">
       <label class="form-label">Notas de la Visita</label>
       <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"></textarea>
+    </div>
+
+
+    <!-- Causa Raíz -->
+    <div class="col-12">
+      <label class="form-label">Causa Raíz (Diagnóstico)</label>
+      <select class="form-select" name="rootCauseId" id="root-cause-select">
+        <option value="">Seleccione una causa raíz (opcional)</option>
+        <!-- Las opciones se cargarán con JavaScript -->
+      </select>
+      <div id="root-cause-categories" class="mt-2"></div>
+
+      <!-- Mostrar causa raíz actual si existe -->
+      <div id="current-root-cause" class="mt-2" style="display: none;">
+        <div class="alert alert-info p-2">
+          <small>
+            <strong>Causa raíz actual:</strong>
+            <span id="current-root-cause-text"></span>
+          </small>
+        </div>
+      </div>
     </div>
     <!-- Lectura existente (solo si hay meterReading) -->
     <div id="existing-meter-section" style="display:none" class="mb-3">
@@ -3426,6 +3814,80 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
         </div>
       </div>
     </div>
+
+    <!-- Lectura de niveles de toner -->
+    <div class="col-12">
+      <div class="card" id="toner-reading-card">
+        <div class="card-header">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="chk-toner" name="takeTonerReading">
+            <label class="form-check-label" for="chk-toner">
+              <strong>¿Se tomó lectura de niveles de toner?</strong>
+            </label>
+          </div>
+        </div>
+        <div class="card-body" id="toner-fields" style="display:none">
+          <div class="row">
+            <div class="col-md-3">
+              <label class="form-label">Nivel K (Negro)</label>
+              <input type="number" class="form-control" name="tonerLevelK" id="toner-level-k" min="0" max="100"
+                placeholder="0-100%">
+              <div class="form-text">0% = vacío, 100% = lleno</div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nivel C (Cian)</label>
+              <input type="number" class="form-control" name="tonerLevelC" id="toner-level-c" min="0" max="100"
+                placeholder="0-100%">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nivel M (Magenta)</label>
+              <input type="number" class="form-control" name="tonerLevelM" id="toner-level-m" min="0" max="100"
+                placeholder="0-100%">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nivel Y (Amarillo)</label>
+              <input type="number" class="form-control" name="tonerLevelY" id="toner-level-y" min="0" max="100"
+                placeholder="0-100%">
+            </div>
+            <div class="col-12 mt-3">
+              <label class="form-label">Notas sobre niveles de toner</label>
+              <input type="text" class="form-control" name="tonerNotes" id="toner-notes"
+                placeholder="Observaciones sobre los niveles de toner">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lectura existente de toner (solo si hay tonerReading) -->
+    <div id="existing-toner-section" style="display:none" class="mb-3">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Lectura de Toner Existente</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <strong>K (Negro):</strong> <span id="existing-toner-k"></span>%
+            </div>
+            <div class="col-md-3">
+              <strong>C (Cian):</strong> <span id="existing-toner-c"></span>%
+            </div>
+            <div class="col-md-3">
+              <strong>M (Magenta):</strong> <span id="existing-toner-m"></span>%
+            </div>
+            <div class="col-md-3">
+              <strong>Y (Amarillo):</strong> <span id="existing-toner-y"></span>%
+            </div>
+            <div class="col-12 mt-2">
+              <strong>Notas:</strong> <span id="existing-toner-notes"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
 
     <!-- Estado de resolución -->
     <div class="col-12">
@@ -3526,6 +3988,15 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
     // Toggle resolución
     chkSolved.addEventListener("change", e => {
       resolutionFields.style.display = e.target.checked ? "block" : "none";
+    });
+
+    // Toggle lectura de toner
+    const chkToner = document.getElementById("chk-toner");
+    const tonerFields = document.getElementById("toner-fields");
+    const existingTonerSection = document.getElementById("existing-toner-section");
+
+    chkToner.addEventListener("change", e => {
+      tonerFields.style.display = e.target.checked ? "block" : "none";
     });
 
     // Toggle repuestos
@@ -3670,6 +4141,70 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
 
           }
 
+          // En la función loadVisitData(), después de cargar otros datos:
+          if (visit.startTime || visit.endTime) {
+            // Mostrar sección de tiempos existentes
+            const existingTimesSection = document.getElementById("existing-times-section");
+            existingTimesSection.style.display = "block";
+
+            // Formatear y mostrar tiempos existentes
+            if (visit.startTime) {
+              const startTime = new Date(visit.startTime);
+              document.getElementById("existing-start-time").textContent =
+                startTime.toLocaleString('es-CO', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+
+              // Bloquear campo de entrada
+              document.getElementById("start-time").value = startTime.toISOString().slice(0, 16);
+              document.getElementById("start-time").readOnly = true;
+            }
+
+            if (visit.endTime) {
+              const endTime = new Date(visit.endTime);
+              document.getElementById("existing-end-time").textContent =
+                endTime.toLocaleString('es-CO', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+
+              // Bloquear campo de entrada
+              document.getElementById("end-time").value = endTime.toISOString().slice(0, 16);
+              document.getElementById("end-time").readOnly = true;
+            }
+
+            // Calcular y mostrar duración si ambos tiempos existen
+            if (visit.startTime && visit.endTime) {
+              const start = new Date(visit.startTime);
+              const end = new Date(visit.endTime);
+              const durationMs = end - start;
+              const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+              const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+
+              document.getElementById("existing-duration").textContent =
+                `${durationHours} horas ${durationMinutes} minutos`;
+            }
+          } else {
+            // Si no hay tiempos registrados, permitir edición
+            // Opcional: Establecer valores por defecto
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById("start-time").value = now.toISOString().slice(0, 16);
+
+            // Establecer end_time como 1 hora después por defecto
+            const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+            document.getElementById("end-time").value = oneHourLater.toISOString().slice(0, 16);
+          }
+
+
+
           if (visit.colorReading) {
             const colorInput = document.getElementById("color-reading");
             colorInput.value = visit.colorReading;
@@ -3680,6 +4215,36 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
             const scannerInput = document.getElementById("scanner-reading");
             scannerInput.value = visit.scannerReading;
             scannerInput.readOnly = true;
+          }
+
+
+          if (visit.takeTonerReading || visit.tonerLevelK != null || visit.tonerLevelC != null ||
+            visit.tonerLevelM != null || visit.tonerLevelY != null) {
+
+            // Mostrar sección de lectura existente
+            existingTonerSection.style.display = "block";
+            document.getElementById("existing-toner-k").textContent = visit.tonerLevelK || "0";
+            document.getElementById("existing-toner-c").textContent = visit.tonerLevelC || "0";
+            document.getElementById("existing-toner-m").textContent = visit.tonerLevelM || "0";
+            document.getElementById("existing-toner-y").textContent = visit.tonerLevelY || "0";
+            document.getElementById("existing-toner-notes").textContent = visit.tonerNotes || "Sin notas";
+
+            // Bloquear campos de entrada
+            document.getElementById("toner-level-k").value = visit.tonerLevelK || "";
+            document.getElementById("toner-level-k").readOnly = true;
+            document.getElementById("toner-level-c").value = visit.tonerLevelC || "";
+            document.getElementById("toner-level-c").readOnly = true;
+            document.getElementById("toner-level-m").value = visit.tonerLevelM || "";
+            document.getElementById("toner-level-m").readOnly = true;
+            document.getElementById("toner-level-y").value = visit.tonerLevelY || "";
+            document.getElementById("toner-level-y").readOnly = true;
+            document.getElementById("toner-notes").value = visit.tonerNotes || "";
+            document.getElementById("toner-notes").readOnly = true;
+
+            // Deshabilitar checkbox
+            chkToner.checked = false;
+            chkToner.disabled = true;
+            tonerFields.style.display = "block";
           }
 
 
@@ -3700,6 +4265,8 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
                 "Error cargando técnico";
             }
           }
+
+          await loadRootCausesForEdit(visit);
 
           // Configurar estado de resolución
           if (visit.solved) {
@@ -3760,6 +4327,157 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
       }
     }
 
+
+    async function loadRootCausesForEdit(visit) {
+      console.log("🔍 Cargando causas raíz para edición...");
+
+      try {
+        const groupedCauses = await rootCauseService.getGrouped();
+        const select = document.getElementById('root-cause-select');
+        const categoriesDiv = document.getElementById('root-cause-categories');
+        const currentRootCauseDiv = document.getElementById('current-root-cause');
+        const currentRootCauseText = document.getElementById('current-root-cause-text');
+
+        // Limpiar select
+        select.innerHTML = '<option value="">Seleccione una causa raíz (opcional)</option>';
+
+        if (!groupedCauses || Object.keys(groupedCauses).length === 0) {
+          categoriesDiv.innerHTML = '<div class="alert alert-warning">No hay causas raíz configuradas</div>';
+          return;
+        }
+
+        // Crear botones de categorías
+        let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+        for (const [category, causes] of Object.entries(groupedCauses)) {
+          categoriesHtml += `
+            <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                    onclick="filterRootCausesForEdit('${category}')">
+                ${category}
+            </button>
+            `;
+        }
+        categoriesHtml += '</div>';
+        categoriesDiv.innerHTML = categoriesHtml;
+
+        // Almacenar todas las causas para filtrado
+        window.allRootCausesEdit = [];
+        for (const [category, causes] of Object.entries(groupedCauses)) {
+          causes.forEach(cause => {
+            window.allRootCausesEdit.push({
+              id: cause.id,
+              name: cause.name,
+              category: category
+            });
+
+            // Agregar al select
+            const option = document.createElement('option');
+            option.value = cause.id;
+            option.textContent = `${category} - ${cause.name}`;
+            option.setAttribute('data-category', category);
+            select.appendChild(option);
+          });
+        }
+
+        // Si la visita ya tiene una causa raíz, seleccionarla
+        if (visit.rootCauseId) {
+          console.log("👉 Visit tiene rootCauseId:", visit.rootCauseId);
+          select.value = visit.rootCauseId;
+
+          // Mostrar información de la causa raíz actual
+          if (visit.rootCauseName) {
+            currentRootCauseDiv.style.display = 'block';
+            currentRootCauseText.textContent =
+              `${visit.rootCauseCategory || ''} - ${visit.rootCauseName}`;
+          }
+        }
+
+      } catch (err) {
+        console.error("❌ Error cargando causas raíz para edición:", err);
+        loadHardcodedRootCausesForEdit(visit);
+      }
+    }
+
+
+    // Función para filtrar causas por categoría
+    function filterRootCausesForEdit(category) {
+      const select = document.getElementById('root-cause-select');
+      select.innerHTML = '<option value="">Seleccione una causa raíz (opcional)</option>';
+
+      if (!window.allRootCausesEdit) return;
+
+      // Filtrar por categoría y agregar al select
+      const filteredCauses = window.allRootCausesEdit.filter(cause => cause.category === category);
+      filteredCauses.forEach(cause => {
+        const option = document.createElement('option');
+        option.value = cause.id;
+        option.textContent = `${cause.category} - ${cause.name}`;
+        select.appendChild(option);
+      });
+    }
+
+    // Función de respaldo con datos hardcodeados
+    function loadHardcodedRootCausesForEdit(visit) {
+      console.log("⚠️ Cargando causas raíz hardcodeadas para edición...");
+
+      const groupedCauses = {
+        "CONTADORES / LECTURAS": [
+          { id: 1, name: "CONTADOR", category: "CONTADORES / LECTURAS" },
+          { id: 2, name: "TOMA DE CONTADORES", category: "CONTADORES / LECTURAS" },
+          { id: 3, name: "LECTURA DE CONTADOR", category: "CONTADORES / LECTURAS" }
+        ],
+        "TONER / TINTA": [
+          { id: 6, name: "RECARGA TONER", category: "TONER / TINTA" },
+          { id: 8, name: "TONER", category: "TONER / TINTA" }
+        ]
+      };
+
+      const select = document.getElementById('root-cause-select');
+      const categoriesDiv = document.getElementById('root-cause-categories');
+      const currentRootCauseDiv = document.getElementById('current-root-cause');
+      const currentRootCauseText = document.getElementById('current-root-cause-text');
+
+      select.innerHTML = '<option value="">Seleccione una causa raíz (opcional)</option>';
+
+      let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        categoriesHtml += `
+        <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                onclick="filterRootCausesForEdit('${category}')">
+            ${category}
+        </button>
+        `;
+
+        causes.forEach(cause => {
+          if (!window.allRootCausesEdit) window.allRootCausesEdit = [];
+          window.allRootCausesEdit.push(cause);
+
+          const option = document.createElement('option');
+          option.value = cause.id;
+          option.textContent = `${category} - ${cause.name}`;
+          select.appendChild(option);
+        });
+      }
+      categoriesHtml += '</div>';
+
+      categoriesDiv.innerHTML = categoriesHtml +
+        '<div class="alert alert-info mt-2"><small>⚠️ Usando datos de prueba</small></div>';
+
+      // Si la visita ya tiene una causa raíz, seleccionarla
+      if (visit && visit.rootCauseId) {
+        select.value = visit.rootCauseId;
+        if (visit.rootCauseName) {
+          currentRootCauseDiv.style.display = 'block';
+          currentRootCauseText.textContent =
+            `${visit.rootCauseCategory || ''} - ${visit.rootCauseName}`;
+        }
+      }
+    }
+
+
+
+
+
+
     // Inicializar la página
     await Promise.all([
       loadRequestInfo(),
@@ -3783,6 +4501,15 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
           visitDatetime: rawDate ? new Date(rawDate).toISOString() : null,
           visitNotes: formData.get("visitNotes") || null,
           solved: chkSolved.checked,
+
+          // Nuevos campos de tiempo
+          startTime: document.getElementById("start-time").value ?
+            new Date(document.getElementById("start-time").value).toISOString() : null,
+          endTime: document.getElementById("end-time").value ?
+            new Date(document.getElementById("end-time").value).toISOString() : null,
+
+          rootCauseId: document.getElementById("root-cause-select").value ?
+            parseInt(document.getElementById("root-cause-select").value) : null,
           takeMeterReading: chkMeter.checked,
           reading: chkMeter.checked ?
             (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
@@ -3791,7 +4518,18 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
             (formData.get("colorReading") ? parseInt(formData.get("colorReading")) : null) : null,
 
           scannerReading: chkMeter.checked ?
-            (formData.get("scannerReading") ? parseInt(formData.get("scannerReading")) : null) : null
+            (formData.get("scannerReading") ? parseInt(formData.get("scannerReading")) : null) : null,
+
+          takeTonerReading: chkToner.checked,
+          tonerLevelK: chkToner.checked ?
+            (formData.get("tonerLevelK") ? parseInt(formData.get("tonerLevelK")) : null) : null,
+          tonerLevelC: chkToner.checked ?
+            (formData.get("tonerLevelC") ? parseInt(formData.get("tonerLevelC")) : null) : null,
+          tonerLevelM: chkToner.checked ?
+            (formData.get("tonerLevelM") ? parseInt(formData.get("tonerLevelM")) : null) : null,
+          tonerLevelY: chkToner.checked ?
+            (formData.get("tonerLevelY") ? parseInt(formData.get("tonerLevelY")) : null) : null,
+          tonerNotes: chkToner.checked ? formData.get("tonerNotes") || null : null
         };
 
         // Recopilar información de repuestos
@@ -3906,6 +4644,16 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
       <div class="invalid-feedback">Por favor ingrese la fecha y hora de la visita</div>
     </div>
 
+
+    <div class="col-12">
+      <label class="form-label">Causa Raíz (Diagnóstico) *</label>
+      <select class="form-select" name="rootCauseId" id="root-cause-select" required>
+        <option value="">Seleccione una causa raíz</option>
+        <!-- Las opciones se cargarán con JavaScript -->
+      </select>
+      <div id="root-cause-categories" class="mt-2"></div>
+    </div>
+
     <div class="col-12">
       <label class="form-label">Notas de la Visita *</label>
       <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"
@@ -3955,6 +4703,7 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
     try {
       await loadRequestInfo(requestId);
       await loadTechnicians();
+      await loadRootCausesForVisit();
     } catch (err) {
       console.error("Error inicializando:", err);
       showAlert("Error al cargar datos iniciales", "danger");
@@ -3980,7 +4729,10 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
           technicianId: parseInt(document.getElementById("technicians").value),
           visitDatetime: document.getElementById("visit-datetime").value + "-05:00",
           visitNotes: document.getElementById("visit-notes").value,
-          solved: document.getElementById("solved").checked
+          solved: document.getElementById("solved").checked,
+
+          rootCauseId: document.getElementById("root-cause-select").value ?
+            parseInt(document.getElementById("root-cause-select").value) : null
         };
 
         console.log("Enviando visita:", visitData);
@@ -4058,6 +4810,128 @@ document.getElementById("form-new-request").addEventListener("submit", async (e)
       });
     }
   }
+
+  async function loadRootCausesForVisit() {
+    console.log("🔍 Cargando causas raíz para visita...");
+
+    try {
+      const groupedCauses = await rootCauseService.getGrouped();
+      const select = document.getElementById('root-cause-select');
+      const categoriesDiv = document.getElementById('root-cause-categories');
+
+      // Limpiar select
+      select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+      if (!groupedCauses || Object.keys(groupedCauses).length === 0) {
+        categoriesDiv.innerHTML = '<div class="alert alert-warning">No hay causas raíz configuradas</div>';
+        return;
+      }
+
+      // Crear botones de categorías
+      let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        categoriesHtml += `
+            <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                    onclick="filterRootCausesForVisit('${category}')">
+                ${category}
+            </button>
+            `;
+      }
+      categoriesHtml += '</div>';
+      categoriesDiv.innerHTML = categoriesHtml;
+
+      // Almacenar todas las causas para filtrado
+      window.allRootCausesVisit = [];
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        causes.forEach(cause => {
+          window.allRootCausesVisit.push({
+            id: cause.id,
+            name: cause.name,
+            category: category
+          });
+
+          // Agregar al select
+          const option = document.createElement('option');
+          option.value = cause.id;
+          option.textContent = `${category} - ${cause.name}`;
+          option.setAttribute('data-category', category);
+          select.appendChild(option);
+        });
+      }
+
+    } catch (err) {
+      console.error("❌ Error cargando causas raíz para visita:", err);
+      loadHardcodedRootCausesForVisit();
+    }
+  }
+
+
+  // Función para filtrar causas por categoría
+  function filterRootCausesForVisit(category) {
+    const select = document.getElementById('root-cause-select');
+    select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+    if (!window.allRootCausesVisit) return;
+
+    // Filtrar por categoría y agregar al select
+    const filteredCauses = window.allRootCausesVisit.filter(cause => cause.category === category);
+    filteredCauses.forEach(cause => {
+      const option = document.createElement('option');
+      option.value = cause.id;
+      option.textContent = `${cause.category} - ${cause.name}`;
+      select.appendChild(option);
+    });
+  }
+
+  // Función de respaldo con datos hardcodeados
+  function loadHardcodedRootCausesForVisit() {
+    console.log("⚠️ Cargando causas raíz hardcodeadas para visita...");
+
+    const groupedCauses = {
+      "CONTADORES / LECTURAS": [
+        { id: 1, name: "CONTADOR", category: "CONTADORES / LECTURAS" },
+        { id: 2, name: "TOMA DE CONTADORES", category: "CONTADORES / LECTURAS" }
+      ],
+      "TONER / TINTA": [
+        { id: 6, name: "RECARGA TONER", category: "TONER / TINTA" },
+        { id: 8, name: "TONER", category: "TONER / TINTA" }
+      ]
+    };
+
+    const select = document.getElementById('root-cause-select');
+    const categoriesDiv = document.getElementById('root-cause-categories');
+
+    select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+    let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+    for (const [category, causes] of Object.entries(groupedCauses)) {
+      categoriesHtml += `
+        <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                onclick="filterRootCausesForVisit('${category}')">
+            ${category}
+        </button>
+        `;
+
+      causes.forEach(cause => {
+        if (!window.allRootCausesVisit) window.allRootCausesVisit = [];
+        window.allRootCausesVisit.push(cause);
+
+        const option = document.createElement('option');
+        option.value = cause.id;
+        option.textContent = `${category} - ${cause.name}`;
+        select.appendChild(option);
+      });
+    }
+    categoriesHtml += '</div>';
+
+    categoriesDiv.innerHTML = categoriesHtml +
+      '<div class="alert alert-info mt-2"><small>⚠️ Usando datos de prueba</small></div>';
+  }
+
+
+
+
+
 </script>
 
 <style>

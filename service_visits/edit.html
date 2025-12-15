@@ -436,6 +436,11 @@
 
 
 
+          console.log("VISITA CARGADA DESDE BACK:", visit);
+          console.log("startTime recibido:", visit.startTime);
+          console.log("endTime recibido:", visit.endTime);
+
+
           console.log("👉 Visita cargada:", visit); // 👈 ver todo el objeto
           console.log("👉 TechnicianId recibido:", visit.technicianId);
           // Llenar formulario con datos existentes
@@ -877,7 +882,18 @@
           tonerLevelY: chkToner.checked ?
             (formData.get("tonerLevelY") ? parseInt(formData.get("tonerLevelY")) : null) : null,
           tonerNotes: chkToner.checked ? formData.get("tonerNotes") || null : null
+        
+          
+
+
         };
+
+
+
+         console.log("🔒 start readOnly:", startInput.readOnly);
+          console.log("🔒 end readOnly:", endInput.readOnly);
+          console.log("⏱ startTime enviado:", startTimeValue);
+          console.log("⏱ endTime enviado:", endTimeValue);
 
         // Recopilar información de repuestos
         if (chkParts.checked) {
