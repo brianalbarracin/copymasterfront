@@ -47,6 +47,27 @@
       <label class="form-label">Notas de la Visita</label>
       <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"></textarea>
     </div>
+
+
+    <!-- Causa Raíz -->
+    <div class="col-12">
+      <label class="form-label">Causa Raíz (Diagnóstico)</label>
+      <select class="form-select" name="rootCauseId" id="root-cause-select">
+        <option value="">Seleccione una causa raíz (opcional)</option>
+        <!-- Las opciones se cargarán con JavaScript -->
+      </select>
+      <div id="root-cause-categories" class="mt-2"></div>
+
+      <!-- Mostrar causa raíz actual si existe -->
+      <div id="current-root-cause" class="mt-2" style="display: none;">
+        <div class="alert alert-info p-2">
+          <small>
+            <strong>Causa raíz actual:</strong>
+            <span id="current-root-cause-text"></span>
+          </small>
+        </div>
+      </div>
+    </div>
     <!-- Lectura existente (solo si hay meterReading) -->
     <div id="existing-meter-section" style="display:none" class="mb-3">
       <div class="card bg-light">
@@ -492,6 +513,8 @@
             }
           }
 
+          await loadRootCausesForEdit(visit);
+
           // Configurar estado de resolución
           if (visit.solved) {
             chkSolved.checked = true;
@@ -550,6 +573,157 @@
         existingPartsList.innerHTML = '<p class="text-muted">Error al cargar repuestos existentes</p>';
       }
     }
+
+
+    async function loadRootCausesForEdit(visit) {
+      console.log("🔍 Cargando causas raíz para edición...");
+
+      try {
+        const groupedCauses = await rootCauseService.getGrouped();
+        const select = document.getElementById('root-cause-select');
+        const categoriesDiv = document.getElementById('root-cause-categories');
+        const currentRootCauseDiv = document.getElementById('current-root-cause');
+        const currentRootCauseText = document.getElementById('current-root-cause-text');
+
+        // Limpiar select
+        select.innerHTML = '<option value="">Seleccione una causa raíz (opcional)</option>';
+
+        if (!groupedCauses || Object.keys(groupedCauses).length === 0) {
+          categoriesDiv.innerHTML = '<div class="alert alert-warning">No hay causas raíz configuradas</div>';
+          return;
+        }
+
+        // Crear botones de categorías
+        let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+        for (const [category, causes] of Object.entries(groupedCauses)) {
+          categoriesHtml += `
+            <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                    onclick="filterRootCausesForEdit('${category}')">
+                ${category}
+            </button>
+            `;
+        }
+        categoriesHtml += '</div>';
+        categoriesDiv.innerHTML = categoriesHtml;
+
+        // Almacenar todas las causas para filtrado
+        window.allRootCausesEdit = [];
+        for (const [category, causes] of Object.entries(groupedCauses)) {
+          causes.forEach(cause => {
+            window.allRootCausesEdit.push({
+              id: cause.id,
+              name: cause.name,
+              category: category
+            });
+
+            // Agregar al select
+            const option = document.createElement('option');
+            option.value = cause.id;
+            option.textContent = `${category} - ${cause.name}`;
+            option.setAttribute('data-category', category);
+            select.appendChild(option);
+          });
+        }
+
+        // Si la visita ya tiene una causa raíz, seleccionarla
+        if (visit.rootCauseId) {
+          console.log("👉 Visit tiene rootCauseId:", visit.rootCauseId);
+          select.value = visit.rootCauseId;
+
+          // Mostrar información de la causa raíz actual
+          if (visit.rootCauseName) {
+            currentRootCauseDiv.style.display = 'block';
+            currentRootCauseText.textContent =
+              `${visit.rootCauseCategory || ''} - ${visit.rootCauseName}`;
+          }
+        }
+
+      } catch (err) {
+        console.error("❌ Error cargando causas raíz para edición:", err);
+        loadHardcodedRootCausesForEdit(visit);
+      }
+    }
+
+
+    // Función para filtrar causas por categoría
+    function filterRootCausesForEdit(category) {
+      const select = document.getElementById('root-cause-select');
+      select.innerHTML = '<option value="">Seleccione una causa raíz (opcional)</option>';
+
+      if (!window.allRootCausesEdit) return;
+
+      // Filtrar por categoría y agregar al select
+      const filteredCauses = window.allRootCausesEdit.filter(cause => cause.category === category);
+      filteredCauses.forEach(cause => {
+        const option = document.createElement('option');
+        option.value = cause.id;
+        option.textContent = `${cause.category} - ${cause.name}`;
+        select.appendChild(option);
+      });
+    }
+
+    // Función de respaldo con datos hardcodeados
+    function loadHardcodedRootCausesForEdit(visit) {
+      console.log("⚠️ Cargando causas raíz hardcodeadas para edición...");
+
+      const groupedCauses = {
+        "CONTADORES / LECTURAS": [
+          { id: 1, name: "CONTADOR", category: "CONTADORES / LECTURAS" },
+          { id: 2, name: "TOMA DE CONTADORES", category: "CONTADORES / LECTURAS" },
+          { id: 3, name: "LECTURA DE CONTADOR", category: "CONTADORES / LECTURAS" }
+        ],
+        "TONER / TINTA": [
+          { id: 6, name: "RECARGA TONER", category: "TONER / TINTA" },
+          { id: 8, name: "TONER", category: "TONER / TINTA" }
+        ]
+      };
+
+      const select = document.getElementById('root-cause-select');
+      const categoriesDiv = document.getElementById('root-cause-categories');
+      const currentRootCauseDiv = document.getElementById('current-root-cause');
+      const currentRootCauseText = document.getElementById('current-root-cause-text');
+
+      select.innerHTML = '<option value="">Seleccione una causa raíz (opcional)</option>';
+
+      let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        categoriesHtml += `
+        <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
+                onclick="filterRootCausesForEdit('${category}')">
+            ${category}
+        </button>
+        `;
+
+        causes.forEach(cause => {
+          if (!window.allRootCausesEdit) window.allRootCausesEdit = [];
+          window.allRootCausesEdit.push(cause);
+
+          const option = document.createElement('option');
+          option.value = cause.id;
+          option.textContent = `${category} - ${cause.name}`;
+          select.appendChild(option);
+        });
+      }
+      categoriesHtml += '</div>';
+
+      categoriesDiv.innerHTML = categoriesHtml +
+        '<div class="alert alert-info mt-2"><small>⚠️ Usando datos de prueba</small></div>';
+
+      // Si la visita ya tiene una causa raíz, seleccionarla
+      if (visit && visit.rootCauseId) {
+        select.value = visit.rootCauseId;
+        if (visit.rootCauseName) {
+          currentRootCauseDiv.style.display = 'block';
+          currentRootCauseText.textContent =
+            `${visit.rootCauseCategory || ''} - ${visit.rootCauseName}`;
+        }
+      }
+    }
+
+
+
+
+
 
     // Inicializar la página
     await Promise.all([

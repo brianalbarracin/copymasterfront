@@ -99,13 +99,19 @@
 
       // Información básica
       document.getElementById("sr-info").innerHTML = `
-        <tr><th>ID</th><td>${r.id}</td></tr>
-        <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
-        <tr><th>Estado</th><td><span class="badge ${r.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${r.status || 'N/A'}</span></td></tr>
-        <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
-        <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
-        <tr><th>Causa raíz</th><td>${r.rootCause || "N/A"}</td></tr>
-      `;
+         <tr><th>ID</th><td>${r.id}</td></tr>
+    <tr><th>Número</th><td>${r.requestNumber || "N/A"}</td></tr>
+    <tr><th>Estado</th><td><span class="badge ${r.status === 'CERRADA' ? 'bg-success' : 'bg-warning'}">${r.status || 'N/A'}</span></td></tr>
+    <tr><th>Tipo</th><td>${r.serviceType || "N/A"}</td></tr>
+    <tr><th>Descripción</th><td>${r.description || "N/A"}</td></tr>
+    <tr><th>Causa raíz</th><td>
+        ${r.rootCauseName ? 
+            `<strong>${r.rootCauseName}</strong>` : 
+            (r.rootCause || "N/A")
+        }
+        ${r.rootCauseCategory ? `<br><small class="text-muted">${r.rootCauseCategory}</small>` : ''}
+    </td></tr>
+`;
 
       // Cliente
       if (r.customerId) {
@@ -205,3 +211,23 @@
     appLoad("service_visits/edit.html");
 }
 </script>
+
+<style>
+    /* Para la causa raíz en el detalle */
+    .root-cause-display {
+        font-weight: 500;
+        color: #0d6efd;
+    }
+    
+    .root-cause-category {
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+    
+    /* Para el formulario de edición */
+    #current-root-cause .alert {
+        background-color: #e7f3ff;
+        border-color: #b6d4fe;
+        color: #084298;
+    }
+</style>
