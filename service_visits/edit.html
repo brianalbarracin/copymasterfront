@@ -43,6 +43,42 @@
       <input type="datetime-local" class="form-control" name="visitDatetime" id="visit-datetime" required>
     </div>
 
+    <div class="col-md-6">
+      <label class="form-label">Hora de Inicio</label>
+      <input type="datetime-local" class="form-control" name="startTime" id="start-time">
+      <div class="form-text">Cuando el técnico comenzó la intervención</div>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Hora de Finalización</label>
+      <input type="datetime-local" class="form-control" name="endTime" id="end-time">
+      <div class="form-text">Cuando el técnico terminó la intervención</div>
+    </div>
+
+    <!-- Sección para mostrar tiempos ya registrados (si existen) -->
+    <div id="existing-times-section" style="display:none" class="col-12 mb-3">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Tiempos ya registrados</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Inicio:</strong> <span id="existing-start-time"></span>
+            </div>
+            <div class="col-md-6">
+              <strong>Fin:</strong> <span id="existing-end-time"></span>
+            </div>
+            <div class="col-12 mt-2">
+              <strong>Duración:</strong> <span id="existing-duration"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
     <div class="col-12">
       <label class="form-label">Notas de la Visita</label>
       <textarea class="form-control" name="visitNotes" id="visit-notes" rows="4"></textarea>
@@ -452,6 +488,70 @@
 
           }
 
+          // En la función loadVisitData(), después de cargar otros datos:
+          if (visit.startTime || visit.endTime) {
+            // Mostrar sección de tiempos existentes
+            const existingTimesSection = document.getElementById("existing-times-section");
+            existingTimesSection.style.display = "block";
+
+            // Formatear y mostrar tiempos existentes
+            if (visit.startTime) {
+              const startTime = new Date(visit.startTime);
+              document.getElementById("existing-start-time").textContent =
+                startTime.toLocaleString('es-CO', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+
+              // Bloquear campo de entrada
+              document.getElementById("start-time").value = startTime.toISOString().slice(0, 16);
+              document.getElementById("start-time").readOnly = true;
+            }
+
+            if (visit.endTime) {
+              const endTime = new Date(visit.endTime);
+              document.getElementById("existing-end-time").textContent =
+                endTime.toLocaleString('es-CO', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+
+              // Bloquear campo de entrada
+              document.getElementById("end-time").value = endTime.toISOString().slice(0, 16);
+              document.getElementById("end-time").readOnly = true;
+            }
+
+            // Calcular y mostrar duración si ambos tiempos existen
+            if (visit.startTime && visit.endTime) {
+              const start = new Date(visit.startTime);
+              const end = new Date(visit.endTime);
+              const durationMs = end - start;
+              const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+              const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+
+              document.getElementById("existing-duration").textContent =
+                `${durationHours} horas ${durationMinutes} minutos`;
+            }
+          } else {
+            // Si no hay tiempos registrados, permitir edición
+            // Opcional: Establecer valores por defecto
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById("start-time").value = now.toISOString().slice(0, 16);
+
+            // Establecer end_time como 1 hora después por defecto
+            const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+            document.getElementById("end-time").value = oneHourLater.toISOString().slice(0, 16);
+          }
+
+
+
           if (visit.colorReading) {
             const colorInput = document.getElementById("color-reading");
             colorInput.value = visit.colorReading;
@@ -748,6 +848,12 @@
           visitDatetime: rawDate ? new Date(rawDate).toISOString() : null,
           visitNotes: formData.get("visitNotes") || null,
           solved: chkSolved.checked,
+
+          // Nuevos campos de tiempo
+          startTime: document.getElementById("start-time").value ?
+            new Date(document.getElementById("start-time").value).toISOString() : null,
+          endTime: document.getElementById("end-time").value ?
+            new Date(document.getElementById("end-time").value).toISOString() : null,
 
           rootCauseId: document.getElementById("root-cause-select").value ?
             parseInt(document.getElementById("root-cause-select").value) : null,
