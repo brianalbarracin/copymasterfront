@@ -748,6 +748,9 @@
           visitDatetime: rawDate ? new Date(rawDate).toISOString() : null,
           visitNotes: formData.get("visitNotes") || null,
           solved: chkSolved.checked,
+
+          rootCauseId: document.getElementById("root-cause-select").value ?
+            parseInt(document.getElementById("root-cause-select").value) : null,
           takeMeterReading: chkMeter.checked,
           reading: chkMeter.checked ?
             (formData.get("reading") ? parseInt(formData.get("reading")) : null) : null,
