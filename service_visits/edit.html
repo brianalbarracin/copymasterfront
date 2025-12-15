@@ -845,6 +845,13 @@
       btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Guardando...';
 
       try {
+
+        console.log("🟡 SUBMIT disparado");
+        console.log("start-time input value:", document.getElementById("start-time").value);
+        console.log("end-time input value:", document.getElementById("end-time").value);
+        console.log("start-time readOnly:", document.getElementById("start-time").readOnly);
+        console.log("end-time readOnly:", document.getElementById("end-time").readOnly);
+
         const formData = new FormData(document.getElementById("visit-form"));
         const rawDate = formData.get("visitDatetime");
         const dto = {
@@ -882,18 +889,14 @@
           tonerLevelY: chkToner.checked ?
             (formData.get("tonerLevelY") ? parseInt(formData.get("tonerLevelY")) : null) : null,
           tonerNotes: chkToner.checked ? formData.get("tonerNotes") || null : null
-        
-          
+
+
 
 
         };
 
 
 
-         console.log("🔒 start readOnly:", startInput.readOnly);
-          console.log("🔒 end readOnly:", endInput.readOnly);
-          console.log("⏱ startTime enviado:", startTimeValue);
-          console.log("⏱ endTime enviado:", endTimeValue);
 
         // Recopilar información de repuestos
         if (chkParts.checked) {
