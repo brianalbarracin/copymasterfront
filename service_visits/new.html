@@ -130,7 +130,10 @@
           technicianId: parseInt(document.getElementById("technicians").value),
           visitDatetime: document.getElementById("visit-datetime").value + "-05:00",
           visitNotes: document.getElementById("visit-notes").value,
-          solved: document.getElementById("solved").checked
+          solved: document.getElementById("solved").checked,
+
+          rootCauseId: document.getElementById("root-cause-select").value ?
+            parseInt(document.getElementById("root-cause-select").value) : null
         };
 
         console.log("Enviando visita:", visitData);
@@ -209,122 +212,122 @@
     }
   }
 
-async function loadRootCausesForVisit() {
+  async function loadRootCausesForVisit() {
     console.log("🔍 Cargando causas raíz para visita...");
-    
+
     try {
-        const groupedCauses = await rootCauseService.getGrouped();
-        const select = document.getElementById('root-cause-select');
-        const categoriesDiv = document.getElementById('root-cause-categories');
-        
-        // Limpiar select
-        select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
-        
-        if (!groupedCauses || Object.keys(groupedCauses).length === 0) {
-            categoriesDiv.innerHTML = '<div class="alert alert-warning">No hay causas raíz configuradas</div>';
-            return;
-        }
-        
-        // Crear botones de categorías
-        let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
-        for (const [category, causes] of Object.entries(groupedCauses)) {
-            categoriesHtml += `
+      const groupedCauses = await rootCauseService.getGrouped();
+      const select = document.getElementById('root-cause-select');
+      const categoriesDiv = document.getElementById('root-cause-categories');
+
+      // Limpiar select
+      select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
+
+      if (!groupedCauses || Object.keys(groupedCauses).length === 0) {
+        categoriesDiv.innerHTML = '<div class="alert alert-warning">No hay causas raíz configuradas</div>';
+        return;
+      }
+
+      // Crear botones de categorías
+      let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        categoriesHtml += `
             <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
                     onclick="filterRootCausesForVisit('${category}')">
                 ${category}
             </button>
             `;
-        }
-        categoriesHtml += '</div>';
-        categoriesDiv.innerHTML = categoriesHtml;
-        
-        // Almacenar todas las causas para filtrado
-        window.allRootCausesVisit = [];
-        for (const [category, causes] of Object.entries(groupedCauses)) {
-            causes.forEach(cause => {
-                window.allRootCausesVisit.push({
-                    id: cause.id,
-                    name: cause.name,
-                    category: category
-                });
-                
-                // Agregar al select
-                const option = document.createElement('option');
-                option.value = cause.id;
-                option.textContent = `${category} - ${cause.name}`;
-                option.setAttribute('data-category', category);
-                select.appendChild(option);
-            });
-        }
-        
+      }
+      categoriesHtml += '</div>';
+      categoriesDiv.innerHTML = categoriesHtml;
+
+      // Almacenar todas las causas para filtrado
+      window.allRootCausesVisit = [];
+      for (const [category, causes] of Object.entries(groupedCauses)) {
+        causes.forEach(cause => {
+          window.allRootCausesVisit.push({
+            id: cause.id,
+            name: cause.name,
+            category: category
+          });
+
+          // Agregar al select
+          const option = document.createElement('option');
+          option.value = cause.id;
+          option.textContent = `${category} - ${cause.name}`;
+          option.setAttribute('data-category', category);
+          select.appendChild(option);
+        });
+      }
+
     } catch (err) {
-        console.error("❌ Error cargando causas raíz para visita:", err);
-        loadHardcodedRootCausesForVisit();
+      console.error("❌ Error cargando causas raíz para visita:", err);
+      loadHardcodedRootCausesForVisit();
     }
-}
+  }
 
 
-// Función para filtrar causas por categoría
-function filterRootCausesForVisit(category) {
+  // Función para filtrar causas por categoría
+  function filterRootCausesForVisit(category) {
     const select = document.getElementById('root-cause-select');
     select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
-    
+
     if (!window.allRootCausesVisit) return;
-    
+
     // Filtrar por categoría y agregar al select
     const filteredCauses = window.allRootCausesVisit.filter(cause => cause.category === category);
     filteredCauses.forEach(cause => {
-        const option = document.createElement('option');
-        option.value = cause.id;
-        option.textContent = `${cause.category} - ${cause.name}`;
-        select.appendChild(option);
+      const option = document.createElement('option');
+      option.value = cause.id;
+      option.textContent = `${cause.category} - ${cause.name}`;
+      select.appendChild(option);
     });
-}
+  }
 
-// Función de respaldo con datos hardcodeados
-function loadHardcodedRootCausesForVisit() {
+  // Función de respaldo con datos hardcodeados
+  function loadHardcodedRootCausesForVisit() {
     console.log("⚠️ Cargando causas raíz hardcodeadas para visita...");
-    
+
     const groupedCauses = {
-        "CONTADORES / LECTURAS": [
-            { id: 1, name: "CONTADOR", category: "CONTADORES / LECTURAS" },
-            { id: 2, name: "TOMA DE CONTADORES", category: "CONTADORES / LECTURAS" }
-        ],
-        "TONER / TINTA": [
-            { id: 6, name: "RECARGA TONER", category: "TONER / TINTA" },
-            { id: 8, name: "TONER", category: "TONER / TINTA" }
-        ]
+      "CONTADORES / LECTURAS": [
+        { id: 1, name: "CONTADOR", category: "CONTADORES / LECTURAS" },
+        { id: 2, name: "TOMA DE CONTADORES", category: "CONTADORES / LECTURAS" }
+      ],
+      "TONER / TINTA": [
+        { id: 6, name: "RECARGA TONER", category: "TONER / TINTA" },
+        { id: 8, name: "TONER", category: "TONER / TINTA" }
+      ]
     };
-    
+
     const select = document.getElementById('root-cause-select');
     const categoriesDiv = document.getElementById('root-cause-categories');
-    
+
     select.innerHTML = '<option value="">Seleccione una causa raíz</option>';
-    
+
     let categoriesHtml = '<div class="btn-group flex-wrap" role="group">';
     for (const [category, causes] of Object.entries(groupedCauses)) {
-        categoriesHtml += `
+      categoriesHtml += `
         <button type="button" class="btn btn-outline-secondary btn-sm m-1" 
                 onclick="filterRootCausesForVisit('${category}')">
             ${category}
         </button>
         `;
-        
-        causes.forEach(cause => {
-            if (!window.allRootCausesVisit) window.allRootCausesVisit = [];
-            window.allRootCausesVisit.push(cause);
-            
-            const option = document.createElement('option');
-            option.value = cause.id;
-            option.textContent = `${category} - ${cause.name}`;
-            select.appendChild(option);
-        });
+
+      causes.forEach(cause => {
+        if (!window.allRootCausesVisit) window.allRootCausesVisit = [];
+        window.allRootCausesVisit.push(cause);
+
+        const option = document.createElement('option');
+        option.value = cause.id;
+        option.textContent = `${category} - ${cause.name}`;
+        select.appendChild(option);
+      });
     }
     categoriesHtml += '</div>';
-    
-    categoriesDiv.innerHTML = categoriesHtml + 
-        '<div class="alert alert-info mt-2"><small>⚠️ Usando datos de prueba</small></div>';
-}
+
+    categoriesDiv.innerHTML = categoriesHtml +
+      '<div class="alert alert-info mt-2"><small>⚠️ Usando datos de prueba</small></div>';
+  }
 
 
 
