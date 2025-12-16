@@ -943,7 +943,7 @@
   }
 
   // Inicializar cuando se carga el DOM
-  document.addEventListener("DOMContentLoaded", function () {
+  /*document.addEventListener("DOMContentLoaded", function () {
     loadTechnicianDetail();
 
     // Añadir botón de refrescar al header si es necesario
@@ -955,7 +955,15 @@
       refreshBtn.onclick = refreshData;
       header.querySelector("div").appendChild(refreshBtn);
     }
+  });*/
+
+
+  window.addEventListener('load', function () {
+    setTimeout(loadTechnicianDetail, 100);
   });
+
+  // O aún mejor, llama directamente:
+  setTimeout(loadTechnicianDetail, 100);
 
   // Estilos CSS adicionales para la línea de tiempo
   const style = document.createElement('style');
