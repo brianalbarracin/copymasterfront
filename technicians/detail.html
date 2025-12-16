@@ -302,8 +302,8 @@
 
     // Inicializar cuando se carga la página
     async function loadTechnicianDetail() {
-      const params = new URLSearchParams(location.search);
-      const id = params.get("id");
+      
+      let id = sessionStorage.getItem('selectedTechnicianId');
 
       console.log("🟢 ID obtenido de URL:", id); // Agrega este log
 
