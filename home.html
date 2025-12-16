@@ -2,7 +2,11 @@
   <div class="row g-3">
     <div class="col-md-8">
       <div class="card p-3">
-        <h4>Resumen del día <small class="text-muted" id="current-date"></small></h4>
+        <h4>Resumen del día <small class="text-muted" id="current-date"></small>
+          <button class="btn btn-sm btn-outline-primary float-end" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </h4>
 
         <!-- Estadísticas principales -->
         <div class="row mb-4">
@@ -278,7 +282,8 @@
 </style>
 
 <script>
-  document.addEventListener("DOMContentLoaded", async () => {
+  // Función principal que se ejecutará cuando la página se cargue
+  async function loadDashboard() {
     try {
       // Mostrar fecha actual
       const now = new Date();
@@ -286,6 +291,9 @@
       document.getElementById('current-date').innerText = now.toLocaleDateString('es-ES', options);
 
       console.log("📊 Cargando resumen del día...");
+
+      // Mostrar loading state
+      showLoadingState();
 
       // Obtener datos en paralelo
       const [machinesData, requestsData, techniciansData, customersData, visitsData] = await Promise.all([
@@ -305,185 +313,230 @@
       });
 
       // 1. Estadísticas principales
-      document.getElementById("home-machines-count").innerText = machinesData.length || 0;
-      document.getElementById("home-technicians-count").innerText =
-        techniciansData.filter(t => t.active !== false).length || 0;
-      document.getElementById("home-customers-count").innerText = customersData.length || 0;
+      updateMainStats(machinesData, techniciansData, customersData);
 
       // 2. Solicitudes de hoy
-      const today = new Date().toISOString().split('T')[0];
-      const requestsToday = requestsData.filter(r => {
-        if (!r.reportedAt) return false;
-        const requestDate = new Date(r.reportedAt).toISOString().split('T')[0];
-        return requestDate === today;
-      });
-
-      document.getElementById("home-requests-today").innerText = requestsToday.length || 0;
+      updateTodayRequests(requestsData, customersData);
 
       // 3. Solicitudes por estado
-      const statusCounts = {
-        'pendiente': 0,
-        'EN_PROCESO': 0,
-        'abierto': 0,
-        'resuelto': 0,
-        'repetida': 0,
-        'CERRADA': 0
-      };
+      updateRequestStatusCounts(requestsData);
 
-      requestsData.forEach(r => {
-        const status = r.status ? r.status.toLowerCase() : 'pendiente';
-        if (statusCounts[status] !== undefined) {
-          statusCounts[status]++;
-        } else if (status.includes('pendiente')) {
-          statusCounts['pendiente']++;
-        } else if (status.includes('proceso')) {
-          statusCounts['EN_PROCESO']++;
-        }
-      });
+      // 4. Visitas de hoy
+      updateTodayVisits(visitsData, techniciansData);
 
-      // Actualizar contadores de estado
-      document.getElementById("requests-pending").innerText = statusCounts.pendiente;
-      document.getElementById("requests-process").innerText = statusCounts.EN_PROCESO;
-      document.getElementById("requests-open").innerText = statusCounts.abierto;
-      document.getElementById("requests-solved").innerText = statusCounts.resuelto;
-      document.getElementById("requests-repeated").innerText = statusCounts.repetida;
-      document.getElementById("requests-closed").innerText = statusCounts.CERRADA;
-
-      // 4. Últimas solicitudes (máximo 5)
-      const latestRequests = requestsData
-        .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0))
-        .slice(0, 5);
-
-      const requestsTbody = document.getElementById("home-latest-requests");
-      requestsTbody.innerHTML = '';
-
-      if (latestRequests.length === 0) {
-        requestsTbody.innerHTML = `
-        <tr>
-          <td colspan="4" class="text-center text-muted">
-            No hay solicitudes recientes
-          </td>
-        </tr>
-      `;
-      } else {
-        latestRequests.forEach(request => {
-          const customerName = customersData.find(c => c.id === request.customerId)?.name || 'Sin cliente';
-          const status = request.status || 'pendiente';
-          const statusClass = getStatusBadgeClass(status);
-
-          requestsTbody.innerHTML += `
-          <tr>
-            <td><strong>${request.requestNumber || request.id}</strong></td>
-            <td><small>${customerName}</small></td>
-            <td><span class="badge ${statusClass} status-badge">${status}</span></td>
-            <td>
-              <button class="btn btn-sm btn-outline-primary" onclick="viewRequestDetail(${request.id})">
-                <i class="fas fa-eye"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-        });
-      }
-
-      // 5. Visitas de hoy
-      const visitsToday = visitsData.filter(v => {
-        if (!v.visitDatetime) return false;
-        const visitDate = new Date(v.visitDatetime).toISOString().split('T')[0];
-        return visitDate === today;
-      });
-
-      document.getElementById("visits-today").innerText = visitsToday.length || 0;
-
-      // Mostrar visitas de hoy
-      const visitsTbody = document.getElementById("home-today-visits");
-      visitsTbody.innerHTML = '';
-
-      if (visitsToday.length === 0) {
-        visitsTbody.innerHTML = `
-        <tr>
-          <td colspan="3" class="text-center text-muted">
-            No hay visitas programadas para hoy
-          </td>
-        </tr>
-      `;
-      } else {
-        visitsToday.slice(0, 5).forEach(visit => {
-          const technician = techniciansData.find(t => t.id === visit.technicianId);
-          const technicianName = technician ? technician.fullName : 'Sin asignar';
-          const visitTime = visit.visitDatetime ?
-            new Date(visit.visitDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-            'Sin hora';
-
-          visitsTbody.innerHTML += `
-          <tr>
-            <td><small>${technicianName}</small></td>
-            <td><small>${visitTime}</small></td>
-            <td>
-              <span class="badge ${visit.solved ? 'bg-success' : 'bg-warning'} status-badge">
-                ${visit.solved ? 'Resuelta' : 'Pendiente'}
-              </span>
-            </td>
-          </tr>
-        `;
-        });
-      }
-
-      // 6. Técnicos activos
-      const activeTechnicians = techniciansData.filter(t => t.active !== false);
-      document.getElementById("active-technicians").innerText = activeTechnicians.length;
-
-      // Mostrar técnicos disponibles
-      const techniciansContainer = document.getElementById("available-technicians");
-      techniciansContainer.innerHTML = '';
-
-      if (activeTechnicians.length === 0) {
-        techniciansContainer.innerHTML = `
-        <div class="alert alert-warning py-2">
-          <small>No hay técnicos activos</small>
-        </div>
-      `;
-      } else {
-        activeTechnicians.slice(0, 5).forEach(tech => {
-          techniciansContainer.innerHTML += `
-          <div class="technician-badge ${tech.available ? 'online' : 'offline'} mb-2">
-            <i class="fas ${tech.available ? 'fa-check-circle' : 'fa-clock'} me-2"></i>
-            ${tech.fullName || 'Técnico'} 
-            ${tech.specialty ? `<small class="ms-2">(${tech.specialty})</small>` : ''}
-          </div>
-        `;
-        });
-
-        if (activeTechnicians.length > 5) {
-          techniciansContainer.innerHTML += `
-          <div class="text-center mt-2">
-            <small class="text-muted">+${activeTechnicians.length - 5} técnicos más</small>
-          </div>
-        `;
-        }
-      }
+      // 5. Técnicos activos
+      updateTechniciansInfo(techniciansData);
 
       console.log("✅ Resumen del día cargado exitosamente");
 
     } catch (error) {
       console.error("❌ Error cargando resumen:", error);
+      showErrorState(error);
+    }
+  }
 
-      // Mostrar mensaje de error
-      const mainCard = document.querySelector('.col-md-8 .card');
-      if (mainCard) {
-        const errorAlert = document.createElement('div');
-        errorAlert.className = 'alert alert-danger mt-3';
-        errorAlert.innerHTML = `
-        <h6>Error al cargar el resumen</h6>
-        <p>${error.message || 'Error desconocido'}</p>
-        <button class="btn btn-sm btn-outline-danger" onclick="location.reload()">
-          <i class="fas fa-redo"></i> Reintentar
-        </button>
+  // Función para mostrar estado de carga
+  function showLoadingState() {
+    const loadingElements = [
+      'home-machines-count', 'home-requests-today', 'home-technicians-count', 'home-customers-count',
+      'requests-pending', 'requests-process', 'requests-open', 'requests-solved', 'requests-repeated', 'requests-closed',
+      'visits-today', 'active-technicians'
+    ];
+
+    loadingElements.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      }
+    });
+  }
+
+  // Función para actualizar estadísticas principales
+  function updateMainStats(machines, technicians, customers) {
+    document.getElementById("home-machines-count").innerText = machines.length || 0;
+    document.getElementById("home-technicians-count").innerText =
+      technicians.filter(t => t.active !== false).length || 0;
+    document.getElementById("home-customers-count").innerText = customers.length || 0;
+  }
+
+  // Función para actualizar solicitudes de hoy
+  function updateTodayRequests(requests, customers) {
+    const today = new Date().toISOString().split('T')[0];
+    const requestsToday = requests.filter(r => {
+      if (!r.reportedAt) return false;
+      const requestDate = new Date(r.reportedAt).toISOString().split('T')[0];
+      return requestDate === today;
+    });
+
+    document.getElementById("home-requests-today").innerText = requestsToday.length || 0;
+
+    // Mostrar últimas solicitudes
+    const latestRequests = requests
+      .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0))
+      .slice(0, 5);
+
+    const requestsTbody = document.getElementById("home-latest-requests");
+    requestsTbody.innerHTML = '';
+
+    if (latestRequests.length === 0) {
+      requestsTbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-muted">
+          No hay solicitudes recientes
+        </td>
+      </tr>
+    `;
+    } else {
+      latestRequests.forEach(request => {
+        const customerName = customers.find(c => c.id === request.customerId)?.name || 'Sin cliente';
+        const status = request.status || 'pendiente';
+        const statusClass = getStatusBadgeClass(status);
+
+        requestsTbody.innerHTML += `
+        <tr>
+          <td><strong>${request.requestNumber || request.id}</strong></td>
+          <td><small>${customerName}</small></td>
+          <td><span class="badge ${statusClass} status-badge">${status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="viewRequestDetail(${request.id})">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
       `;
-        mainCard.prepend(errorAlert);
+      });
+    }
+  }
+
+  // Función para actualizar conteos por estado
+  function updateRequestStatusCounts(requests) {
+    const statusCounts = {
+      'pendiente': 0,
+      'EN_PROCESO': 0,
+      'abierto': 0,
+      'resuelto': 0,
+      'repetida': 0,
+      'CERRADA': 0
+    };
+
+    requests.forEach(r => {
+      const status = r.status ? r.status.toLowerCase() : 'pendiente';
+      if (statusCounts[status] !== undefined) {
+        statusCounts[status]++;
+      } else if (status.includes('pendiente')) {
+        statusCounts['pendiente']++;
+      } else if (status.includes('proceso')) {
+        statusCounts['EN_PROCESO']++;
+      }
+    });
+
+    // Actualizar contadores de estado
+    document.getElementById("requests-pending").innerText = statusCounts.pendiente;
+    document.getElementById("requests-process").innerText = statusCounts.EN_PROCESO;
+    document.getElementById("requests-open").innerText = statusCounts.abierto;
+    document.getElementById("requests-solved").innerText = statusCounts.resuelto;
+    document.getElementById("requests-repeated").innerText = statusCounts.repetida;
+    document.getElementById("requests-closed").innerText = statusCounts.CERRADA;
+  }
+
+  // Función para actualizar visitas de hoy
+  function updateTodayVisits(visits, technicians) {
+    const today = new Date().toISOString().split('T')[0];
+    const visitsToday = visits.filter(v => {
+      if (!v.visitDatetime) return false;
+      const visitDate = new Date(v.visitDatetime).toISOString().split('T')[0];
+      return visitDate === today;
+    });
+
+    document.getElementById("visits-today").innerText = visitsToday.length || 0;
+
+    // Mostrar visitas de hoy
+    const visitsTbody = document.getElementById("home-today-visits");
+    visitsTbody.innerHTML = '';
+
+    if (visitsToday.length === 0) {
+      visitsTbody.innerHTML = `
+      <tr>
+        <td colspan="3" class="text-center text-muted">
+          No hay visitas programadas para hoy
+        </td>
+      </tr>
+    `;
+    } else {
+      visitsToday.slice(0, 5).forEach(visit => {
+        const technician = technicians.find(t => t.id === visit.technicianId);
+        const technicianName = technician ? technician.fullName : 'Sin asignar';
+        const visitTime = visit.visitDatetime ?
+          new Date(visit.visitDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+          'Sin hora';
+
+        visitsTbody.innerHTML += `
+        <tr>
+          <td><small>${technicianName}</small></td>
+          <td><small>${visitTime}</small></td>
+          <td>
+            <span class="badge ${visit.solved ? 'bg-success' : 'bg-warning'} status-badge">
+              ${visit.solved ? 'Resuelta' : 'Pendiente'}
+            </span>
+          </td>
+        </tr>
+      `;
+      });
+    }
+  }
+
+  // Función para actualizar información de técnicos
+  function updateTechniciansInfo(technicians) {
+    const activeTechnicians = technicians.filter(t => t.active !== false);
+    document.getElementById("active-technicians").innerText = activeTechnicians.length;
+
+    // Mostrar técnicos disponibles
+    const techniciansContainer = document.getElementById("available-technicians");
+    techniciansContainer.innerHTML = '';
+
+    if (activeTechnicians.length === 0) {
+      techniciansContainer.innerHTML = `
+      <div class="alert alert-warning py-2">
+        <small>No hay técnicos activos</small>
+      </div>
+    `;
+    } else {
+      activeTechnicians.slice(0, 5).forEach(tech => {
+        techniciansContainer.innerHTML += `
+        <div class="technician-badge ${tech.available ? 'online' : 'offline'} mb-2">
+          <i class="fas ${tech.available ? 'fa-check-circle' : 'fa-clock'} me-2"></i>
+          ${tech.fullName || 'Técnico'} 
+          ${tech.specialty ? `<small class="ms-2">(${tech.specialty})</small>` : ''}
+        </div>
+      `;
+      });
+
+      if (activeTechnicians.length > 5) {
+        techniciansContainer.innerHTML += `
+        <div class="text-center mt-2">
+          <small class="text-muted">+${activeTechnicians.length - 5} técnicos más</small>
+        </div>
+      `;
       }
     }
-  });
+  }
+
+  // Función para mostrar estado de error
+  function showErrorState(error) {
+    const mainCard = document.querySelector('.col-md-8 .card');
+    if (mainCard) {
+      const errorAlert = document.createElement('div');
+      errorAlert.className = 'alert alert-danger mt-3';
+      errorAlert.innerHTML = `
+      <h6>Error al cargar el resumen</h6>
+      <p>${error.message || 'Error desconocido'}</p>
+      <button class="btn btn-sm btn-outline-danger" onclick="refreshDashboard()">
+        <i class="fas fa-redo"></i> Reintentar
+      </button>
+    `;
+      mainCard.prepend(errorAlert);
+    }
+  }
 
   // Función auxiliar para clases de estado
   function getStatusBadgeClass(status) {
@@ -509,7 +562,7 @@
     appLoad('service_requests/detail.html');
   }
 
-  // Función para actualizar el resumen (se puede llamar desde botón)
+  // Función para actualizar el resumen
   function refreshDashboard() {
     const loadingAlert = document.createElement('div');
     loadingAlert.className = 'alert alert-info alert-dismissible fade show';
@@ -521,22 +574,67 @@
     const container = document.querySelector('.container');
     container.prepend(loadingAlert);
 
-    // Recargar la página después de 1 segundo
-    setTimeout(() => {
-      location.reload();
-    }, 1000);
+    // Recargar los datos
+    loadDashboard().then(() => {
+      // Cerrar el alert después de 2 segundos
+      setTimeout(() => {
+        loadingAlert.classList.remove('show');
+        setTimeout(() => loadingAlert.remove(), 150);
+      }, 2000);
+    });
   }
 
-  // Agregar botón de actualización al título
-  setTimeout(() => {
-    const title = document.querySelector('h4');
-    if (title && !title.querySelector('.refresh-btn')) {
-      const refreshBtn = document.createElement('button');
-      refreshBtn.className = 'btn btn-sm btn-outline-primary refresh-btn ms-2';
-      refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
-      refreshBtn.title = 'Actualizar resumen';
-      refreshBtn.onclick = refreshDashboard;
-      title.appendChild(refreshBtn);
-    }
-  }, 500);
+  // Función para inicializar eventos
+  function initDashboardEvents() {
+    // Configurar eventos de los enlaces de acceso rápido
+    document.querySelectorAll('a[data-page]').forEach(link => {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        appLoad(this.getAttribute('data-page'));
+      });
+    });
+  }
+
+  // EJECUTAR CUANDO LA PÁGINA SE CARGUE
+  // Como no podemos usar DOMContentLoaded, usamos un enfoque diferente
+
+  // Opción 1: Ejecutar inmediatamente (recomendado para appLoad)
+  (function () {
+    console.log("🏠 Inicializando dashboard...");
+
+    // Esperar un momento para asegurar que el DOM esté listo
+    setTimeout(() => {
+      // Cargar los datos
+      loadDashboard();
+
+      // Inicializar eventos
+      initDashboardEvents();
+    }, 100);
+  })();
+
+  // Opción 2: Crear evento personalizado para cuando se cargue la página
+  window.addEventListener('dashboardLoaded', function () {
+    loadDashboard();
+    initDashboardEvents();
+  });
+
+  // Opción 3: Usar MutationObserver para detectar cuando se carga el contenido
+  if (typeof MutationObserver !== 'undefined') {
+    const observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (mutation.type === 'childList' && document.getElementById('home-machines-count')) {
+          console.log("🎯 Dashboard detectado en DOM, cargando datos...");
+          loadDashboard();
+          initDashboardEvents();
+          observer.disconnect(); // Dejar de observar
+        }
+      });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // También exponer funciones globalmente para poder llamarlas manualmente
+  window.loadDashboard = loadDashboard;
+  window.refreshDashboard = refreshDashboard;
 </script>
