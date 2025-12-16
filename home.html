@@ -585,7 +585,7 @@
   }
 
   // Función para inicializar eventos
-  /*function initDashboardEvents() {
+  function initDashboardEvents() {
     // Configurar eventos de los enlaces de acceso rápido
     document.querySelectorAll('a[data-page]').forEach(link => {
       link.addEventListener('click', function (e) {
@@ -593,7 +593,7 @@
         appLoad(this.getAttribute('data-page'));
       });
     });
-  }*/
+  }
 
   // EJECUTAR CUANDO LA PÁGINA SE CARGUE
   // Como no podemos usar DOMContentLoaded, usamos un enfoque diferente
@@ -608,7 +608,7 @@
       loadDashboard();
 
       // Inicializar eventos
-      //initDashboardEvents();
+      initDashboardEvents();
     }, 100);
   })();
 
