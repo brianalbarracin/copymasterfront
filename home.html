@@ -2,38 +2,541 @@
   <div class="row g-3">
     <div class="col-md-8">
       <div class="card p-3">
-        <h4>Resumen del día</h4>
-        <div class="row">
-          <div class="col-sm-4"><div class="p-3 bg-light rounded">Máquinas: <strong id="home-machines-count">...</strong></div></div>
-          <div class="col-sm-4"><div class="p-3 bg-light rounded">Solicitudes hoy: <strong id="home-requests-count">...</strong></div></div>
-          <div class="col-sm-4"><div class="p-3 bg-light rounded">Visitas hoy: <strong id="home-visits-count">...</strong></div></div>
+        <h4>Resumen del día <small class="text-muted" id="current-date"></small></h4>
+
+        <!-- Estadísticas principales -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="stat-card">
+              <i class="fas fa-print text-primary"></i>
+              <div class="number" id="home-machines-count">0</div>
+              <div class="label">Máquinas Totales</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <i class="fas fa-tools text-warning"></i>
+              <div class="number" id="home-requests-today">0</div>
+              <div class="label">Solicitudes Hoy</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <i class="fas fa-users text-success"></i>
+              <div class="number" id="home-technicians-count">0</div>
+              <div class="label">Técnicos Activos</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <i class="fas fa-user-friends text-info"></i>
+              <div class="number" id="home-customers-count">0</div>
+              <div class="label">Clientes</div>
+            </div>
+          </div>
         </div>
+
         <hr>
-        <h5 class="mt-3">Últimas solicitudes</h5>
-        <div id="home-latest-requests"></div>
+
+        <!-- Solicitudes por estado -->
+        <div class="row mb-4">
+          <div class="col-md-12">
+            <h5>Estado de Solicitudes</h5>
+            <div class="row">
+              <div class="col-md-2">
+                <div class="small-stat-card bg-primary">
+                  <div class="number" id="requests-pending">0</div>
+                  <div class="label">Pendientes</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="small-stat-card bg-warning">
+                  <div class="number" id="requests-process">0</div>
+                  <div class="label">En Proceso</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="small-stat-card bg-orange">
+                  <div class="number" id="requests-open">0</div>
+                  <div class="label">Abiertas</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="small-stat-card bg-success">
+                  <div class="number" id="requests-solved">0</div>
+                  <div class="label">Resueltas</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="small-stat-card bg-danger">
+                  <div class="number" id="requests-repeated">0</div>
+                  <div class="label">Repetidas</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="small-stat-card bg-secondary">
+                  <div class="number" id="requests-closed">0</div>
+                  <div class="label">Cerradas</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Últimas solicitudes -->
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Últimas Solicitudes</h5>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Cliente</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="home-latest-requests">
+                  <tr>
+                    <td colspan="4" class="text-center">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Visitas de hoy -->
+          <div class="col-md-6">
+            <h5>Visitas de Hoy</h5>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Técnico</th>
+                    <th>Hora</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="home-today-visits">
+                  <tr>
+                    <td colspan="3" class="text-center">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Indicadores rápidos -->
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <div class="alert alert-light">
+                  <small><i class="fas fa-clock text-warning"></i> <strong id="visits-today">0</strong> visitas
+                    hoy</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="alert alert-light">
+                  <small><i class="fas fa-user-clock text-info"></i> <strong id="active-technicians">0</strong> técnicos
+                    activos</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Panel lateral -->
     <div class="col-md-4">
-      <div class="card p-3">
+      <!-- Accesos rápidos -->
+      <div class="card p-3 mb-3">
         <h5>Accesos rápidos</h5>
         <ul class="list-unstyled">
-          <li><a href="#" data-page="machines/list.html" class="link-success">Ver máquinas</a></li>
-          <li><a href="#" data-page="machines/create.html" class="link-success">Crear máquina</a></li>
-          <li><a href="#" data-page="machines/service_requests.html" class="link-success">Crear solicitud</a></li>
+          <li class="mb-2">
+            <a href="#" data-page="machines/list.html" class="btn btn-outline-success w-100 text-start">
+              <i class="fas fa-print me-2"></i> Ver máquinas
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="#" data-page="machines/create.html" class="btn btn-outline-success w-100 text-start">
+              <i class="fas fa-plus me-2"></i> Crear máquina
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="#" data-page="service_requests/new.html" class="btn btn-outline-success w-100 text-start">
+              <i class="fas fa-tools me-2"></i> Crear solicitud
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="#" data-page="customers/list.html" class="btn btn-outline-primary w-100 text-start">
+              <i class="fas fa-users me-2"></i> Ver clientes
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="#" data-page="technicians/list.html" class="btn btn-outline-primary w-100 text-start">
+              <i class="fas fa-user-friends me-2"></i> Ver técnicos
+            </a>
+          </li>
         </ul>
+      </div>
+
+      <!-- Técnicos disponibles -->
+      <div class="card p-3">
+        <h5>Técnicos Disponibles</h5>
+        <div id="available-technicians">
+          <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-success" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <small class="text-muted ms-2">Cargando técnicos...</small>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
+<style>
+  .stat-card {
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: transform 0.3s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .stat-card i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .stat-card .number {
+    font-size: 1.8rem;
+    font-weight: bold;
+    line-height: 1;
+  }
+
+  .stat-card .label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 5px;
+  }
+
+  .small-stat-card {
+    text-align: center;
+    padding: 10px;
+    border-radius: 6px;
+    color: white;
+  }
+
+  .small-stat-card .number {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .small-stat-card .label {
+    font-size: 0.75rem;
+    opacity: 0.9;
+  }
+
+  .bg-orange {
+    background-color: #ff8c00 !important;
+  }
+
+  .technician-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    margin: 2px;
+    border-radius: 20px;
+    background: #e9ecef;
+    font-size: 0.85rem;
+  }
+
+  .technician-badge.online {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .technician-badge.offline {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .status-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+</style>
+
 <script>
-document.addEventListener("DOMContentLoaded", async ()=>{
-  try{
-    const machines = await machineService.list().then(r=>r.data || r);
-    const reqs = await serviceRequestService.list().then(r=>r.data || r);
-    document.getElementById("home-machines-count").innerText = (machines && machines.length) || 0;
-    document.getElementById("home-requests-count").innerText = (reqs && reqs.length) || 0;
-    document.getElementById("home-latest-requests").innerHTML = (reqs||[]).slice(0,5).map(r=>`<div class="small mb-2"><strong>${r.requestNumber||r.id}</strong> - ${r.rootCause||''} <span class="text-muted">(${new Date(r.reportedAt).toLocaleString()})</span></div>`).join('');
-  }catch(e){ console.error(e); }
-});
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      // Mostrar fecha actual
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('current-date').innerText = now.toLocaleDateString('es-ES', options);
+
+      console.log("📊 Cargando resumen del día...");
+
+      // Obtener datos en paralelo
+      const [machinesData, requestsData, techniciansData, customersData, visitsData] = await Promise.all([
+        machineService.list().then(r => r.data || r).catch(() => []),
+        serviceRequestService.list().then(r => r.data || r).catch(() => []),
+        technicianService.list().then(r => r.data || r).catch(() => []),
+        customerService.list().then(r => r.data || r).catch(() => []),
+        serviceVisitService.list().then(r => r.data || r).catch(() => [])
+      ]);
+
+      console.log("✅ Datos cargados:", {
+        machines: machinesData.length,
+        requests: requestsData.length,
+        technicians: techniciansData.length,
+        customers: customersData.length,
+        visits: visitsData.length
+      });
+
+      // 1. Estadísticas principales
+      document.getElementById("home-machines-count").innerText = machinesData.length || 0;
+      document.getElementById("home-technicians-count").innerText =
+        techniciansData.filter(t => t.active !== false).length || 0;
+      document.getElementById("home-customers-count").innerText = customersData.length || 0;
+
+      // 2. Solicitudes de hoy
+      const today = new Date().toISOString().split('T')[0];
+      const requestsToday = requestsData.filter(r => {
+        if (!r.reportedAt) return false;
+        const requestDate = new Date(r.reportedAt).toISOString().split('T')[0];
+        return requestDate === today;
+      });
+
+      document.getElementById("home-requests-today").innerText = requestsToday.length || 0;
+
+      // 3. Solicitudes por estado
+      const statusCounts = {
+        'pendiente': 0,
+        'EN_PROCESO': 0,
+        'abierto': 0,
+        'resuelto': 0,
+        'repetida': 0,
+        'CERRADA': 0
+      };
+
+      requestsData.forEach(r => {
+        const status = r.status ? r.status.toLowerCase() : 'pendiente';
+        if (statusCounts[status] !== undefined) {
+          statusCounts[status]++;
+        } else if (status.includes('pendiente')) {
+          statusCounts['pendiente']++;
+        } else if (status.includes('proceso')) {
+          statusCounts['EN_PROCESO']++;
+        }
+      });
+
+      // Actualizar contadores de estado
+      document.getElementById("requests-pending").innerText = statusCounts.pendiente;
+      document.getElementById("requests-process").innerText = statusCounts.EN_PROCESO;
+      document.getElementById("requests-open").innerText = statusCounts.abierto;
+      document.getElementById("requests-solved").innerText = statusCounts.resuelto;
+      document.getElementById("requests-repeated").innerText = statusCounts.repetida;
+      document.getElementById("requests-closed").innerText = statusCounts.CERRADA;
+
+      // 4. Últimas solicitudes (máximo 5)
+      const latestRequests = requestsData
+        .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0))
+        .slice(0, 5);
+
+      const requestsTbody = document.getElementById("home-latest-requests");
+      requestsTbody.innerHTML = '';
+
+      if (latestRequests.length === 0) {
+        requestsTbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center text-muted">
+            No hay solicitudes recientes
+          </td>
+        </tr>
+      `;
+      } else {
+        latestRequests.forEach(request => {
+          const customerName = customersData.find(c => c.id === request.customerId)?.name || 'Sin cliente';
+          const status = request.status || 'pendiente';
+          const statusClass = getStatusBadgeClass(status);
+
+          requestsTbody.innerHTML += `
+          <tr>
+            <td><strong>${request.requestNumber || request.id}</strong></td>
+            <td><small>${customerName}</small></td>
+            <td><span class="badge ${statusClass} status-badge">${status}</span></td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" onclick="viewRequestDetail(${request.id})">
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+        });
+      }
+
+      // 5. Visitas de hoy
+      const visitsToday = visitsData.filter(v => {
+        if (!v.visitDatetime) return false;
+        const visitDate = new Date(v.visitDatetime).toISOString().split('T')[0];
+        return visitDate === today;
+      });
+
+      document.getElementById("visits-today").innerText = visitsToday.length || 0;
+
+      // Mostrar visitas de hoy
+      const visitsTbody = document.getElementById("home-today-visits");
+      visitsTbody.innerHTML = '';
+
+      if (visitsToday.length === 0) {
+        visitsTbody.innerHTML = `
+        <tr>
+          <td colspan="3" class="text-center text-muted">
+            No hay visitas programadas para hoy
+          </td>
+        </tr>
+      `;
+      } else {
+        visitsToday.slice(0, 5).forEach(visit => {
+          const technician = techniciansData.find(t => t.id === visit.technicianId);
+          const technicianName = technician ? technician.fullName : 'Sin asignar';
+          const visitTime = visit.visitDatetime ?
+            new Date(visit.visitDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+            'Sin hora';
+
+          visitsTbody.innerHTML += `
+          <tr>
+            <td><small>${technicianName}</small></td>
+            <td><small>${visitTime}</small></td>
+            <td>
+              <span class="badge ${visit.solved ? 'bg-success' : 'bg-warning'} status-badge">
+                ${visit.solved ? 'Resuelta' : 'Pendiente'}
+              </span>
+            </td>
+          </tr>
+        `;
+        });
+      }
+
+      // 6. Técnicos activos
+      const activeTechnicians = techniciansData.filter(t => t.active !== false);
+      document.getElementById("active-technicians").innerText = activeTechnicians.length;
+
+      // Mostrar técnicos disponibles
+      const techniciansContainer = document.getElementById("available-technicians");
+      techniciansContainer.innerHTML = '';
+
+      if (activeTechnicians.length === 0) {
+        techniciansContainer.innerHTML = `
+        <div class="alert alert-warning py-2">
+          <small>No hay técnicos activos</small>
+        </div>
+      `;
+      } else {
+        activeTechnicians.slice(0, 5).forEach(tech => {
+          techniciansContainer.innerHTML += `
+          <div class="technician-badge ${tech.available ? 'online' : 'offline'} mb-2">
+            <i class="fas ${tech.available ? 'fa-check-circle' : 'fa-clock'} me-2"></i>
+            ${tech.fullName || 'Técnico'} 
+            ${tech.specialty ? `<small class="ms-2">(${tech.specialty})</small>` : ''}
+          </div>
+        `;
+        });
+
+        if (activeTechnicians.length > 5) {
+          techniciansContainer.innerHTML += `
+          <div class="text-center mt-2">
+            <small class="text-muted">+${activeTechnicians.length - 5} técnicos más</small>
+          </div>
+        `;
+        }
+      }
+
+      console.log("✅ Resumen del día cargado exitosamente");
+
+    } catch (error) {
+      console.error("❌ Error cargando resumen:", error);
+
+      // Mostrar mensaje de error
+      const mainCard = document.querySelector('.col-md-8 .card');
+      if (mainCard) {
+        const errorAlert = document.createElement('div');
+        errorAlert.className = 'alert alert-danger mt-3';
+        errorAlert.innerHTML = `
+        <h6>Error al cargar el resumen</h6>
+        <p>${error.message || 'Error desconocido'}</p>
+        <button class="btn btn-sm btn-outline-danger" onclick="location.reload()">
+          <i class="fas fa-redo"></i> Reintentar
+        </button>
+      `;
+        mainCard.prepend(errorAlert);
+      }
+    }
+  });
+
+  // Función auxiliar para clases de estado
+  function getStatusBadgeClass(status) {
+    const statusLower = status.toLowerCase();
+
+    if (statusLower === 'cerrada' || statusLower === 'resuelto') {
+      return 'bg-success';
+    } else if (statusLower === 'en_proceso' || status.includes('PROCESO')) {
+      return 'bg-warning text-dark';
+    } else if (statusLower === 'abierto') {
+      return 'bg-orange text-white';
+    } else if (statusLower === 'pendiente') {
+      return 'bg-primary';
+    } else if (statusLower === 'repetida') {
+      return 'bg-danger';
+    }
+    return 'bg-secondary';
+  }
+
+  // Función para ver detalle de solicitud
+  function viewRequestDetail(requestId) {
+    sessionStorage.setItem('selectedRequestId', requestId);
+    appLoad('service_requests/detail.html');
+  }
+
+  // Función para actualizar el resumen (se puede llamar desde botón)
+  function refreshDashboard() {
+    const loadingAlert = document.createElement('div');
+    loadingAlert.className = 'alert alert-info alert-dismissible fade show';
+    loadingAlert.innerHTML = `
+    <i class="fas fa-sync fa-spin me-2"></i> Actualizando datos...
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+
+    const container = document.querySelector('.container');
+    container.prepend(loadingAlert);
+
+    // Recargar la página después de 1 segundo
+    setTimeout(() => {
+      location.reload();
+    }, 1000);
+  }
+
+  // Agregar botón de actualización al título
+  setTimeout(() => {
+    const title = document.querySelector('h4');
+    if (title && !title.querySelector('.refresh-btn')) {
+      const refreshBtn = document.createElement('button');
+      refreshBtn.className = 'btn btn-sm btn-outline-primary refresh-btn ms-2';
+      refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+      refreshBtn.title = 'Actualizar resumen';
+      refreshBtn.onclick = refreshDashboard;
+      title.appendChild(refreshBtn);
+    }
+  }, 500);
 </script>
