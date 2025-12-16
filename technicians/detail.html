@@ -300,27 +300,33 @@
     let timeChart = null;
     let distributionChart = null;
 
+    console.log("🔵 Iniciando technicians/detail.html");
+
     // Inicializar cuando se carga la página
-    async function loadTechnicianDetail() {
-      
-      let id = sessionStorage.getItem('selectedTechnicianId');
+    async function initTechnicianDetail() {
+      // 1. Obtener ID de sessionStorage
+      technicianId = sessionStorage.getItem('selectedTechnicianId');
 
-      console.log("🟢 ID obtenido de URL:", id); // Agrega este log
+      console.log("🔵 ID obtenido de sessionStorage:", technicianId);
 
-      if (!id) {
-        console.error("❌ No se encontró ID en la URL");
+      if (!technicianId) {
+        console.error("❌ No se encontró ID de técnico en sessionStorage");
         showAlert("No se especificó ID de técnico", "danger");
         appLoad('technicians/list.html');
         return;
       }
 
-      window.__TID = id;
-      technicianId = id;
+      // Guardar en variable global para usar en otras funciones
+      window.__TID = technicianId;
 
       try {
+        console.log("🔵 Cargando información del técnico ID:", technicianId);
+
         // Cargar información básica del técnico
-        const tech = await technicianService.get(id);
+        const tech = await technicianService.get(technicianId);
         technicianData = tech;
+
+        console.log("🔵 Datos del técnico cargados:", tech);
 
         // Actualizar información básica
         document.getElementById("t-name").textContent = tech.fullName || ("Técnico " + tech.id);
@@ -335,7 +341,7 @@
         // Cargar datos de desempeño
         await loadPerformanceData();
 
-        // Inicializar pestañas de Bootstrap
+        // Inicializar pestañas de Bootstrap si está disponible
         if (typeof bootstrap !== 'undefined') {
           const tabEl = document.querySelector('#technicianTabs button[data-bs-toggle="tab"]');
           if (tabEl) {
@@ -344,11 +350,10 @@
         }
 
       } catch (error) {
-        console.error("Error cargando técnico:", error);
-        showAlert("Error cargando información del técnico", "danger");
+        console.error("❌ Error cargando técnico:", error);
+        showAlert("Error cargando información del técnico: " + error.message, "danger");
       }
     }
-
     // Cargar datos de desempeño
     async function loadPerformanceData() {
       try {
