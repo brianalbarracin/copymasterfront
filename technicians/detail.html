@@ -292,682 +292,750 @@
 </div>
 
 <script>
-  // Variables globales
-  /*let technicianId = null;
-  let technicianData = null;*/
-  let performanceData = null;
-  let timeChart = null;
-  let distributionChart = null;
+  (function () {
+    // Variables locales a esta función - no conflictos globales
+    let technicianId = null;
+    let technicianData = null;
+    let performanceData = null;
+    let timeChart = null;
+    let distributionChart = null;
 
-  // Inicializar cuando se carga la página
-  async function loadTechnicianDetail() {
-    const params = new URLSearchParams(location.search);
-    const id = params.get("id");
-    if (!id) {
-      showAlert("No se especificó ID de técnico", "danger");
-      appLoad('technicians/list.html');
-      return;
-    }
-
-    window.__TID = id;
-    technicianId = id;
-
-    try {
-      // Cargar información básica del técnico
-      const tech = await technicianService.get(id);
-      technicianData = tech;
-
-      // Actualizar información básica
-      document.getElementById("t-name").textContent = tech.fullName || ("Técnico " + tech.id);
-      document.getElementById("t-email").textContent = tech.email || "";
-      document.getElementById("t-id").textContent = tech.id;
-      document.getElementById("t-identification").textContent = tech.identification || "N/A";
-      document.getElementById("t-phone").textContent = tech.phone || "N/A";
-      document.getElementById("t-email-detail").textContent = tech.email || "N/A";
-      document.getElementById("t-active").textContent = tech.active ? "Sí" : "No";
-      document.getElementById("t-hire-date").textContent = tech.hireDate || "N/A";
-
-      // Cargar datos de desempeño
-      await loadPerformanceData();
-
-      // Inicializar pestañas de Bootstrap
-      if (typeof bootstrap !== 'undefined') {
-        const tabEl = document.querySelector('#technicianTabs button[data-bs-toggle="tab"]');
-        if (tabEl) {
-          const tab = new bootstrap.Tab(tabEl);
-        }
+    // Inicializar cuando se carga la página
+    async function loadTechnicianDetail() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get("id");
+      if (!id) {
+        showAlert("No se especificó ID de técnico", "danger");
+        appLoad('technicians/list.html');
+        return;
       }
 
-    } catch (error) {
-      console.error("Error cargando técnico:", error);
-      showAlert("Error cargando información del técnico", "danger");
-    }
-  }
+      window.__TID = id;
+      technicianId = id;
 
-  // Cargar datos de desempeño
-  async function loadPerformanceData() {
-    try {
-      // Cargar hoja de vida completa
-      const response = await fetch(`${API_BASE}/technicians/${technicianId}/performance`);
-      if (response.ok) {
-        const result = await response.json();
-        performanceData = result.data;
+      try {
+        // Cargar información básica del técnico
+        const tech = await technicianService.get(id);
+        technicianData = tech;
 
-        if (performanceData) {
-          updatePerformanceCards();
-          updatePerformanceInfo();
-          loadRepeatedRequests();
-          loadTimeline();
-          loadOpenTasks();
-          loadTimeMetrics();
+        // Actualizar información básica
+        document.getElementById("t-name").textContent = tech.fullName || ("Técnico " + tech.id);
+        document.getElementById("t-email").textContent = tech.email || "";
+        document.getElementById("t-id").textContent = tech.id;
+        document.getElementById("t-identification").textContent = tech.identification || "N/A";
+        document.getElementById("t-phone").textContent = tech.phone || "N/A";
+        document.getElementById("t-email-detail").textContent = tech.email || "N/A";
+        document.getElementById("t-active").textContent = tech.active ? "Sí" : "No";
+        document.getElementById("t-hire-date").textContent = tech.hireDate || "N/A";
+
+        // Cargar datos de desempeño
+        await loadPerformanceData();
+
+        // Inicializar pestañas de Bootstrap
+        if (typeof bootstrap !== 'undefined') {
+          const tabEl = document.querySelector('#technicianTabs button[data-bs-toggle="tab"]');
+          if (tabEl) {
+            const tab = new bootstrap.Tab(tabEl);
+          }
         }
+
+      } catch (error) {
+        console.error("Error cargando técnico:", error);
+        showAlert("Error cargando información del técnico", "danger");
+      }
+    }
+
+    // Cargar datos de desempeño
+    async function loadPerformanceData() {
+      try {
+        console.log("🔧 Cargando datos de desempeño para técnico:", technicianId);
+
+        // Cargar hoja de vida completa
+        const response = await fetch(`${API_BASE}/technicians/${technicianId}/performance`);
+
+        console.log("🔧 Response status:", response.status);
+        console.log("🔧 Response headers:", response.headers);
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("🔧 Datos recibidos:", result);
+
+          performanceData = result.data;
+
+          if (performanceData) {
+            updatePerformanceCards();
+            updatePerformanceInfo();
+            loadRepeatedRequests();
+            loadTimeline();
+            loadOpenTasks();
+            loadTimeMetrics();
+          } else {
+            console.warn("🔧 No se encontraron datos de performance");
+          }
+        } else {
+          const errorText = await response.text();
+          console.error("🔧 Error en la respuesta del servidor:", errorText);
+          throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+      } catch (error) {
+        console.error("Error cargando datos de desempeño:", error);
+        showAlert("Error cargando datos de desempeño: " + error.message, "warning");
+      }
+    }
+
+    // Actualizar tarjetas de resumen
+    function updatePerformanceCards() {
+      if (!performanceData) return;
+      console.log("🔧 Actualizando tarjetas con datos:", performanceData);
+
+      // Tarjetas superiores
+      document.getElementById("total-visits").textContent = performanceData.totalVisits || 0;
+      document.getElementById("solved-visits").textContent = performanceData.solvedVisits || 0;
+      document.getElementById("repeated-requests").textContent = performanceData.repeatedRequestsCount || 0;
+
+      // Porcentaje a tiempo
+      const onTime = performanceData.onTimePercentage || 0;
+      document.getElementById("on-time-percentage").textContent = onTime.toFixed(1) + "%";
+
+      // Actualizar color según el porcentaje
+      const onTimeCard = document.querySelector("#on-time-percentage").closest('.card');
+      if (onTimeCard) {
+        if (onTime >= 90) {
+          onTimeCard.classList.remove('bg-info');
+          onTimeCard.classList.add('bg-success');
+        } else if (onTime < 70) {
+          onTimeCard.classList.remove('bg-info');
+          onTimeCard.classList.add('bg-danger');
+        }
+      }
+    }
+
+    // Actualizar información detallada
+    function updatePerformanceInfo() {
+      if (!performanceData) return;
+
+      // Métricas en la pestaña de información
+      document.getElementById("unique-requests").textContent = performanceData.uniqueRequests || 0;
+      document.getElementById("completed-requests").textContent = performanceData.completedRequests || 0;
+
+      // Tiempo promedio - CORRECCIÓN: toMinutes() no existe, usa total de segundos
+      if (performanceData.averageVisitTime) {
+        // Si averageVisitTime es un objeto Duration, convierte a minutos
+        const avgSeconds = performanceData.averageVisitTime.seconds ||
+          performanceData.averageVisitTime / 1000 || 0;
+        const avgMinutes = Math.round(avgSeconds / 60);
+        document.getElementById("avg-time").textContent = `${avgMinutes} minutos`;
       } else {
-        throw new Error("Error en la respuesta del servidor");
+        document.getElementById("avg-time").textContent = "No disponible";
       }
-    } catch (error) {
-      console.error("Error cargando datos de desempeño:", error);
-      showAlert("Error cargando datos de desempeño", "warning");
-    }
-  }
 
-  // Actualizar tarjetas de resumen
-  function updatePerformanceCards() {
-    if (!performanceData) return;
+      // Porcentaje de cierre
+      const closureRate = performanceData.closureRate || 0;
+      document.getElementById("closure-rate").textContent = closureRate.toFixed(1) + "%";
 
-    // Tarjetas superiores
-    document.getElementById("total-visits").textContent = performanceData.totalVisits || 0;
-    document.getElementById("solved-visits").textContent = performanceData.solvedVisits || 0;
-    document.getElementById("repeated-requests").textContent = performanceData.repeatedRequestsCount || 0;
-
-    // Porcentaje a tiempo
-    const onTime = performanceData.onTimePercentage || 0;
-    document.getElementById("on-time-percentage").textContent = onTime.toFixed(1) + "%";
-
-    // Actualizar color según el porcentaje
-    const onTimeCard = document.querySelector("#on-time-percentage").closest('.card');
-    if (onTime >= 90) {
-      onTimeCard.classList.remove('bg-info');
-      onTimeCard.classList.add('bg-success');
-    } else if (onTime < 70) {
-      onTimeCard.classList.remove('bg-info');
-      onTimeCard.classList.add('bg-danger');
-    }
-  }
-
-  // Actualizar información detallada
-  function updatePerformanceInfo() {
-    if (!performanceData) return;
-
-    // Métricas en la pestaña de información
-    document.getElementById("unique-requests").textContent = performanceData.uniqueRequests || 0;
-    document.getElementById("completed-requests").textContent = performanceData.completedRequests || 0;
-
-    // Tiempo promedio
-    if (performanceData.averageVisitTime) {
-      const avgMinutes = Math.round(performanceData.averageVisitTime.toMinutes());
-      document.getElementById("avg-time").textContent = `${avgMinutes} minutos`;
-    } else {
-      document.getElementById("avg-time").textContent = "No disponible";
+      // Métricas de apertura/cierre
+      document.getElementById("same-tech").textContent = performanceData.sameTechnicianOpenedClosed || 0;
+      document.getElementById("different-tech").textContent = performanceData.differentTechnicianClosed || 0;
     }
 
-    // Porcentaje de cierre
-    const closureRate = performanceData.closureRate || 0;
-    document.getElementById("closure-rate").textContent = closureRate.toFixed(1) + "%";
+    // Cargar solicitudes repetidas
+    async function loadRepeatedRequests() {
+      try {
+        console.log("🔧 Cargando solicitudes repetidas para técnico:", technicianId);
+        const response = await fetch(`${API_BASE}/technicians/${technicianId}/repeated-requests`);
 
-    // Métricas de apertura/cierre
-    document.getElementById("same-tech").textContent = performanceData.sameTechnicianOpenedClosed || 0;
-    document.getElementById("different-tech").textContent = performanceData.differentTechnicianClosed || 0;
-  }
+        if (response.ok) {
+          const result = await response.json();
+          const repeatedRequests = result.data || [];
 
-  // Cargar solicitudes repetidas
-  async function loadRepeatedRequests() {
-    try {
-      const response = await fetch(`${API_BASE}/technicians/${technicianId}/repeated-requests`);
-      if (response.ok) {
-        const result = await response.json();
-        const repeatedRequests = result.data || [];
+          console.log("🔧 Solicitudes repetidas encontradas:", repeatedRequests.length);
 
-        // Actualizar contador
-        document.getElementById("repeated-count").textContent =
-          `${repeatedRequests.length} solicitudes repetidas encontradas.`;
+          // Actualizar contador
+          const repeatedCountElement = document.getElementById("repeated-count");
+          if (repeatedCountElement) {
+            repeatedCountElement.textContent = `${repeatedRequests.length} solicitudes repetidas encontradas.`;
+          }
 
-        // Actualizar tabla
-        const tbody = document.getElementById("repeated-requests-table");
-        tbody.innerHTML = "";
+          // Actualizar tabla
+          const tbody = document.getElementById("repeated-requests-table");
+          if (!tbody) return;
 
-        if (repeatedRequests.length === 0) {
-          tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center">
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle me-2"></i>
-                                No se encontraron solicitudes repetidas para este técnico. ¡Excelente trabajo!
-                            </div>
-                        </td>
-                    </tr>
-                `;
-          return;
-        }
+          tbody.innerHTML = "";
 
-        // Llenar tabla con datos
-        for (const request of repeatedRequests) {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-                    <td>
-                        <span class="customer-placeholder" data-id="${request.customerId}">
-                            Cliente ${request.customerId}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="machine-placeholder" data-id="${request.machineId}">
-                            Máquina ${request.machineId}
-                        </span>
-                    </td>
-                    <td>${request.rootCause || "Sin causa raíz"}</td>
-                    <td>
-                        <small>
-                            ${request.firstRequestDate ? new Date(request.firstRequestDate).toLocaleDateString() : 'N/A'}<br>
-                            <span class="text-muted">#${request.firstRequestId}</span>
-                        </small>
-                    </td>
-                    <td>
-                        <small>
-                            ${request.lastRequestDate ? new Date(request.lastRequestDate).toLocaleDateString() : 'N/A'}<br>
-                            <span class="text-muted">#${request.lastRequestId}</span>
-                        </small>
-                    </td>
-                    <td>
-                        <span class="badge ${request.repeatCount > 2 ? 'bg-danger' : 'bg-warning'}">
-                            ${request.repeatCount} veces
-                        </span>
-                    </td>
-                    <td>
-                        ${request.daysBetweenFailures ? `${request.daysBetweenFailures} días` : 'N/A'}
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-info" onclick="viewRequest(${request.lastRequestId})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                `;
-          tbody.appendChild(row);
-        }
-
-        // Cargar nombres de clientes y máquinas
-        loadCustomerAndMachineNames();
-
-      } else {
-        throw new Error("Error cargando solicitudes repetidas");
-      }
-    } catch (error) {
-      console.error("Error cargando solicitudes repetidas:", error);
-      document.getElementById("repeated-requests-table").innerHTML = `
+          if (repeatedRequests.length === 0) {
+            tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center text-danger">
-                    Error cargando solicitudes repetidas
-                </td>
+              <td colspan="8" class="text-center">
+                <div class="alert alert-success">
+                  <i class="fas fa-check-circle me-2"></i>
+                  No se encontraron solicitudes repetidas para este técnico. ¡Excelente trabajo!
+                </div>
+              </td>
             </tr>
+          `;
+            return;
+          }
+
+          // Llenar tabla con datos
+          for (const request of repeatedRequests) {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+            <td>
+              <span class="customer-placeholder" data-id="${request.customerId}">
+                Cliente ${request.customerId}
+              </span>
+            </td>
+            <td>
+              <span class="machine-placeholder" data-id="${request.machineId}">
+                Máquina ${request.machineId}
+              </span>
+            </td>
+            <td>${request.rootCause || "Sin causa raíz"}</td>
+            <td>
+              <small>
+                ${request.firstRequestDate ? new Date(request.firstRequestDate).toLocaleDateString() : 'N/A'}<br>
+                <span class="text-muted">#${request.firstRequestId}</span>
+              </small>
+            </td>
+            <td>
+              <small>
+                ${request.lastRequestDate ? new Date(request.lastRequestDate).toLocaleDateString() : 'N/A'}<br>
+                <span class="text-muted">#${request.lastRequestId}</span>
+              </small>
+            </td>
+            <td>
+              <span class="badge ${request.repeatCount > 2 ? 'bg-danger' : 'bg-warning'}">
+                ${request.repeatCount} veces
+              </span>
+            </td>
+            <td>
+              ${request.daysBetweenFailures ? `${request.daysBetweenFailures} días` : 'N/A'}
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-info" onclick="viewRequest(${request.lastRequestId})">
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          `;
+            tbody.appendChild(row);
+          }
+
+          // Cargar nombres de clientes y máquinas
+          loadCustomerAndMachineNames();
+
+        } else {
+          throw new Error("Error cargando solicitudes repetidas");
+        }
+      } catch (error) {
+        console.error("Error cargando solicitudes repetidas:", error);
+        const tbody = document.getElementById("repeated-requests-table");
+        if (tbody) {
+          tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center text-danger">
+              Error cargando solicitudes repetidas: ${error.message}
+            </td>
+          </tr>
         `;
-    }
-  }
-
-  // Cargar nombres de clientes y máquinas
-  async function loadCustomerAndMachineNames() {
-    const customerElements = document.querySelectorAll('.customer-placeholder');
-    const machineElements = document.querySelectorAll('.machine-placeholder');
-
-    // Cargar clientes
-    const customerIds = Array.from(customerElements).map(el => el.dataset.id);
-    const uniqueCustomerIds = [...new Set(customerIds)];
-
-    for (const customerId of uniqueCustomerIds) {
-      try {
-        const customer = await customerService.get(customerId);
-        if (customer && customer.name) {
-          const elements = document.querySelectorAll(`.customer-placeholder[data-id="${customerId}"]`);
-          elements.forEach(el => {
-            el.textContent = customer.name;
-            el.classList.remove('customer-placeholder');
-          });
         }
-      } catch (error) {
-        console.error(`Error cargando cliente ${customerId}:`, error);
       }
     }
 
-    // Cargar máquinas
-    const machineIds = Array.from(machineElements).map(el => el.dataset.id);
-    const uniqueMachineIds = [...new Set(machineIds)];
+    // Cargar nombres de clientes y máquinas
+    async function loadCustomerAndMachineNames() {
+      const customerElements = document.querySelectorAll('.customer-placeholder');
+      const machineElements = document.querySelectorAll('.machine-placeholder');
 
-    for (const machineId of uniqueMachineIds) {
-      try {
-        const machine = await machineService.get(machineId);
-        if (machine) {
-          const machineName = `${machine.brand || ''} ${machine.model || ''}`.trim() ||
-            `Serial: ${machine.companySerial || machineId}`;
-          const elements = document.querySelectorAll(`.machine-placeholder[data-id="${machineId}"]`);
-          elements.forEach(el => {
-            el.textContent = machineName;
-            el.classList.remove('machine-placeholder');
-          });
-        }
-      } catch (error) {
-        console.error(`Error cargando máquina ${machineId}:`, error);
-      }
-    }
-  }
+      // Cargar clientes
+      const customerIds = Array.from(customerElements).map(el => el.dataset.id);
+      const uniqueCustomerIds = [...new Set(customerIds)];
 
-  // Cargar línea de tiempo
-  async function loadTimeline() {
-    try {
-      const limit = document.getElementById("timeline-limit").value || 20;
-      const response = await fetch(`${API_BASE}/technicians/${technicianId}/timeline?limit=${limit}`);
-
-      if (response.ok) {
-        const result = await response.json();
-        const timeline = result.data || [];
-
-        const timelineContainer = document.getElementById("visits-timeline");
-        timelineContainer.innerHTML = "";
-
-        if (timeline.length === 0) {
-          timelineContainer.innerHTML = `
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No se encontraron visitas recientes para este técnico.
-                    </div>
-                `;
-          return;
-        }
-
-        // Crear línea de tiempo
-        timeline.forEach((visit, index) => {
-          const timelineItem = document.createElement("div");
-          timelineItem.className = "timeline-item mb-3";
-
-          // Determinar icono según estado
-          let iconClass = "fas fa-clock";
-          let bgClass = "bg-secondary";
-
-          if (visit.solved) {
-            iconClass = "fas fa-check-circle";
-            bgClass = "bg-success";
-          } else if (visit.startTime && visit.endTime) {
-            iconClass = "fas fa-tools";
-            bgClass = "bg-primary";
+      for (const customerId of uniqueCustomerIds) {
+        try {
+          const customer = await customerService.get(customerId);
+          if (customer && customer.name) {
+            const elements = document.querySelectorAll(`.customer-placeholder[data-id="${customerId}"]`);
+            elements.forEach(el => {
+              el.textContent = customer.name;
+              el.classList.remove('customer-placeholder');
+            });
           }
-
-          // Formatear fechas
-          const visitDate = visit.visitDate ?
-            new Date(visit.visitDate).toLocaleString() : 'Sin fecha';
-
-          const duration = visit.durationMinutes ?
-            `${visit.durationMinutes} min` : 'Sin tiempo registrado';
-
-          timelineItem.innerHTML = `
-                    <div class="d-flex">
-                        <div class="timeline-badge ${bgClass} rounded-circle d-flex align-items-center justify-content-center me-3" 
-                             style="width: 40px; height: 40px;">
-                            <i class="${iconClass} text-white"></i>
-                        </div>
-                        <div class="timeline-content flex-grow-1">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Visita #${visit.visitId}</h6>
-                                <small class="text-muted">${visitDate}</small>
-                            </div>
-                            <p class="mb-1">
-                                <strong>Solicitud:</strong> #${visit.requestId}
-                                ${visit.requestNumber ? `(${visit.requestNumber})` : ''}
-                            </p>
-                            <p class="mb-1">
-                                <strong>Duración:</strong> ${duration}
-                            </p>
-                            ${visit.notes ? `<p class="mb-1"><strong>Notas:</strong> ${visit.notes}</p>` : ''}
-                            ${visit.startTime && visit.endTime ? `
-                                <p class="mb-1">
-                                    <small>
-                                        <strong>Horario:</strong> 
-                                        ${new Date(visit.startTime).toLocaleTimeString()} - 
-                                        ${new Date(visit.endTime).toLocaleTimeString()}
-                                    </small>
-                                </p>
-                            ` : ''}
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewVisit(${visit.visitId})">
-                                    <i class="fas fa-eye me-1"></i> Ver Detalles
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-          timelineContainer.appendChild(timelineItem);
-
-          // Añadir línea entre elementos (excepto el último)
-          if (index < timeline.length - 1) {
-            const line = document.createElement("div");
-            line.className = "timeline-line ms-5";
-            line.style.height = "20px";
-            line.style.width = "2px";
-            line.style.backgroundColor = "#dee2e6";
-            line.style.marginLeft = "20px";
-            timelineContainer.appendChild(line);
-          }
-        });
-
-      } else {
-        throw new Error("Error cargando línea de tiempo");
+        } catch (error) {
+          console.error(`Error cargando cliente ${customerId}:`, error);
+        }
       }
-    } catch (error) {
-      console.error("Error cargando línea de tiempo:", error);
-      document.getElementById("visits-timeline").innerHTML = `
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Error cargando el historial de visitas
+
+      // Cargar máquinas
+      const machineIds = Array.from(machineElements).map(el => el.dataset.id);
+      const uniqueMachineIds = [...new Set(machineIds)];
+
+      for (const machineId of uniqueMachineIds) {
+        try {
+          const machine = await machineService.get(machineId);
+          if (machine) {
+            const machineName = `${machine.brand || ''} ${machine.model || ''}`.trim() ||
+              `Serial: ${machine.companySerial || machineId}`;
+            const elements = document.querySelectorAll(`.machine-placeholder[data-id="${machineId}"]`);
+            elements.forEach(el => {
+              el.textContent = machineName;
+              el.classList.remove('machine-placeholder');
+            });
+          }
+        } catch (error) {
+          console.error(`Error cargando máquina ${machineId}:`, error);
+        }
+      }
+    }
+
+    // Cargar línea de tiempo
+    async function loadTimeline() {
+      try {
+        const limit = document.getElementById("timeline-limit")?.value || 20;
+        const response = await fetch(`${API_BASE}/technicians/${technicianId}/timeline?limit=${limit}`);
+
+        if (response.ok) {
+          const result = await response.json();
+          const timeline = result.data || [];
+
+          const timelineContainer = document.getElementById("visits-timeline");
+          if (!timelineContainer) return;
+
+          timelineContainer.innerHTML = "";
+
+          if (timeline.length === 0) {
+            timelineContainer.innerHTML = `
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No se encontraron visitas recientes para este técnico.
             </div>
+          `;
+            return;
+          }
+
+          // Crear línea de tiempo
+          timeline.forEach((visit, index) => {
+            const timelineItem = document.createElement("div");
+            timelineItem.className = "timeline-item mb-3";
+
+            // Determinar icono según estado
+            let iconClass = "fas fa-clock";
+            let bgClass = "bg-secondary";
+
+            if (visit.solved) {
+              iconClass = "fas fa-check-circle";
+              bgClass = "bg-success";
+            } else if (visit.startTime && visit.endTime) {
+              iconClass = "fas fa-tools";
+              bgClass = "bg-primary";
+            }
+
+            // Formatear fechas
+            const visitDate = visit.visitDate ?
+              new Date(visit.visitDate).toLocaleString() : 'Sin fecha';
+
+            const duration = visit.durationMinutes ?
+              `${visit.durationMinutes} min` : 'Sin tiempo registrado';
+
+            timelineItem.innerHTML = `
+            <div class="d-flex">
+              <div class="timeline-badge ${bgClass} rounded-circle d-flex align-items-center justify-content-center me-3" 
+                   style="width: 40px; height: 40px;">
+                <i class="${iconClass} text-white"></i>
+              </div>
+              <div class="timeline-content flex-grow-1">
+                <div class="d-flex justify-content-between">
+                  <h6 class="mb-1">Visita #${visit.visitId}</h6>
+                  <small class="text-muted">${visitDate}</small>
+                </div>
+                <p class="mb-1">
+                  <strong>Solicitud:</strong> #${visit.requestId}
+                  ${visit.requestNumber ? `(${visit.requestNumber})` : ''}
+                </p>
+                <p class="mb-1">
+                  <strong>Duración:</strong> ${duration}
+                </p>
+                ${visit.notes ? `<p class="mb-1"><strong>Notas:</strong> ${visit.notes}</p>` : ''}
+                ${visit.startTime && visit.endTime ? `
+                  <p class="mb-1">
+                    <small>
+                      <strong>Horario:</strong> 
+                      ${new Date(visit.startTime).toLocaleTimeString()} - 
+                      ${new Date(visit.endTime).toLocaleTimeString()}
+                    </small>
+                  </p>
+                ` : ''}
+                <div class="mt-2">
+                  <button class="btn btn-sm btn-outline-primary" onclick="viewVisit(${visit.visitId})">
+                    <i class="fas fa-eye me-1"></i> Ver Detalles
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+            timelineContainer.appendChild(timelineItem);
+
+            // Añadir línea entre elementos (excepto el último)
+            if (index < timeline.length - 1) {
+              const line = document.createElement("div");
+              line.className = "timeline-line ms-5";
+              line.style.height = "20px";
+              line.style.width = "2px";
+              line.style.backgroundColor = "#dee2e6";
+              line.style.marginLeft = "20px";
+              timelineContainer.appendChild(line);
+            }
+          });
+
+        } else {
+          throw new Error("Error cargando línea de tiempo");
+        }
+      } catch (error) {
+        console.error("Error cargando línea de tiempo:", error);
+        const timelineContainer = document.getElementById("visits-timeline");
+        if (timelineContainer) {
+          timelineContainer.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Error cargando el historial de visitas
+          </div>
         `;
-    }
-  }
-
-  // Cargar métricas de tiempo
-  async function loadTimeMetrics() {
-    try {
-      const response = await fetch(`${API_BASE}/technicians/${technicianId}/time-metrics`);
-      if (response.ok) {
-        const result = await response.json();
-        const metrics = result.data || {};
-
-        // Actualizar gráficos si existen métricas
-        if (metrics.timeDistribution) {
-          createTimeDistributionChart(metrics.timeDistribution);
         }
-
-        if (metrics.averageByDay) {
-          createAverageByDayChart(metrics.averageByDay);
-        }
-
-        // Actualizar tiempos en la pestaña de desempeño
-        if (performanceData) {
-          if (performanceData.averageVisitTime) {
-            const avgMinutes = Math.round(performanceData.averageVisitTime.toMinutes());
-            document.getElementById("avg-visit-time").textContent = `${avgMinutes} min`;
-          }
-
-          if (performanceData.longestVisitTime) {
-            const longestMinutes = Math.round(performanceData.longestVisitTime.toMinutes());
-            document.getElementById("longest-visit").textContent = `${longestMinutes} min`;
-          }
-
-          if (performanceData.shortestVisitTime) {
-            const shortestMinutes = Math.round(performanceData.shortestVisitTime.toMinutes());
-            document.getElementById("shortest-visit").textContent = `${shortestMinutes} min`;
-          }
-        }
-
       }
-    } catch (error) {
-      console.error("Error cargando métricas de tiempo:", error);
-    }
-  }
-
-  // Crear gráfico de distribución de tiempos
-  function createTimeDistributionChart(distribution) {
-    const ctx = document.getElementById('visitDistributionChart');
-    if (!ctx) return;
-
-    // Destruir gráfico anterior si existe
-    if (distributionChart) {
-      distributionChart.destroy();
     }
 
-    const labels = Object.keys(distribution);
-    const data = Object.values(distribution);
-    const backgroundColors = [
-      'rgba(54, 162, 235, 0.7)',
-      'rgba(75, 192, 192, 0.7)',
-      'rgba(255, 206, 86, 0.7)',
-      'rgba(255, 99, 132, 0.7)'
-    ];
+    // Cargar métricas de tiempo
+    async function loadTimeMetrics() {
+      try {
+        console.log("🔧 Cargando métricas de tiempo para técnico:", technicianId);
+        const response = await fetch(`${API_BASE}/technicians/${technicianId}/time-metrics`);
 
-    distributionChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: data,
-          backgroundColor: backgroundColors,
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-          },
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                const label = context.label || '';
-                const value = context.raw || 0;
-                const total = data.reduce((a, b) => a + b, 0);
-                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                return `${label}: ${value} visitas (${percentage}%)`;
+        if (response.ok) {
+          const result = await response.json();
+          const metrics = result.data || {};
+
+          console.log("🔧 Métricas recibidas:", metrics);
+
+          // Actualizar gráficos si existen métricas
+          if (metrics.timeDistribution) {
+            createTimeDistributionChart(metrics.timeDistribution);
+          }
+
+          if (metrics.averageByDay) {
+            createAverageByDayChart(metrics.averageByDay);
+          }
+
+          // Actualizar tiempos en la pestaña de desempeño
+          if (performanceData) {
+            if (performanceData.averageVisitTime) {
+              // CORRECCIÓN: Convertir duración a minutos
+              const avgSeconds = performanceData.averageVisitTime.seconds ||
+                performanceData.averageVisitTime / 1000 || 0;
+              const avgMinutes = Math.round(avgSeconds / 60);
+              document.getElementById("avg-visit-time").textContent = `${avgMinutes} min`;
+            }
+
+            if (performanceData.longestVisitTime) {
+              const longestSeconds = performanceData.longestVisitTime.seconds ||
+                performanceData.longestVisitTime / 1000 || 0;
+              const longestMinutes = Math.round(longestSeconds / 60);
+              document.getElementById("longest-visit").textContent = `${longestMinutes} min`;
+            }
+
+            if (performanceData.shortestVisitTime) {
+              const shortestSeconds = performanceData.shortestVisitTime.seconds ||
+                performanceData.shortestVisitTime / 1000 || 0;
+              const shortestMinutes = Math.round(shortestSeconds / 60);
+              document.getElementById("shortest-visit").textContent = `${shortestMinutes} min`;
+            }
+          }
+
+        }
+      } catch (error) {
+        console.error("Error cargando métricas de tiempo:", error);
+      }
+    }
+
+    // Crear gráfico de distribución de tiempos
+    function createTimeDistributionChart(distribution) {
+      const ctx = document.getElementById('visitDistributionChart');
+      if (!ctx) return;
+
+      // Destruir gráfico anterior si existe
+      if (distributionChart) {
+        distributionChart.destroy();
+      }
+
+      const labels = Object.keys(distribution);
+      const data = Object.values(distribution);
+      const backgroundColors = [
+        'rgba(54, 162, 235, 0.7)',
+        'rgba(75, 192, 192, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(255, 99, 132, 0.7)'
+      ];
+
+      distributionChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: backgroundColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  const total = data.reduce((a, b) => a + b, 0);
+                  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                  return `${label}: ${value} visitas (${percentage}%)`;
+                }
               }
             }
           }
         }
-      }
-    });
-  }
-
-  // Crear gráfico de promedio por día
-  function createAverageByDayChart(averageByDay) {
-    const ctx = document.getElementById('timeChart');
-    if (!ctx) return;
-
-    // Destruir gráfico anterior si existe
-    if (timeChart) {
-      timeChart.destroy();
+      });
     }
 
-    // Ordenar días de la semana
-    const daysOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-    const spanishDays = {
-      'MONDAY': 'Lunes',
-      'TUESDAY': 'Martes',
-      'WEDNESDAY': 'Miércoles',
-      'THURSDAY': 'Jueves',
-      'FRIDAY': 'Viernes',
-      'SATURDAY': 'Sábado',
-      'SUNDAY': 'Domingo'
+    // Crear gráfico de promedio por día
+    function createAverageByDayChart(averageByDay) {
+      const ctx = document.getElementById('timeChart');
+      if (!ctx) return;
+
+      // Destruir gráfico anterior si existe
+      if (timeChart) {
+        timeChart.destroy();
+      }
+
+      // Ordenar días de la semana
+      const daysOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+      const spanishDays = {
+        'MONDAY': 'Lunes',
+        'TUESDAY': 'Martes',
+        'WEDNESDAY': 'Miércoles',
+        'THURSDAY': 'Jueves',
+        'FRIDAY': 'Viernes',
+        'SATURDAY': 'Sábado',
+        'SUNDAY': 'Domingo'
+      };
+
+      const labels = daysOrder
+        .filter(day => averageByDay[day])
+        .map(day => spanishDays[day] || day);
+
+      const data = daysOrder
+        .filter(day => averageByDay[day])
+        .map(day => Math.round(averageByDay[day]));
+
+      timeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Minutos promedio',
+            data: data,
+            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Minutos'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Día de la semana'
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  return `${context.dataset.label}: ${context.raw} minutos`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Cargar tareas abiertas
+    async function loadOpenTasks() {
+      try {
+        console.log("🔧 Cargando tareas abiertas para técnico:", technicianId);
+        const response = await fetch(`${API_BASE}/technicians/${technicianId}/open-tasks`);
+
+        if (response.ok) {
+          const result = await response.json();
+          const openTasks = result.data || {};
+
+          console.log("🔧 Tareas abiertas recibidas:", openTasks);
+
+          // Visitas no resueltas
+          const unsolvedCount = openTasks.unsolvedVisits || 0;
+          const unsolvedCountElement = document.getElementById("unsolved-count");
+          if (unsolvedCountElement) {
+            unsolvedCountElement.textContent = unsolvedCount;
+          }
+
+          const unsolvedList = openTasks.unsolvedVisitsList || [];
+          const unsolvedContainer = document.getElementById("unsolved-visits-list");
+          if (unsolvedContainer) {
+            unsolvedContainer.innerHTML = "";
+
+            if (unsolvedList.length === 0) {
+              unsolvedContainer.innerHTML = `
+              <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                ¡No hay visitas no resueltas pendientes!
+              </div>
+            `;
+            } else {
+              unsolvedList.forEach(visit => {
+                const visitItem = document.createElement("div");
+                visitItem.className = "mb-2 p-2 border rounded";
+                visitItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>Visita #${visit.visitId}</strong><br>
+                    <small class="text-muted">
+                      Solicitud: #${visit.requestId}
+                      ${visit.requestNumber ? `(${visit.requestNumber})` : ''}
+                    </small>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary" onclick="viewVisit(${visit.visitId})">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </div>
+                ${visit.notes ? `<p class="mb-0 mt-1"><small>${visit.notes}</small></p>` : ''}
+              `;
+                unsolvedContainer.appendChild(visitItem);
+              });
+            }
+          }
+
+          // Solicitudes abiertas asignadas
+          const openRequestsCount = openTasks.openRequests || 0;
+          const openRequestsCountElement = document.getElementById("open-requests-count");
+          if (openRequestsCountElement) {
+            openRequestsCountElement.textContent = openRequestsCount;
+          }
+
+          const openRequestsContainer = document.getElementById("open-requests-list");
+          if (openRequestsContainer) {
+            openRequestsContainer.innerHTML = `
+            <div class="alert ${openRequestsCount > 0 ? 'alert-warning' : 'alert-success'}">
+              <i class="${openRequestsCount > 0 ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle'} me-2"></i>
+              ${openRequestsCount > 0 ?
+                `El técnico tiene ${openRequestsCount} solicitud(es) asignada(s) sin cerrar.` :
+                '¡No hay solicitudes abiertas asignadas!'}
+            </div>
+            <div class="text-center mt-2">
+              <button class="btn btn-sm btn-outline-primary" onclick="viewAssignedRequests()">
+                <i class="fas fa-list me-1"></i> Ver todas las solicitudes asignadas
+              </button>
+            </div>
+          `;
+          }
+
+        } else {
+          throw new Error("Error cargando tareas abiertas");
+        }
+      } catch (error) {
+        console.error("Error cargando tareas abiertas:", error);
+      }
+    }
+
+    // Funciones auxiliares - Necesitan ser globales o accesibles
+    window.viewRequest = function (requestId) {
+      sessionStorage.setItem("selectedRequestId", requestId);
+      appLoad('service_requests/detail.html');
     };
 
-    const labels = daysOrder
-      .filter(day => averageByDay[day])
-      .map(day => spanishDays[day] || day);
-
-    const data = daysOrder
-      .filter(day => averageByDay[day])
-      .map(day => Math.round(averageByDay[day]));
-
-    timeChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Minutos promedio',
-          data: data,
-          backgroundColor: 'rgba(75, 192, 192, 0.7)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Minutos'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Día de la semana'
-            }
-          }
-        },
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                return `${context.dataset.label}: ${context.raw} minutos`;
-              }
-            }
-          }
-        }
-      }
-    });
-  }
-
-  // Cargar tareas abiertas
-  async function loadOpenTasks() {
-    try {
-      const response = await fetch(`${API_BASE}/technicians/${technicianId}/open-tasks`);
-      if (response.ok) {
-        const result = await response.json();
-        const openTasks = result.data || {};
-
-        // Visitas no resueltas
-        const unsolvedCount = openTasks.unsolvedVisits || 0;
-        document.getElementById("unsolved-count").textContent = unsolvedCount;
-
-        const unsolvedList = openTasks.unsolvedVisitsList || [];
-        const unsolvedContainer = document.getElementById("unsolved-visits-list");
-        unsolvedContainer.innerHTML = "";
-
-        if (unsolvedList.length === 0) {
-          unsolvedContainer.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle me-2"></i>
-                        ¡No hay visitas no resueltas pendientes!
-                    </div>
-                `;
-        } else {
-          unsolvedList.forEach(visit => {
-            const visitItem = document.createElement("div");
-            visitItem.className = "mb-2 p-2 border rounded";
-            visitItem.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>Visita #${visit.visitId}</strong><br>
-                                <small class="text-muted">
-                                    Solicitud: #${visit.requestId}
-                                    ${visit.requestNumber ? `(${visit.requestNumber})` : ''}
-                                </small>
-                            </div>
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewVisit(${visit.visitId})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
-                        ${visit.notes ? `<p class="mb-0 mt-1"><small>${visit.notes}</small></p>` : ''}
-                    `;
-            unsolvedContainer.appendChild(visitItem);
-          });
-        }
-
-        // Solicitudes abiertas asignadas
-        const openRequestsCount = openTasks.openRequests || 0;
-        document.getElementById("open-requests-count").textContent = openRequestsCount;
-
-        // Nota: Para cargar la lista completa de solicitudes abiertas,
-        // necesitarías otro endpoint específico o usar el endpoint existente de service-requests
-        // Por ahora mostramos solo el contador
-        const openRequestsContainer = document.getElementById("open-requests-list");
-        openRequestsContainer.innerHTML = `
-                <div class="alert ${openRequestsCount > 0 ? 'alert-warning' : 'alert-success'}">
-                    <i class="${openRequestsCount > 0 ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle'} me-2"></i>
-                    ${openRequestsCount > 0 ?
-            `El técnico tiene ${openRequestsCount} solicitud(es) asignada(s) sin cerrar.` :
-            '¡No hay solicitudes abiertas asignadas!'}
-                </div>
-                <div class="text-center mt-2">
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewAssignedRequests()">
-                        <i class="fas fa-list me-1"></i> Ver todas las solicitudes asignadas
-                    </button>
-                </div>
-            `;
-
+    window.viewVisit = function (visitId) {
+      sessionStorage.setItem("selectedVisitId", visitId);
+      const requestId = sessionStorage.getItem("selectedRequestId") || '';
+      if (requestId) {
+        appLoad('service_visits/edit.html');
       } else {
-        throw new Error("Error cargando tareas abiertas");
+        showAlert("No se pudo determinar la solicitud asociada", "warning");
       }
-    } catch (error) {
-      console.error("Error cargando tareas abiertas:", error);
-    }
-  }
+    };
 
-  // Funciones auxiliares
-  function viewRequest(requestId) {
-    sessionStorage.setItem("selectedRequestId", requestId);
-    appLoad('service_requests/detail.html');
-  }
+    window.viewAssignedRequests = function () {
+      // Redirigir a la lista de solicitudes filtrada por este técnico
+      sessionStorage.setItem("filterTechnicianId", technicianId);
+      appLoad('service_requests/list.html');
+    };
 
-  function viewVisit(visitId) {
-    sessionStorage.setItem("selectedVisitId", visitId);
-    const requestId = sessionStorage.getItem("selectedRequestId") || '';
-    if (requestId) {
-      appLoad('service_visits/edit.html');
-    } else {
-      showAlert("No se pudo determinar la solicitud asociada", "warning");
-    }
-  }
+    // Exportar a PDF (funcionalidad futura)
+    window.exportToPDF = function () {
+      showAlert("Funcionalidad de exportación a PDF en desarrollo", "info");
+    };
 
-  function viewAssignedRequests() {
-    // Redirigir a la lista de solicitudes filtrada por este técnico
-    sessionStorage.setItem("filterTechnicianId", technicianId);
-    appLoad('service_requests/list.html');
-  }
+    // Refrescar datos
+    window.refreshData = function () {
+      loadPerformanceData();
+      showAlert("Datos actualizados", "success");
+    };
 
-  // Exportar a PDF (funcionalidad futura)
-  function exportToPDF() {
-    showAlert("Funcionalidad de exportación a PDF en desarrollo", "info");
-  }
+    // Configurar botón de refrescar
+    window.setupRefreshButton = function () {
+      const header = document.querySelector(".d-flex.justify-content-between");
+      if (header) {
+        // Remover botón existente si lo hay
+        const existingBtn = header.querySelector(".refresh-technician-btn");
+        if (existingBtn) {
+          existingBtn.remove();
+        }
 
-  // Refrescar datos
-  function refreshData() {
-    loadPerformanceData();
-    showAlert("Datos actualizados", "success");
-  }
+        const refreshBtn = document.createElement("button");
+        refreshBtn.className = "btn btn-outline-primary btn-sm refresh-technician-btn ms-2";
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Actualizar';
+        refreshBtn.onclick = refreshData;
+        header.querySelector("div").appendChild(refreshBtn);
+      }
+    };
 
-  // Inicializar cuando se carga el DOM
-  /*document.addEventListener("DOMContentLoaded", function () {
-    loadTechnicianDetail();
+    // Inicializar
+    document.addEventListener("DOMContentLoaded", function () {
+      console.log("🔧 DOM cargado - Iniciando carga del técnico");
+      loadTechnicianDetail();
+      setupRefreshButton();
+    });
 
-    // Añadir botón de refrescar al header si es necesario
-    const header = document.querySelector(".d-flex.justify-content-between");
-    if (header) {
-      const refreshBtn = document.createElement("button");
-      refreshBtn.className = "btn btn-outline-primary btn-sm";
-      refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Actualizar';
-      refreshBtn.onclick = refreshData;
-      header.querySelector("div").appendChild(refreshBtn);
-    }
-  });*/
+    // También iniciar después de un pequeño delay por si acaso
+    setTimeout(() => {
+      if (!technicianId) {
+        console.log("🔧 Iniciando carga tardía del técnico");
+        loadTechnicianDetail();
+        setupRefreshButton();
+      }
+    }, 300);
 
-
-  window.addEventListener('load', function () {
-    setTimeout(loadTechnicianDetail, 100);
-  });
-
-  // O aún mejor, llama directamente:
-  setTimeout(loadTechnicianDetail, 100);
-
-  // Estilos CSS adicionales para la línea de tiempo
-  const style = document.createElement('style');
-  style.textContent = `
+    // Estilos CSS adicionales para la línea de tiempo
+    const style = document.createElement('style');
+    style.textContent = `
 .timeline {
     position: relative;
     padding-left: 20px;
@@ -992,5 +1060,6 @@
     flex-shrink: 0;
 }
 `;
-  document.head.appendChild(style);
+    document.head.appendChild(style);
+  })();
 </script>
