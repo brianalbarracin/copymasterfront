@@ -599,9 +599,9 @@
 
 
 
+             
 
-
-            /* window.appLoad = async function (path) {
+             window.appLoad = async function (path) {
                  try {
                      // Mostrar indicador de carga
                      document.getElementById("content-main").innerHTML = `
@@ -654,85 +654,8 @@
              </div>
          `;
                  }
-             };*/
-            window.appLoad = async function (path) {
-                try {
-                    // Mostrar indicador de carga
-                    document.getElementById("content-main").innerHTML = `
-      <div class="text-center py-5">
-        <div class="spinner-border text-success" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-        <p class="mt-3">Cargando...</p>
-      </div>
-    `;
+             };
 
-                    const res = await fetch(path);
-                    if (!res.ok) throw new Error("No se pudo cargar " + path);
-
-                    const html = await res.text();
-                    document.getElementById("content-main").innerHTML = html;
-
-                    // 🔥 LIMPIAR EVENTOS DUPLICADOS ANTES DE AGREGAR NUEVOS
-                    // Esto evita que se acumulen event listeners
-                    const oldLinks = document.querySelectorAll('a[data-page]');
-                    oldLinks.forEach(link => {
-                        // Clonar el elemento para remover todos los event listeners
-                        const newLink = link.cloneNode(true);
-                        link.parentNode.replaceChild(newLink, link);
-                    });
-
-                    // 🔥 VOLVER A CONFIGURAR LA NAVEGACIÓN DESDE EL INDEX PRINCIPAL
-                    document.querySelectorAll('a[data-page]').forEach(a => {
-                        // Remover cualquier event listener existente primero
-                        a.replaceWith(a.cloneNode(true));
-                        const newA = a.cloneNode(true);
-                        a.parentNode.replaceChild(newA, a);
-
-                        // Agregar el event listener
-                        newA.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            appLoad(newA.dataset.page);
-                        });
-                    });
-
-                    // Ejecutar scripts incrustados de manera segura
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const scripts = doc.querySelectorAll('script');
-
-                    for (const script of scripts) {
-                        if (script.src) {
-                            // Script externo
-                            const newScript = document.createElement('script');
-                            newScript.src = script.src;
-                            document.head.appendChild(newScript);
-                        } else {
-                            // Script inline - ejecutar en un ámbito aislado
-                            try {
-                                const code = script.textContent;
-                                // Evitar ejecutar código que configure navegación duplicada
-                                if (!code.includes('a[data-page]') && !code.includes('initDashboardEvents')) {
-                                    const func = new Function(code);
-                                    func();
-                                }
-                            } catch (e) {
-                                console.warn("Error ejecutando script:", e);
-                            }
-                        }
-                    }
-
-                } catch (e) {
-                    console.error(e);
-                    document.getElementById("content-main").innerHTML = `
-      <div class="alert alert-danger">
-        <h5>Error al cargar la página</h5>
-        <p>${e.message}</p>
-        <a href="#" onclick="appLoad('home.html')" class="btn btn-sm btn-success">Volver al inicio</a>
-      </div>
-    `;
-                }
-            };
 
 
 
