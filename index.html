@@ -242,7 +242,66 @@
                 });
                 return fetch(`${API_BASE}/technicians/comparison?${params}`)
                     .then(r => r.json()).then(res => res.data);
-            }
+            },
+
+            // 🔹 NUEVOS MÉTODOS PARA HOJA DE VIDA
+            getPerformance: (id) => fetch(`${API_BASE}/technicians/${id}/performance`)
+                .then(r => r.json()).then(res => res.data),
+
+            getStats: (id, startDate, endDate) => {
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+
+                return fetch(`${API_BASE}/technicians/${id}/stats?${params}`)
+                    .then(r => r.json()).then(res => res.data);
+            },
+
+            getRepeatedRequests: (id) => fetch(`${API_BASE}/technicians/${id}/repeated-requests`)
+                .then(r => r.json()).then(res => res.data),
+
+            getTimeMetrics: (id) => fetch(`${API_BASE}/technicians/${id}/time-metrics`)
+                .then(r => r.json()).then(res => res.data),
+
+            getTimeline: (id, limit = 20) => fetch(`${API_BASE}/technicians/${id}/timeline?limit=${limit}`)
+                .then(r => r.json()).then(res => res.data),
+
+            getOpenTasks: (id) => fetch(`${API_BASE}/technicians/${id}/open-tasks`)
+                .then(r => r.json()).then(res => res.data),
+
+            // 🔹 Método de eliminación
+            delete: (id) => fetch(`${API_BASE}/technicians/${id}`, {
+                method: "DELETE"
+            }).then(r => r.json()).then(res => res.data)
+
+
+        };
+
+
+        const technicianPerformanceService = {
+            getPerformance: (id) => fetch(`${API_BASE}/technicians/${id}/performance`)
+                .then(r => r.json()).then(res => res.data),
+
+            getStats: (id, startDate, endDate) => {
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+
+                return fetch(`${API_BASE}/technicians/${id}/stats?${params}`)
+                    .then(r => r.json()).then(res => res.data);
+            },
+
+            getRepeatedRequests: (id) => fetch(`${API_BASE}/technicians/${id}/repeated-requests`)
+                .then(r => r.json()).then(res => res.data),
+
+            getTimeMetrics: (id) => fetch(`${API_BASE}/technicians/${id}/time-metrics`)
+                .then(r => r.json()).then(res => res.data),
+
+            getTimeline: (id, limit = 20) => fetch(`${API_BASE}/technicians/${id}/timeline?limit=${limit}`)
+                .then(r => r.json()).then(res => res.data),
+
+            getOpenTasks: (id) => fetch(`${API_BASE}/technicians/${id}/open-tasks`)
+                .then(r => r.json()).then(res => res.data)
         };
 
         const machineService = {
@@ -391,6 +450,39 @@
                 .then(r => r.json()).then(res => res.data || [])
         };
 
+
+
+        const readingTonerService = {
+            getByMachine: (machineId) => fetch(`${API_BASE}/reading-toner/machine/${machineId}`)
+                .then(r => r.json()).then(res => res.data),
+
+            create: (data) => fetch(`${API_BASE}/reading-toner`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data),
+
+            update: (id, data) => fetch(`${API_BASE}/reading-toner/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data)
+        };
+
+        const meterReadingService = {
+            getByMachine: (machineId) => fetch(`${API_BASE}/meter-readings/machine/${machineId}`)
+                .then(r => r.json()).then(res => res.data),
+
+            create: (data) => fetch(`${API_BASE}/meter-readings`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => res.data)
+        };
+
+
+
+
         const costService = {
             analysis: (startDate, endDate) => {
                 const params = new URLSearchParams({
@@ -470,37 +562,97 @@
             document.getElementById("current-user").innerText = userObj.username || userObj.fullName || "";
 
             // Configurar sistema de navegación
+            /* window.appLoad = async function (path) {
+                 try {
+ 
+                         
+                     const res = await fetch(path);
+                     if (!res.ok) throw new Error("No se pudo cargar " + path);
+ 
+                     const html = await res.text();
+                     document.getElementById("content-main").innerHTML = html;
+ 
+                     // Ejecutar scripts incrustados
+                     const tmp = document.createElement('div');
+                     tmp.innerHTML = html;
+                     tmp.querySelectorAll('script').forEach(s => {
+                         const script = document.createElement('script');
+                         if (s.src) {
+                             script.src = s.src;
+                         } else {
+                             script.textContent = s.textContent;
+                         }
+                         document.body.appendChild(script);
+                     });
+                 } catch (e) {
+                     console.error(e);
+                     document.getElementById("content-main").innerHTML = `
+                         <div class="alert alert-danger">
+                             <h5>Error al cargar la página</h5>
+                             <p>${e.message}</p>
+                             <a href="#" onclick="appLoad('home.html')" class="btn btn-sm btn-success">Volver al inicio</a>
+                         </div>
+                     `;
+                 }
+             };*/
+
             window.appLoad = async function (path) {
                 try {
+                    // Mostrar indicador de carga
+                    document.getElementById("content-main").innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Cargando...</p>
+            </div>
+        `;
+
                     const res = await fetch(path);
                     if (!res.ok) throw new Error("No se pudo cargar " + path);
 
                     const html = await res.text();
                     document.getElementById("content-main").innerHTML = html;
 
-                    // Ejecutar scripts incrustados
-                    const tmp = document.createElement('div');
-                    tmp.innerHTML = html;
-                    tmp.querySelectorAll('script').forEach(s => {
-                        const script = document.createElement('script');
-                        if (s.src) {
-                            script.src = s.src;
+                    // Ejecutar scripts incrustados de manera segura
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const scripts = doc.querySelectorAll('script');
+
+                    for (const script of scripts) {
+                        if (script.src) {
+                            // Script externo
+                            const newScript = document.createElement('script');
+                            newScript.src = script.src;
+                            document.head.appendChild(newScript);
                         } else {
-                            script.textContent = s.textContent;
+                            // Script inline
+                            try {
+                                // Usar Function para evitar problemas de contexto
+                                new Function(script.textContent)();
+                            } catch (e) {
+                                console.warn("Error ejecutando script:", e);
+                            }
                         }
-                        document.body.appendChild(script);
-                    });
+                    }
+
+                    // Forzar la ejecución de scripts que usan DOMContentLoaded
+                    window.dispatchEvent(new Event('DOMContentLoaded'));
+
                 } catch (e) {
                     console.error(e);
                     document.getElementById("content-main").innerHTML = `
-                        <div class="alert alert-danger">
-                            <h5>Error al cargar la página</h5>
-                            <p>${e.message}</p>
-                            <a href="#" onclick="appLoad('home.html')" class="btn btn-sm btn-success">Volver al inicio</a>
-                        </div>
-                    `;
+            <div class="alert alert-danger">
+                <h5>Error al cargar la página</h5>
+                <p>${e.message}</p>
+                <a href="#" onclick="appLoad('home.html')" class="btn btn-sm btn-success">Volver al inicio</a>
+            </div>
+        `;
                 }
             };
+
+
+
 
             // Configurar eventos de navegación
             document.querySelectorAll('a[data-page]').forEach(a => {
