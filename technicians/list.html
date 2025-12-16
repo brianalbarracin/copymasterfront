@@ -31,7 +31,7 @@
 </div>
 
 <script>
-    async function loadTechnicians(query="") {
+    async function loadTechnicians(query = "") {
         try {
             const technicians = await technicianService.list();
             const tbody = document.getElementById("technicians-tbody");
@@ -50,7 +50,7 @@
                             <td>${t.phone || ""}</td>
                             <td>${t.specialty || ""}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="appLoad('technicians/detail.html?id=${t.id}')">
+                                <button class="btn btn-sm btn-primary" onclick="viewTechnicianDetail(${t.id}))">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <button class="btn btn-sm btn-warning" onclick="appLoad('technicians/edit.html?id=${t.id}')">
@@ -72,8 +72,15 @@
         }
     }
 
+
+
+    function viewTechnicianDetail(id) {
+        console.log("🔵 Navegando a detalle del técnico:", id);
+        sessionStorage.setItem('selectedTechnicianId', id);
+        appLoad('technicians/detail.html');
+    }
     // Autoejecutar inmediatamente cuando el snippet se inyecta
-    (async function() {
+    (async function () {
         await loadTechnicians();
         document.getElementById("technician-search").addEventListener("input", (e) => {
             loadTechnicians(e.target.value);

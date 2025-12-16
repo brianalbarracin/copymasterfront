@@ -304,7 +304,11 @@
     async function loadTechnicianDetail() {
       const params = new URLSearchParams(location.search);
       const id = params.get("id");
+
+      console.log("🟢 ID obtenido de URL:", id); // Agrega este log
+
       if (!id) {
+        console.error("❌ No se encontró ID en la URL");
         showAlert("No se especificó ID de técnico", "danger");
         appLoad('technicians/list.html');
         return;
