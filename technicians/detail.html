@@ -5,7 +5,7 @@
       <p class="text-muted mb-0" id="t-email"></p>
     </div>
     <div>
-      <button class="btn btn-outline-secondary btn-sm" onclick="appLoad('technicians/edit.html?id='+window.__TID)">
+      <button class="btn btn-outline-secondary btn-sm" onclick="editTechnician()">
         <i class="fas fa-edit me-1"></i> Editar
       </button>
       <button class="btn btn-outline-info btn-sm" onclick="appLoad('technicians/list.html')">
@@ -215,7 +215,6 @@
               <th>Máquina</th>
               <th>Causa Raíz</th>
               <th>Primera Fall</th>
-
               <th>Última Fall</th>
               <th>Veces</th>
               <th>Días entre</th>
@@ -302,8 +301,8 @@
 
     console.log("🔵 Iniciando technicians/detail.html");
 
-    // Inicializar cuando se carga la página
-    async function initTechnicianDetail() {
+    // CORRECCIÓN: Cambiar el nombre de la función a loadTechnicianDetail
+    async function loadTechnicianDetail() {
       // 1. Obtener ID de sessionStorage
       technicianId = sessionStorage.getItem('selectedTechnicianId');
 
@@ -354,6 +353,7 @@
         showAlert("Error cargando información del técnico: " + error.message, "danger");
       }
     }
+
     // Cargar datos de desempeño
     async function loadPerformanceData() {
       try {
@@ -975,7 +975,7 @@
       }
     }
 
-    // Funciones auxiliares - Necesitan ser globales o accesibles
+    // FUNCIONES GLOBALES
     window.viewRequest = function (requestId) {
       sessionStorage.setItem("selectedRequestId", requestId);
       appLoad('service_requests/detail.html');
@@ -992,83 +992,38 @@
     };
 
     window.viewAssignedRequests = function () {
-      // Redirigir a la lista de solicitudes filtrada por este técnico
       sessionStorage.setItem("filterTechnicianId", technicianId);
       appLoad('service_requests/list.html');
     };
 
-    // Exportar a PDF (funcionalidad futura)
+    window.editTechnician = function () {
+      if (technicianId) {
+        sessionStorage.setItem('selectedTechnicianId', technicianId);
+        appLoad('technicians/edit.html');
+      }
+    };
+
     window.exportToPDF = function () {
       showAlert("Funcionalidad de exportación a PDF en desarrollo", "info");
     };
 
-    // Refrescar datos
     window.refreshData = function () {
       loadPerformanceData();
       showAlert("Datos actualizados", "success");
-    };
-
-    // Configurar botón de refrescar
-    window.setupRefreshButton = function () {
-      const header = document.querySelector(".d-flex.justify-content-between");
-      if (header) {
-        // Remover botón existente si lo hay
-        const existingBtn = header.querySelector(".refresh-technician-btn");
-        if (existingBtn) {
-          existingBtn.remove();
-        }
-
-        const refreshBtn = document.createElement("button");
-        refreshBtn.className = "btn btn-outline-primary btn-sm refresh-technician-btn ms-2";
-        refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Actualizar';
-        refreshBtn.onclick = refreshData;
-        header.querySelector("div").appendChild(refreshBtn);
-      }
     };
 
     // Inicializar
     document.addEventListener("DOMContentLoaded", function () {
       console.log("🔧 DOM cargado - Iniciando carga del técnico");
       loadTechnicianDetail();
-      setupRefreshButton();
     });
 
-    // También iniciar después de un pequeño delay por si acaso
     setTimeout(() => {
       if (!technicianId) {
         console.log("🔧 Iniciando carga tardía del técnico");
         loadTechnicianDetail();
-        setupRefreshButton();
       }
-    }, 300);
+    }, 100);
 
-    // Estilos CSS adicionales para la línea de tiempo
-    const style = document.createElement('style');
-    style.textContent = `
-.timeline {
-    position: relative;
-    padding-left: 20px;
-}
-
-.timeline-item {
-    position: relative;
-}
-
-.timeline-badge {
-    flex-shrink: 0;
-}
-
-.timeline-content {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    border-left: 3px solid #dee2e6;
-}
-
-.timeline-line {
-    flex-shrink: 0;
-}
-`;
-    document.head.appendChild(style);
   })();
 </script>
